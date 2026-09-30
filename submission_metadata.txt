@@ -1,0 +1,36 @@
+TITLE
+Square-Root Circuit Bounds for Iterated Functions
+
+AUTHOR FIELD (PROVISIONAL; CONFIRM BEFORE SUBMISSION)
+Samuel Schlesinger
+
+KEYWORDS
+Boolean circuit complexity; function iteration; functional graphs; nonuniform computation; sorting networks; permutation inversion; one-way functions
+
+ABSTRACT (LATEX)
+Let $F:\{0,1\}^n\to\{0,1\}^n$ be computed by a Boolean circuit of size $s$, and
+write $A=s+n^3$.  We prove that every fixed iterate $F^T$, for an arbitrary
+integer $T\geq 0$, has a bounded-fan-in Boolean circuit of size
+\[
+  O\!\left(A+\sqrt{n^3 2^n A}\right).
+\]
+The circuit is nonuniform in $F$ and $T$, but the bound is independent of the
+magnitude and bit length of $T$.  No injectivity assumption is required.
+Consequently, all fixed iterates of a polynomial-size update rule have
+circuits of size $2^{n/2+O(\log n)}$.  The same exponential bound holds when
+an $n$-bit iteration count is part of the input.  We also give a batched
+construction that shares preprocessing across independent trajectories.
+
+The proof combines sparse checkpoints in a functional graph with a
+forward-only correction identity and batched dictionary lookup implemented
+by sorting networks.  All lookup and selection gates are included in the
+size bound.  The theorem recovers square-root-size circuits for permutation
+inversion, consistently with possible one-wayness against polynomial-size
+adversaries.  Finally, for even $n$ we construct an explicit linear-size
+permutation on $n$ bits for which some fixed power requires
+$\Omega(2^{n/2}/n)$ gates.  Such hard powers necessarily have binary
+exponents of length $\Omega(2^{n/2}/n^2)$.  The counting argument neither
+identifies an explicit hard power nor establishes one-way functions.
+
+STATUS
+Preliminary draft, September 29, 2026. Historical priority and final attribution require author review. See the provenance note and README.

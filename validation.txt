@@ -1,0 +1,13 @@
+PASS: all finite semantic checks succeeded.
+Seed: 20260929
+batch-lookup instances: 2,000
+checkpoint-lemma instances: 17,476
+explicit inverse states: 1,364
+inverse-power instances: 6,894
+lcm lemma instances: 128
+maps: 448
+outputs: checkpoint: 35,560
+outputs: repetition: 34,344
+outputs: short-time: 49,074
+permutation family instances: 5
+These checks do not replace a proof or establish historical novelty.

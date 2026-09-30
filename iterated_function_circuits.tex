@@ -1,0 +1,1012 @@
+% Compile twice with pdflatex.  This source is self-contained; no BibTeX run
+% or external figure files are needed.  See README.md for draft status.
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[letterpaper,margin=1in]{geometry}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{microtype}
+\usepackage{enumitem}
+\usepackage{booktabs}
+\usepackage{etoolbox}
+\usepackage[hidelinks,pdfencoding=auto]{hyperref}
+\usepackage[capitalise,nameinlink,noabbrev]{cleveref}
+\hypersetup{
+  pdftitle={Square-Root Circuit Bounds for Iterated Functions},
+  pdfauthor={Samuel Schlesinger},
+  pdfsubject={Preliminary research draft: nonuniform Boolean circuit upper bounds},
+  pdfkeywords={circuit complexity, function iteration, functional graphs, nonuniform computation, sorting networks, permutation inversion, one-way functions}
+}
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\theoremstyle{remark}
+\newtheorem{remark}[theorem]{Remark}
+% Keep theorem statements together while allowing their proofs to break.
+\newcommand{\keepstatement}[1]{%
+  \BeforeBeginEnvironment{#1}{\begin{samepage}}%
+  \AfterEndEnvironment{#1}{\end{samepage}}}
+\keepstatement{theorem}
+\keepstatement{lemma}
+\keepstatement{proposition}
+\keepstatement{corollary}
+\keepstatement{definition}
+\newcommand{\bits}{\{0,1\}}
+\newcommand{\CC}{\mathrm{C}}
+\newcommand{\Iter}{\operatorname{Iter}}
+\newcommand{\lcm}{\operatorname{lcm}}
+\newcommand{\poly}{\operatorname{poly}}
+\newcommand{\ord}{\operatorname{ord}}
+\newcommand{\floor}[1]{\left\lfloor #1\right\rfloor}
+\newcommand{\ceil}[1]{\left\lceil #1\right\rceil}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\setlist[enumerate]{itemsep=3pt,topsep=5pt}
+\setlength{\emergencystretch}{2em}
+\numberwithin{equation}{section}
+\title{Square-Root Circuit Bounds\\for Iterated Functions}
+% Author field is provisional and editable; no affiliation is assumed.
+\author{Samuel Schlesinger}
+\date{September 29, 2026\\[3pt]\small Preliminary draft}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Let $F:\bits^n\to\bits^n$ be computed by a Boolean circuit of size $s$, and
+write $A=s+n^3$.  We prove that every fixed iterate $F^T$, for an arbitrary
+integer $T\geq 0$, has a bounded-fan-in Boolean circuit of size
+\[
+  O\!\left(A+\sqrt{n^3 2^n A}\right).
+\]
+The circuit is nonuniform in $F$ and $T$, but the bound is independent of the
+magnitude and bit length of $T$.  No injectivity assumption is required.
+Consequently, all fixed iterates of a polynomial-size update rule have
+circuits of size $2^{n/2+O(\log n)}$.  The same exponential bound holds when
+an $n$-bit iteration count is part of the input.  We also give a batched
+construction that shares preprocessing across independent trajectories.
+
+The proof combines sparse checkpoints in a functional graph with a
+forward-only correction identity and batched dictionary lookup implemented
+by sorting networks.  All lookup and selection gates are included in the
+size bound.  The theorem recovers square-root-size circuits for permutation
+inversion, consistently with possible one-wayness against polynomial-size
+adversaries.  Finally, for even $n$ we construct an explicit linear-size
+permutation on $n$ bits for which some fixed power requires
+$\Omega(2^{n/2}/n)$ gates.  Such hard powers necessarily have binary
+exponents of length $\Omega(2^{n/2}/n^2)$.  The counting argument neither
+identifies an explicit hard power nor establishes one-way functions.
+\end{abstract}
+
+\noindent\textbf{Keywords.} Boolean circuit complexity; function iteration;
+functional graphs; nonuniform computation; sorting networks; permutation
+inversion; one-way functions.
+
+\section{Introduction}\label{sec:intro}
+
+A simple transition rule can describe a computation of enormous duration.
+How complicated can its final-state map be as a Boolean function of the
+initial state?  We study this question for a fixed map
+$F:\bits^n\to\bits^n$.  The computational resource is the total number of
+Boolean gates, rather than the number of evaluations of $F$, the number of
+memory probes, or the time of a random-access algorithm.
+
+Let $N=2^n$ and suppose that $F$ has a circuit of size $s$.  Directly
+unrolling $T$ applications gives a circuit of size at most $Ts$ for $F^T$.
+Alternatively, hardwiring a complete truth table and testing the input
+against all $N$ states gives an $O(nN)$-gate circuit, independently of $T$.
+The latter bound ignores the possibility that $F$ itself is much simpler
+than an arbitrary map on its state space.  Our main result exploits that
+possibility.
+
+\begin{theorem}[Fixed-power tradeoff]\label{thm:main}
+Let $n\geq 1$, let $F:\bits^n\to\bits^n$ satisfy $\CC(F)\leq s$, and put
+$N=2^n$ and $A=s+n^3$.  For every integer $T\geq 0$ and every integer
+$1\leq L\leq N$,
+\begin{equation}\label{eq:tradeoff}
+  \CC(F^T)
+  =O\!\left(Ls+n^3\left(L+\frac{N}{L}\right)\right).
+\end{equation}
+In particular,
+\begin{equation}\label{eq:optimized}
+  \CC(F^T)
+  =O\!\left(A+\sqrt{n^3NA}\right).
+\end{equation}
+The implicit constants are absolute.  The circuit may depend on $F$ and
+$T$, but the size bound does not depend on the bit length of $T$.
+\end{theorem}
+
+Here and throughout, circuits use the full fan-in-two Boolean basis and
+have unrestricted fan-out.  The results also hold over the basis
+$\{\mathsf{AND},\mathsf{OR},\mathsf{NOT}\}$ with a constant-factor change.
+Circuit size refers to the whole multi-output circuit, not to a separate
+size bound for each output bit.
+
+\begin{corollary}\label[corollary]{cor:poly}
+If $\CC(F_n)=n^{O(1)}$, then
+\begin{equation}\label{eq:half}
+  \sup_{T\geq 0}\CC(F_n^T)\leq 2^{n/2+O(\log n)}.
+\end{equation}
+The constant hidden in $O(\log n)$ may depend on the polynomial bound for
+$\CC(F_n)$, but not on $T$.
+\end{corollary}
+
+The quantifiers in \cref{thm:main} are important.  For each $F$ and $T$ we
+construct a circuit that works for \emph{every} initial state.  We do not
+construct a single circuit taking an arbitrary-length exponent as input.
+Nevertheless, an $m$-bit exponent can be supplied as input at a multiplicative
+cost of $m$:
+\begin{equation}\label{eq:intro-variable}
+  \CC\bigl((x,t)\mapsto F^t(x)\bigr)
+  =O\!\left(m\left(A+\sqrt{n^3NA}\right)\right),
+  \qquad t\in\bits^m.
+\end{equation}
+We prove this in \cref{sec:variable}.  In particular, $m=n$ preserves the
+exponent in \cref{eq:half}.  We also give a shared-dictionary construction
+for $r$ independent initial states, replacing the main square-root term
+$r\sqrt{n^3NA}$ of separate constructions by $\sqrt{rn^3NA}$; see
+\cref{sec:batch}.
+
+For arbitrary fixed powers, the exponent $1/2$ cannot be improved in
+general.  In \cref{sec:lower} we give an explicit family of permutations
+$P_n$ with $\CC(P_n)=O(n)$ and
+\begin{equation}\label{eq:intro-lower}
+  \max_{T\geq 0}\CC(P_n^T)=2^{n/2+O(\log n)}
+\end{equation}
+for even $n$.  The hard exponent is obtained by counting over a very large
+cyclic group of powers.  This is not an explicit exponential circuit lower
+bound: the permutation is explicit, but the hard power is not specified
+by an efficient procedure.  Moreover, the same permutation has an easy
+iterator when the time parameter has polynomially many bits.
+
+For a permutation $P$, choosing $T=\ord(P)-1$ recovers a circuit for
+$P^{-1}$.  Thus every polynomial-size permutation on $n$ bits admits an
+exact inverter of size $2^{n/2+O(\log n)}$.  This exponential upper bound
+is compatible with one-wayness against polynomial-size circuits.
+We explain this consequence and its limitations in \cref{sec:one-way}.
+
+\subsection{Proof overview}
+
+The functional graph of $F$ consists of directed cycles with directed
+trees feeding into them.  For a parameter $L$, we select $O(N/L)$
+checkpoints so that every trajectory either encounters one within $2L$
+steps or repeats a state within that many steps.  A repeated state reveals
+a period and permits direct recovery of the answer from the initial
+trajectory.
+
+Set $K=2L$ and assume $T\geq K$.  At each checkpoint $h$, store
+$z_h=F^{T-K}(h)$.  If the initial trajectory encounters $h$ at time $d\leq K$,
+then
+\begin{equation}\label{eq:overview-identity}
+  F^{K-d}(z_h)
+  =F^{K-d}\bigl(F^{T-K}(F^d(x))\bigr)
+  =F^T(x).
+\end{equation}
+Thus only a short \emph{forward} correction is needed after the lookup.
+There is no inverse operation, so the argument applies to noninjective
+maps.
+
+A separate lookup for each of $\Theta(L)$ visited states against
+$\Theta(N/L)$ checkpoints would cost $\Theta(N)$ comparisons.  Instead,
+we generate the full initial trajectory before looking anything up and
+resolve all its queries together.  Sorting the queries and dictionary
+records reduces this cost to
+$\poly(n)(L+N/L)$ Boolean gates.  Combining the initial and final short
+simulations with this batched lookup gives \cref{eq:tradeoff}.
+
+\subsection{Related work and status of the formulation}\label{sec:related}
+
+Preprocessing trajectories to exchange storage for later computation is
+classical.  Hellman's cryptanalytic time--memory tradeoff is an early
+example of this approach~\cite{Hellman80}.  More directly, Munro, Raman,
+Raman, and Rao~\cite[Section~3.1]{MRRR12} give a shortcut representation
+for permutation inversion: with a parameter $L$, their black-box
+construction uses $O(L)$ evaluations and
+$O((N/L)(\log N+\log L))$ auxiliary bits.  They also give succinct
+representations of general functions supporting positive powers with a
+word-size exponent~\cite[Section~5]{MRRR12}.  Those results concern
+representation space, RAM time, and black-box access, rather than total
+Boolean gate count.
+
+A closer circuit antecedent is Hirahara, Ilango, and
+Williams~\cite[Section~3.2]{HIW24}: they obtain square-root-size
+permutation-inversion circuits using checkpoints and batched lookup.
+Their lookup theorem builds on a lemma of Paul.  This draft generalizes
+that permutation-inversion construction to arbitrary fixed forward powers
+of possibly noninjective maps.  It does not subsume their general-function
+inversion and compression theorems.
+
+Eppstein~\cite{Eppstein23} studies uniform iteration of polynomial-time
+bijections, with the iteration count supplied in binary, and characterizes
+the resulting class of functional problems as
+$\mathsf{FP}^{\mathsf{PSPACE}}$.  Our resource question differs: the map
+is fixed, the circuits are nonuniform, and the size bound remains
+exponential in the state length.  Our result supplies no polynomial-time
+algorithm for that iteration problem.
+
+The present construction uses the same checkpoint and batched-lookup
+principles.  Batcher's sorting networks~\cite{Batcher68} implement the
+lookup, while the shifted payload in \cref{eq:overview-identity} and the
+checkpoint-or-repetition lemma handle general powers and functional graphs.
+No RAM memory probe is treated as a unit-cost circuit operation.
+Checkpointing, sorting-based lookup, and square-root-size permutation
+inversion are not claimed as new.  Historical priority for the full
+fixed-power theorem and the shared bounds in this draft remains unresolved.
+
+\section{Model and circuit primitives}\label{sec:model}
+
+\subsection{Conventions}
+
+All logarithms are to base two.  The notation $F^t$ denotes $t$-fold
+composition, with $F^0$ equal to the identity.  The quantity $\CC(G)$ is the
+minimum number of internal gates in an acyclic Boolean circuit computing
+all output bits of $G$.  Each internal gate computes a Boolean function
+of at most two bits.  Inputs, wires, fan-out, and output designations are
+not charged as gates.  The two constant bits are available; charging a
+constant number of gates for them would not change any bound.
+
+The circuit for an iterate is allowed to depend on the entire function
+$F$ and on its fixed exponent.  Preprocessing time and the time required
+to find the circuit are not bounded.  Hardwired data do not provide free
+addressing: every comparison, multiplexer, and routing operation used to
+access them is realized with Boolean gates and included in our estimates.
+
+All state words have $n$ bits.  Because $L\leq 2^n$, indices up to $2L$ fit
+in $n+2$ bits.  In the batched construction $r\leq 2^n$, so query identifiers
+and record positions also have $O(n)$ bits.  We retain explicit polynomial
+factors in $n$ for a concrete implementation; these factors are not
+claimed to be optimal.
+
+\subsection{Arithmetic and selection}
+
+Comparison, addition, subtraction, and conditional selection of $w$-bit
+words have $O(w)$-gate circuits.  Binary long division gives an
+$O(w^2)$-gate circuit for the remainder of a $w$-bit integer modulo a
+positive $w$-bit integer: process the dividend bits from most to least
+significant, and at each stage conditionally subtract the modulus from
+the current shifted remainder.  There are $O(w)$ stages and $O(w)$ gates
+per stage.
+
+A circuit can select one of $q$ words of width $w$ using $O(qw)$ gates by
+a binary tree of word multiplexers, padding to a power of two when
+necessary.  It can also select one flagged record from an ordered list of
+$q$ records in $O(qw)$ gates.  For example, a left-to-right scan maintains
+a bit indicating whether a flagged record has already been found and
+retains the first one.  This scan is simply an acyclic chain of gates;
+no depth bound is needed here.
+
+\begin{lemma}[Batched fixed-dictionary lookup]\label[lemma]{lem:lookup}
+Suppose a fixed dictionary consists of $M$ distinct $w$-bit keys, each
+with a $w$-bit payload.  Given $Q\geq 1$ query keys, a Boolean circuit can
+output a match bit and the corresponding payload for every query, in the
+original query order, using
+\begin{equation}\label{eq:lookup-general}
+  O\!\left((M+Q)\bigl(w+\log(M+Q+2)\bigr)
+                    \log^2(M+Q+2)\right)
+\end{equation}
+gates.  The payload of an unmatched query can be set to zero.  In
+particular, if $w=O(n)$ and $\log(M+Q+2)=O(n)$, the cost is
+$O(n^3(M+Q))$.
+\end{lemma}
+
+\begin{proof}
+Let $R=M+Q$.  Form one record for each dictionary entry and one for each
+query.  A record contains a key, a dictionary/query tag, a payload field,
+and an original-position field.  The record width is
+$O(w+\log(R+2))$.
+
+Sort the records lexicographically by key, then by the tag with dictionary
+records first, and then by original position.  A sorting network with
+$O(R\log^2(R+2))$ comparators exists~\cite{Batcher68}.  A comparator
+and the resulting conditional swap of the entire records cost
+$O(w+\log(R+2))$ Boolean gates.  Padding uses a separate dummy-record bit
+so that no actual key is reserved as a sentinel.
+
+In the sorted list, a dictionary record precedes every query with its key.
+Scan the list, resetting the match bit when the key changes and propagating
+the payload from a dictionary record through the equal-key run that
+follows it.  If an equal-key run has no dictionary record, every query in
+that run receives match bit zero.  Dictionary keys are distinct, so no
+run contains two competing payloads.  This scan uses
+$O(R(w+\log(R+2)))$ gates.
+
+Finally, sort records by a tag that places queries first and then by the
+query's original position.  The first $Q$ records give the requested
+outputs in order.  A second sorting network has the same asymptotic cost
+as the first.  Every operation described is a fixed acyclic circuit.
+\end{proof}
+
+\begin{lemma}[Detecting a repeated state]\label[lemma]{lem:repeat}
+Given $Q$ words of $w$ bits, a circuit can return a flag indicating whether
+two words are equal and, when the flag is one, indices $i<j$ of two equal
+words.  Its size is
+\[
+  O\!\left(Q\bigl(w+\log(Q+2)\bigr)\log^2(Q+2)\right).
+\]
+In particular, for $Q\leq 2^{n+O(1)}$ and $w=O(n)$, the size is $O(n^3Q)$.
+\end{lemma}
+
+\begin{proof}
+Attach each word's original index and sort by word and then by index.
+A duplicate exists exactly when two adjacent sorted records have the
+same word.  Compare adjacent words and select one flagged pair.  Sorting
+by index within an equal-word run guarantees that the returned indices
+satisfy $i<j$.  The remaining comparisons and selection use at most
+$O(Q(w+\log(Q+2)))$ gates.
+\end{proof}
+
+\section{Sparse checkpoints in functional graphs}\label{sec:checkpoints}
+
+The functional graph of a map $F$ has one vertex for each state and the
+edge $v\to F(v)$ at every vertex.  Each weakly connected component has a
+unique directed cycle, with directed trees feeding into it.  For a
+noncycle vertex, its \emph{depth} is the number of steps needed to reach
+the cycle.
+
+\begin{lemma}[Checkpoint or repetition]\label[lemma]{lem:checkpoints}
+Let $F$ be a function on a set of $N$ states, and let $1\leq L\leq N$.
+There is a set $H$ of at most $2N/L$ states such that, for every $x$, the
+list
+\[
+  x,F(x),\ldots,F^{2L}(x)
+\]
+either contains an element of $H$ or contains a repeated state.
+\end{lemma}
+
+\begin{proof}
+Let $N_{\mathrm{tree}}$ and $N_{\mathrm{cycle}}$ be the numbers of noncycle
+and cycle vertices.  Among the $L$ residue classes of noncycle depths
+modulo $L$, choose one of minimum cardinality, and put every vertex in
+that class into $H$.  This adds at most $N_{\mathrm{tree}}/L$ vertices.
+The choice is global across all components; choosing a residue separately
+for every tree is unnecessary.
+
+For each cycle of length $\ell\geq L$, number its vertices consecutively
+in the forward direction and mark vertices with indices
+$0,L,2L,\ldots$ below $\ell$.  Consecutive marked vertices, including the
+last and first around the cycle, are at forward distance at most $L$.
+The number of marks on that cycle is
+\[
+  \ceil{\ell/L}\leq 2\ell/L.
+\]
+Leave cycles of length less than $L$ unmarked.  The total number of marks
+is at most
+\[
+  \frac{N_{\mathrm{tree}}}{L}
+    +\frac{2N_{\mathrm{cycle}}}{L}
+  \leq \frac{2N}{L}.
+\]
+
+If the starting depth is at least $L$, the first $L$ depths encountered
+include every residue class modulo $L$, so a marked noncycle vertex is
+encountered.  If the starting depth is less than $L$, the trajectory
+reaches a cycle in fewer than $L$ steps.  On a cycle of length at least
+$L$, it reaches a marked vertex in at most another $L$ steps.  On a
+shorter cycle, it repeats a state in fewer than another $L$ steps.  The
+same cycle analysis applies to a trajectory starting on a cycle.  All
+cases are covered by the displayed list.
+\end{proof}
+
+\begin{remark}
+It is essential that the lemma allows a short repetition instead of a
+checkpoint.  A function can have $N$ fixed points, in which case a set
+meeting every eventual cycle must contain all $N$ states.  Such cycles
+need no stored shortcut: their behavior is already visible locally.
+\end{remark}
+
+\section{Circuits for fixed powers}\label{sec:fixed}
+
+We now prove \cref{thm:main}.  The construction is uniform as a description
+of a circuit from the chosen constants, but no efficient procedure for
+computing those constants is asserted.
+
+\subsection{Short trajectories and shifted payloads}
+
+Fix $L$ and let $K=2L$.  If $T<K$, use $T$ copies of a circuit for $F$;
+this costs at most $2Ls$ gates.  Hence assume $T\geq K$.
+Choose $H$ as in \cref{lem:checkpoints}.  For every $h\in H$, hardwire the
+$n$-bit payload
+\begin{equation}\label{eq:payload}
+  z_h=F^{T-K}(h).
+\end{equation}
+The dictionary is fixed independently of the input $x$ and has at most
+$2N/L$ entries.
+
+On input $x$, first compute
+\begin{equation}\label{eq:prefix}
+  x_0=x,\quad x_1=F(x),\quad\ldots,\quad x_K=F^K(x).
+\end{equation}
+This requires $Ks$ gates.  Apply \cref{lem:lookup} to all $K+1$ states in
+\cref{eq:prefix}, using the dictionary $h\mapsto z_h$.  Select one
+matching record, if any, and retain its original trajectory index $d$.
+This gives a match flag and a pair $(d,z_h)$ with $x_d=h$ whenever the
+flag is one.
+
+For the matched case, compute a second short trajectory
+\[
+  z_h,F(z_h),\ldots,F^K(z_h)
+\]
+and select its entry at position $K-d$.  Its value is
+\begin{align}
+  F^{K-d}(z_h)
+    &=F^{K-d}\bigl(F^{T-K}(h)\bigr)\notag\\
+    &=F^{T-d}(h)\notag\\
+    &=F^{T-d}\bigl(F^d(x)\bigr)
+     =F^T(x).\label{eq:identity}
+\end{align}
+All exponents used here are nonnegative.  This second trajectory costs
+another $Ks$ gates; selection costs $O(nK)$ gates.
+
+\subsection{The repeated-state case and very large exponents}
+
+Use \cref{lem:repeat} on \cref{eq:prefix}.  If no checkpoint was found,
+\cref{lem:checkpoints} guarantees indices
+\[
+  0\leq i<j\leq K,\qquad x_i=x_j.
+\]
+Put $p=j-i$.  Determinism implies $x_{u+p}=x_u$ for all $u\geq i$.
+The number $p$ need not be the least period.  Since $T\geq K\geq i$,
+\begin{equation}\label{eq:period}
+  F^T(x)=x_{\,i+((T-i)\bmod p)}.
+\end{equation}
+The selected index is at most $i+p-1=j-1$, so the required state already
+occurs in the initial trajectory.
+
+To implement \cref{eq:period} without paying for the bit length of $T$,
+hardwire the table
+\begin{equation}\label{eq:residue-table}
+  R_T(p)=T\bmod p,\qquad 1\leq p\leq K.
+\end{equation}
+There are $K$ entries, each of $O(n)$ bits.  A multiplexer tree retrieves
+$R_T(p)$ in $O(nK)$ gates.  Compute $i\bmod p$ by binary long division
+and then compute
+\[
+  (T-i)\bmod p
+    =\bigl(R_T(p)-(i\bmod p)\bigr)\bmod p
+\]
+using a comparison, subtraction, and a conditional addition of $p$.
+These operations take $O(n^2)$ gates.  A further $O(nK)$ gates select the
+state prescribed in \cref{eq:period}.
+
+A circuit evaluates both branches, so all intermediate operations must
+also be defined when their output will be discarded.  If a repeated pair
+is absent, supply the dummy values $i=0$ and $p=1$ to the arithmetic
+branch.  If a checkpoint is absent, supply a dummy state and $d=0$ to
+the second trajectory.  The final output selects the checkpoint branch
+when its match flag is one, and otherwise selects the repetition branch.
+The checkpoint lemma ensures that the selected branch is always valid.
+In particular, no division by zero occurs on any input.
+
+\subsection{Size bound}
+
+The two simulations together use at most $2Ks=4Ls$ gates.  The dictionary
+and query list contain
+\[
+  |H|+(K+1)=O\!\left(\frac{N}{L}+L\right)
+\]
+records of $O(n)$ bits, and the logarithm of this number is $O(n)$.
+Thus \cref{lem:lookup} costs
+$O(n^3(N/L+L))$ gates.  Repeated-state detection costs $O(n^3L)$ gates,
+and all remaining lookup, arithmetic, and selection operations cost
+$O(nL+n^2)$ gates.  Since $n,L\geq 1$, the latter cost is absorbed by
+$O(n^3L)$.  This proves \cref{eq:tradeoff}.
+
+Write the tradeoff as $O(AL+n^3N/L)$, where $A=s+n^3$, and choose
+\begin{equation}\label{eq:L-choice}
+  L=\max\left\{1,\ceil{\sqrt{n^3N/A}}\right\}.
+\end{equation}
+Since $A\geq n^3$, this choice satisfies $L\leq\ceil{\sqrt N}\leq N$.
+If $A\leq n^3N$, then
+$\sqrt{n^3N/A}\leq L\leq 2\sqrt{n^3N/A}$.  Hence
+\[
+  AL=O(\sqrt{n^3NA}),\qquad
+  n^3N/L=O(\sqrt{n^3NA}).
+\]
+If $A>n^3N$, the choice is $L=1$ and the cost is $O(A)$.
+This establishes
+\cref{eq:optimized} and completes the proof of \cref{thm:main}.
+\hfill$\square$
+
+\begin{remark}[Where the exponent is stored]\label[remark]{rem:nonuniform}
+For $T\geq K$, the information about $T$ used by the circuit is confined
+to the checkpoint payloads in \cref{eq:payload} and the residue table in
+\cref{eq:residue-table}.  Their total length is
+$O(n(N/L+L))$ bits.  The construction does not place the binary expansion
+of $T$ on a long hidden input tape, and it does not perform uncharged
+arithmetic on an arbitrarily large integer.  Computing the hardwired
+information is a preprocessing task outside the asserted circuit bound.
+\end{remark}
+
+\section{Input times and shared evaluation}
+
+\subsection{An iteration count supplied as input}\label{sec:variable}
+
+\begin{definition}
+For $m\geq 1$, define
+\[
+  \Iter_{F,m}:\bits^n\times\bits^m\longrightarrow\bits^n,
+  \qquad \Iter_{F,m}(x,t)=F^{\operatorname{val}(t)}(x),
+\]
+where $\operatorname{val}(t)$ is the nonnegative integer encoded by $t$.
+\end{definition}
+
+\begin{theorem}[Variable-time iteration]\label{thm:variable}
+Under the assumptions of \cref{thm:main}, for every $m\geq 1$,
+\begin{equation}\label{eq:variable}
+  \CC(\Iter_{F,m})
+  =O\!\left(m\left(A+\sqrt{n^3NA}\right)\right).
+\end{equation}
+In particular,
+\[
+  \CC(\Iter_{F,n})
+  =O\!\left(n\left(A+\sqrt{n^3NA}\right)\right).
+\]
+If $s$ and $m$ are polynomial in $n$, then
+$\CC(\Iter_{F,m})\leq 2^{n/2+O(\log n)}$.
+\end{theorem}
+
+\begin{proof}
+Write $t=\sum_{j=0}^{m-1}t_j2^j$.  For each $j$, apply
+\cref{thm:main} directly to the original map $F$ and the fixed exponent
+$2^j$, obtaining a circuit for $G_j=F^{2^j}$.  Starting with $v_0=x$, use
+\[
+  v_{j+1}=
+  \begin{cases}
+    G_j(v_j),&t_j=1,\\
+    v_j,&t_j=0.
+  \end{cases}
+\]
+Inductively,
+$v_j=F^{\sum_{a<j}t_a2^a}(x)$, so $v_m=F^t(x)$.
+There are $m$ circuits of the size in \cref{eq:optimized} and $m$
+$n$-bit multiplexers.  The extra $O(mn)$ gates are absorbed by the claimed
+bound.  Each $G_j$ is constructed from $F$ using the theorem; it is not
+obtained by duplicating the circuit for $G_{j-1}$.
+\end{proof}
+
+\subsection{Sharing a dictionary among independent trajectories}
+\label{sec:batch}
+
+Let
+\[
+  B_{F,T,r}(x_1,\ldots,x_r)
+   =\bigl(F^T(x_1),\ldots,F^T(x_r)\bigr).
+\]
+The inputs $x_1,\ldots,x_r$ are independent $n$-bit words.  The following
+construction uses one checkpoint dictionary for all of them.
+
+\begin{theorem}[Batched fixed powers]\label{thm:batch}
+Under the assumptions of \cref{thm:main}, for every $1\leq r\leq N$,
+$T\geq 0$, and $1\leq L\leq N$,
+\begin{equation}\label{eq:batch-tradeoff}
+  \CC(B_{F,T,r})
+   =O\!\left(rLs+n^3\left(rL+\frac{N}{L}\right)\right).
+\end{equation}
+Consequently,
+\begin{equation}\label{eq:batch-opt}
+  \CC(B_{F,T,r})
+   =O\!\left(rA+\sqrt{rn^3NA}\right).
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Set $K=2L$.  If $T<K$, unroll $T$ copies of $F$ independently for each
+input.  Otherwise use the checkpoint set and dictionary from
+\cref{sec:fixed}.  Generate the first $K+1$ states of all $r$ trajectories.
+Together with one copy of the dictionary, these give
+\[
+  R=|H|+r(K+1)=O(N/L+rL)
+\]
+records.  Attach the trajectory number and within-trajectory position to
+each query.  Because $r\leq N$ and $L\leq N$, the record width and
+$\log(R+2)$ are $O(n)$.  One application of \cref{lem:lookup} therefore
+resolves all queries in $O(n^3(N/L+rL))$ gates and returns them in their
+original order.
+
+Select a matching checkpoint separately within each trajectory.  Run
+repeated-state detection separately on each trajectory as well; this
+costs $O(rn^3L)$ gates and does not confuse a collision between two
+different trajectories with a repetition along one trajectory.
+The correction trajectory and output selection are also performed
+separately for each input.  The fixed residue table may be implemented
+with a separate $O(nL)$-gate lookup for each trajectory, whose total
+cost is absorbed by $O(rn^3L)$.  The two simulation phases together cost
+$O(rLs)$ gates.  This proves \cref{eq:batch-tradeoff}.
+
+\begin{samepage}
+Choose
+\[
+  L=\max\left\{1,\ceil{\sqrt{n^3N/(rA)}}\right\}.
+\]
+\end{samepage}
+As before $1\leq L\leq N$.  If $rA\leq n^3N$, then
+$rAL=O(\sqrt{rn^3NA})$ and $n^3N/L=O(\sqrt{rn^3NA})$.
+If $rA>n^3N$, the choice is $L=1$ and the cost is $O(rA)$.
+This gives \cref{eq:batch-opt}.
+\end{proof}
+
+\begin{corollary}[Independent input times]\label[corollary]{cor:batch-variable}
+For $1\leq r\leq N$ and $m\geq 1$, the map
+\[
+  \bigl((x_1,t_1),\ldots,(x_r,t_r)\bigr)
+   \longmapsto
+  \bigl(F^{t_1}(x_1),\ldots,F^{t_r}(x_r)\bigr),
+  \qquad t_i\in\bits^m,
+\]
+has a circuit of size
+\begin{equation}\label{eq:batch-variable}
+  O\!\left(m\left(rA+\sqrt{rn^3NA}\right)\right).
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+Use the binary-power construction of \cref{thm:variable}.  At stage $j$,
+apply \cref{thm:batch} with update map $F$ and exponent $2^j$ on the $r$
+current states, then use the $j$th bit of each $t_i$ to select whether to
+retain or update that state.  The $O(mrn)$ selection gates are absorbed
+by \cref{eq:batch-variable}.
+\end{proof}
+
+For polynomial $s$ and $m$, and $r=\floor{2^{\alpha n}}$ with fixed
+$0\leq\alpha\leq 1$, \cref{eq:batch-variable} is at most
+\[
+  2^{(1+\alpha)n/2+O(\log n)}.
+\]
+This is an upper-bound sharing statement.  It is not a direct-sum
+separation against optimal circuits for a single trajectory.
+
+\section{A matching exponent for arbitrary fixed powers}\label{sec:lower}
+
+This section gives an explicit linear-size permutation whose collection
+of powers is large enough that some member has circuit complexity at
+least $2^{n/2}/\poly(n)$.  The counting argument is elementary and does
+not require an asymptotic estimate for the maximal order of a permutation.
+
+\subsection{A permutation with cycles of all lengths up to \texorpdfstring{$2^{n/2}-1$}{2 to the power n/2, minus 1}}
+
+Let $n=2k$ and $B=2^k-1$.  Write a state as a pair of $k$-bit integers
+$(a,b)$.  Define
+\begin{equation}\label{eq:permutation}
+ P_n(a,b)=
+ \begin{cases}
+   (a,b+1\bmod a),&1\leq a\leq B\ \text{and}\ 0\leq b<a,\\
+   (a,b),&\text{otherwise}.
+ \end{cases}
+\end{equation}
+For each $1\leq a\leq B$, the states
+$(a,0),(a,1),\ldots,(a,a-1)$ form one cycle of length $a$; every other
+state is fixed.  Hence $P_n$ is a permutation and
+\begin{equation}\label{eq:order}
+  \ord(P_n)=D_B:=\lcm(1,2,\ldots,B).
+\end{equation}
+
+Despite the notation in \cref{eq:permutation}, the update does not require
+a general division circuit.  Compare $b$ with $a$, increment $b$, and,
+when $b<a$, replace $b$ by zero exactly when the increment equals $a$.
+Otherwise retain the appropriate increment or original value.
+Comparison, increment, and selection each have $O(k)$-gate circuits.
+The first coordinate is passed through unchanged.  Thus
+\begin{equation}\label{eq:linear-update}
+  \CC(P_n)=O(n),
+\end{equation}
+and the family has a direct polynomial-time circuit construction.
+
+\begin{lemma}\label[lemma]{lem:lcm}
+For every integer $B\geq 1$,
+\begin{equation}\label{eq:lcm-lower}
+  \lcm(1,2,\ldots,B)\geq \frac{2^B}{B+1}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+We show that every binomial coefficient $\binom Bj$ divides $D_B$.
+For a prime $p$, factorial valuations give
+\[
+ \nu_p\!\binom Bj
+ =\sum_{a\geq 1}
+   \left(\floor{\frac{B}{p^a}}-
+         \floor{\frac{j}{p^a}}-
+         \floor{\frac{B-j}{p^a}}\right).
+\]
+Each summand is zero or one, and it is zero when $p^a>B$.
+Therefore
+\[
+  \nu_p\!\binom Bj\leq \floor{\log_p B}=\nu_p(D_B),
+\]
+where both sides are zero for $p>B$.  This proves divisibility.
+Since $\sum_{j=0}^B\binom Bj=2^B$, some binomial coefficient is at least
+$2^B/(B+1)$, and $D_B$ is at least that large.
+\end{proof}
+
+\begin{lemma}[Counting multi-output circuits]\label[lemma]{lem:count}
+The number of functions $\bits^n\to\bits^n$ computable with at most $q$
+fan-in-two Boolean gates is at most
+\begin{equation}\label{eq:count}
+  (q+1)16^q(n+q+2)^{2q+n}
+  =2^{O((q+n)\log(n+q+2))}.
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+Topologically order the gates.  At each gate choose one of at most $16$
+Boolean operations and two predecessors among the inputs, the two
+constants, and gates.  Allowing all $n+q+2$ possible predecessors at each
+position only increases the count.  Choose the $n$ output wires from
+these same possibilities.  Sum over gate counts from zero through $q$;
+each summand is bounded by the expression without its factor $q+1$.
+Different encodings may compute the same function, which only helps the
+upper bound.
+\end{proof}
+
+\begin{theorem}[Hard powers of a simple permutation]\label{thm:lower}
+For all sufficiently large even $n$, the permutation in
+\cref{eq:permutation} satisfies
+\begin{equation}\label{eq:hard-power}
+  \max_{T\geq 0}\CC(P_n^T)
+    =\Omega\!\left(\frac{2^{n/2}}{n}\right).
+\end{equation}
+Together with \cref{thm:main}, this gives
+\begin{equation}\label{eq:tight-exponent}
+  \log_2\!\left(\max_{T\geq 0}\CC(P_n^T)\right)
+    =\frac n2+O(\log n).
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+There are exactly $D_B$ distinct powers of $P_n$, with representatives
+$0\leq T<D_B$.  By \cref{lem:lcm},
+\[
+  \log_2 D_B\geq B-\log_2(B+1).
+\]
+Let $q=\floor{cB/n}$ for a sufficiently small positive absolute constant
+$c$.  Since $B=2^{n/2}-1$, \cref{lem:count} bounds the logarithm of the
+number of circuits of size at most $q$ by
+\[
+  O((q+n)\log(n+q+2))=O(cB+n^2).
+\]
+Choose $c$ so that the coefficient of $B$ is less than $1/2$.
+For all sufficiently large even $n$, this quantity is smaller than
+$B-\log_2(B+1)$.  Thus there are fewer size-$q$ circuits than distinct
+powers of $P_n$.  At least one power has complexity greater than $q$,
+proving \cref{eq:hard-power}.
+
+For the upper bound, substitute $\CC(P_n)=O(n)$ into
+\cref{eq:optimized}.  This gives
+$\max_T\CC(P_n^T)=O(n^3 2^{n/2})$.  Combining the upper and lower
+bounds and taking logarithms proves \cref{eq:tight-exponent}.
+\end{proof}
+
+\begin{corollary}\label[corollary]{cor:one-output}
+For all sufficiently large even $n$, some power of $P_n$ has an output
+coordinate of circuit complexity $\Omega(2^{n/2}/n^2)$.
+\end{corollary}
+
+\begin{proof}
+For the power supplied by \cref{thm:lower}, join optimal circuits for all
+$n$ output coordinates.  Their total size is at most $n$ times the
+largest coordinate complexity and is an upper bound on the complexity
+of the whole map.
+\end{proof}
+
+\subsection{Why the lower bound does not apply to short input times}
+\label{sec:lower-limits}
+
+The lower bound selects $T$ from $\{0,\ldots,D_B-1\}$; it places no
+polynomial bound on the bit length of that exponent.  Indeed,
+\cref{lem:lcm} shows that $\log D_B\geq 2^{n/2}-O(n)$.
+The choice of a power therefore has exponentially many available
+bits.  The theorem does not provide a polynomial-time procedure that,
+given $n$, identifies a hard power.
+
+For the very same family, the iterator with an $m$-bit time input has
+size $O(nm+n^2)$.  On an active cycle,
+\begin{equation}\label{eq:easy-iterator}
+  P_n^t(a,b)=(a,(b+(t\bmod a))\bmod a).
+\end{equation}
+An $m$-stage remainder computation with a $k$-bit running remainder costs
+$O(mk)$ gates, and the remaining comparison, addition, and selection
+cost at most $O(n^2)$ gates.  On the inactive states the answer is the
+input itself; use a dummy positive modulus when $a=0$.
+Consequently, for $m=\poly(n)$ this iterator has polynomial size.
+
+\begin{corollary}[Bit length of hard exponents]\label[corollary]{cor:exponent-length}
+Let $T_n$ be exponents satisfying
+$\CC(P_n^{T_n})=\Omega(2^{n/2}/n)$ for sufficiently large even $n$.
+Their binary lengths
+$m_n=\max\{1,\ceil{\log_2(T_n+1)}\}$ satisfy
+\[
+  m_n=\Omega(2^{n/2}/n^2).
+\]
+\end{corollary}
+
+\begin{proof}
+Hardwire the $m_n$-bit exponent into the iterator just described.
+This gives $\CC(P_n^{T_n})=O(nm_n+n^2)$.
+Comparing with the assumed lower bound and using
+$n^2=o(2^{n/2}/n)$ proves the claim.
+\end{proof}
+
+Thus the hard powers necessarily require exponentially long binary
+exponents; long descriptions are not merely allowed by the counting proof.
+Theorem~\ref{thm:lower} establishes sharpness for arbitrary fixed powers.
+It gives no hardness result for the bounded-bit-time problem.
+
+\section{Permutation inversion and one-way functions}\label{sec:one-way}
+
+\subsection{Inversion as a fixed power}
+
+\begin{corollary}[Exact permutation inversion]\label[corollary]{cor:inverse}
+Let $P:\bits^n\to\bits^n$ be a permutation with $\CC(P)\leq s$, and put
+$N=2^n$ and $A=s+n^3$.  For every $1\leq L\leq N$,
+\[
+  \CC(P^{-1})
+  =O\!\left(Ls+n^3\left(L+\frac NL\right)\right).
+\]
+In particular,
+\[
+  \CC(P^{-1})=O\!\left(A+\sqrt{n^3NA}\right).
+\]
+If $s=n^{O(1)}$, an inverter of size $2^{n/2+O(\log n)}$ is correct on
+every input.
+\end{corollary}
+
+\begin{proof}
+Let $D=\ord(P)$, the least common multiple of its cycle lengths.
+Then $P^D$ is the identity, so $P^{-1}=P^{D-1}$.
+Apply \cref{thm:main}.  The exponent may have a long binary expansion,
+but the theorem charges only the resulting tables and their access gates.
+\end{proof}
+
+This recovers the permutation-inversion circuit bound already discussed
+by Hirahara, Ilango, and Williams~\cite[Section~3.2]{HIW24}.
+It identifies an earlier special case of the fixed-power theorem.
+
+\subsection{Compatibility with one-wayness}
+
+A cryptographic one-way function is computable in polynomial time, while
+every probabilistic polynomial-time inverter succeeds with only negligible
+probability on the image of a uniform input.  One may instead require
+security against every polynomial-size circuit family, a stronger
+nonuniform notion~\cite[Section~7.1.1]{Goldreich08}.  For a length-preserving
+family $f_n:\bits^n\to\bits^n$, the latter requires that, for every such
+family $C_n$,
+\begin{equation}\label{eq:one-way}
+  \Pr_{x\leftarrow\bits^n}
+  \bigl[f_n(C_n(f_n(x)))=f_n(x)\bigr]
+\end{equation}
+be negligible in $n$: smaller than $n^{-c}$ eventually for every fixed
+$c>0$.  Any preimage counts as success.  Deterministic circuits suffice
+in this definition, since random coins can be fixed to maximize average
+success.  A one-way permutation is the bijective special case.
+
+The guarantee in \cref{cor:inverse} is an exponential size upper bound.
+It therefore does not contradict either polynomial-time or polynomial-size
+one-wayness.  Nonuniformity alone is not the reason for compatibility:
+\cref{eq:one-way} already allows arbitrary nonuniform advice encoded in
+polynomial-size circuits.  The relevant distinction is the circuit size.
+Moreover, no efficient procedure for constructing our inverter is asserted.
+
+There is a quantitative consequence.  For every fixed $\varepsilon>0$,
+every polynomial-size permutation family on $n$ bits has exact inverters
+of size at most $2^{(1/2+\varepsilon)n}$ for all sufficiently large $n$.
+Thus such a family cannot remain one-way against all circuits of that
+size, with any success bound strictly below one.  This upper bound leaves
+open security against polynomial-size circuits, and does not exclude
+security against size $2^{cn}$ for a fixed $0<c<1/2$.  It does not
+establish that either kind of security is achievable.
+
+\subsection{General functions and the counting example}
+
+For a noninjective map, inversion is not generally a forward power.
+For example, let $f$ on $\{0,1,2,3\}$ have values $(0,0,1,0)$.
+The unique preimage of $1$ is $2$, whereas every forward iterate of $1$
+belongs to $\{0,1\}$.  Thus \cref{thm:main} does not directly provide
+square-root-size inverters for arbitrary one-way functions.
+For comparison, Hirahara, Ilango, and Williams prove a general inversion
+bound of $2^{4n/5}\poly(s+n)$ gates~\cite[Theorem~3.5]{HIW24}.
+
+Encoding exhaustive preimage search as iteration does not avoid the state
+accounting.  The straightforward transition retains an $n$-bit target
+$y$, an $n$-bit candidate $x$, and a flag; it tests $f(x)=y$ and either
+halts or increments $x$.  This uses $2n+O(1)$ state bits.  For
+polynomial-size $f$, our theorem then gives size $2^{n+O(\log n)}$,
+not the half exponent measured in the preimage length.
+
+The counting construction in \cref{sec:lower} also does not establish
+one-way functions.  Its update permutation $P_n$ has an $O(n)$-gate
+inverse: on an active cycle decrement $b$ modulo $a$, and leave inactive
+states fixed.  A family of the selected hard powers has exponential
+worst-case \emph{forward} circuit complexity, so it cannot be a
+polynomial-time one-way function.  The counting proof supplies no
+average-case inversion hardness.  The results here consequently neither
+prove nor refute the existence of one-way functions or one-way permutations.
+
+\section{Scope and remaining questions}\label{sec:scope}
+
+The main theorem is an exact nonuniform upper bound for unrestricted
+bounded-fan-in circuits.  It applies to noninvertible maps and is uniform
+in the starting state, but not in the circuit construction or its
+preprocessing cost.  It gives no depth bound and no efficient procedure
+for discovering checkpoints or their payloads from a succinct
+representation of $F$.  An initial-state-dependent family of update
+rules must be encoded as a single common transition map before the
+theorem applies; any additional persistent state changes $n$ and hence
+the exponential scale of the bound.
+
+The sharpness result deliberately separates the simplicity of an update
+rule from the description complexity of a chosen power.  A stronger
+lower bound for a specified iteration count, or for an iterator with an
+$n$-bit time input, is not established here.  The explicit permutation
+used for counting cannot witness such a strengthening, by
+\cref{eq:easy-iterator,cor:exponent-length}.  The inversion consequence
+in \cref{cor:inverse} likewise leaves polynomial-size one-wayness open.
+
+Two questions remain distinct.  First, can stronger upper bounds hold
+when the exponent is restricted to polynomially many bits or when the
+functional graph has additional structure?  Second, under what conditions
+can the required preprocessing be performed substantially faster than
+exploring the full state space?  The present proof addresses neither
+question.  Its conclusion is the unconditional total-gate tradeoff:
+a short transition circuit can be combined with a sparse table, whose
+access cost is explicitly accounted for, to compute every fixed iterate
+at square-root state-space scale.
+
+\section*{Provenance and draft status}
+
+This draft and the underlying argument were developed with assistance
+from ChatGPT (GPT-6 Astra Pro), including assistance with theorem
+formulation, proof development, exposition, and literature searches.
+The author field is provisional.  Historical priority and final
+attribution require author review; the draft does not represent
+independent peer verification.
+
+\begin{thebibliography}{9}
+
+\bibitem{Batcher68}
+Kenneth E. Batcher.
+\newblock Sorting networks and their applications.
+\newblock In \emph{Proceedings of the April 30--May 2, 1968, Spring Joint
+Computer Conference}, AFIPS Conference Proceedings, volume 32,
+pages 307--314, 1968.
+\newblock \href{https://doi.org/10.1145/1468075.1468121}{doi:10.1145/1468075.1468121}.
+
+\bibitem{Hellman80}
+Martin E. Hellman.
+\newblock A cryptanalytic time--memory trade-off.
+\newblock \emph{IEEE Transactions on Information Theory}, 26(4):401--406, 1980.
+\newblock \href{https://ee.stanford.edu/~hellman/publications/36.pdf}{Author-hosted full text}.
+
+\bibitem{MRRR12}
+J. Ian Munro, Rajeev Raman, Venkatesh Raman, and S. Srinivasa Rao.
+\newblock Succinct representations of permutations and functions.
+\newblock \emph{Theoretical Computer Science}, 438:74--88, 2012.
+\newblock Preprint: \href{https://arxiv.org/abs/1108.1983}{arXiv:1108.1983}, 2011.
+
+\bibitem{HIW24}
+Shuichi Hirahara, Rahul Ilango, and R. Ryan Williams.
+\newblock Beating brute force for compression problems.
+\newblock In \emph{Proceedings of the 56th Annual ACM Symposium on Theory
+of Computing (STOC)}, pages 659--670, 2024.
+\newblock \href{https://doi.org/10.1145/3618260.3649778}{doi:10.1145/3618260.3649778}.
+\newblock Full version: \href{https://eccc.weizmann.ac.il/report/2023/171/}{ECCC TR23-171};
+section and theorem numbers refer to that version.
+
+\bibitem{Eppstein23}
+David Eppstein.
+\newblock The complexity of iterated reversible computation.
+\newblock \emph{TheoretiCS}, 2, Article 10, 1--41, 2023.
+\newblock \href{https://doi.org/10.46298/theoretics.23.10}{doi:10.46298/theoretics.23.10}.
+
+\bibitem{Goldreich08}
+Oded Goldreich.
+\newblock \emph{Computational Complexity: A Conceptual Perspective}.
+\newblock Cambridge University Press, 2008.
+\newblock Author's draft, Chapter~7:
+\href{https://www.wisdom.weizmann.ac.il/~oded/CC/r3.pdf}{one-way function definitions}.
+
+\end{thebibliography}
+
+\end{document}

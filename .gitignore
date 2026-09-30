@@ -1,0 +1,13 @@
+# LaTeX build intermediates; keep the compiled manuscript PDF tracked.
+*.aux
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# Python and macOS local files.
+__pycache__/
+*.py[cod]
+.DS_Store

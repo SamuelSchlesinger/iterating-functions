@@ -53,6 +53,8 @@ batch construction, and a matching-exponent counting result for arbitrary
 fixed powers of an explicit linear-size permutation. With N = 2^n and
 A = s + n^3, the optimized bound is O(A + sqrt(n^3 N A)); for r trajectories
 it is O(r A + sqrt(r n^3 N A)).
+The fixed-power tradeoff also replaces N by Q_L, the number of deep transient
+states and long-cycle vertices at scale L. This refinement is checked in Lean.
 Writing B = A + sqrt(n^3 N A), arbitrarily wide m-bit input times cost
 O(min(m B, n B + n m)); this improved bound is also checked in Lean.
 For the explicit lower-bound permutation, almost every power is hard when

@@ -22,6 +22,7 @@ public import Proofs.TargetTimes
 public import Proofs.VisitScheduleCircuits
 public import Proofs.TypicalPowers
 public import Proofs.ExponentLength
+public import Proofs.ActivePowers
 
 /-!
 # Public results and axiom audit
@@ -32,6 +33,11 @@ guards fail if the theorem dependencies acquire an additional axiom.
 -/
 
 namespace IteratedFunctions
+
+/-- info: 'IteratedFunctions.active_mass_fixed_power' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms active_mass_fixed_power
 
 /-- info: 'IteratedFunctions.almost_every_counter_power' depends on axioms:
 [propext, Classical.choice, Quot.sound] -/

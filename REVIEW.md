@@ -163,7 +163,7 @@ The general real square-root optimization and invariant-set optimum are now chec
 requires the stated cheap burn-in; a small image alone does not bound the cost
 of computing the state that enters it.
 
-## 4. Active long-trajectory mass: valid, not mechanized
+## 4. Active long-trajectory mass: integrated and mechanized
 
 Let the deep vertices have depth at least `L`. Choose one least-populated
 depth residue modulo `L` among these vertices only. A trajectory starting
@@ -178,8 +178,15 @@ shifted payload becomes `F^(T-3L)(h)`, with direct unrolling for `T<3L`.
 This proves the proposed bound, including `Q_L=0`. Do not optimize while
 treating `Q_L` as a constant: it changes with `L`.
 
-The mechanized path-packing lemma instead improves the universal count to
-`|H|L≤|S|` with a `2L` prefix. It does not by itself prove the `Q_L` theorem.
+The implemented proof takes a simpler route. `ActiveCheckpoints.lean` applies
+the existing packing lemma only to paths entirely inside the deep/long-cycle
+set, so `|H|L≤Q_L`. Deep starts are covered directly; shallow starts enter a
+cycle before `2L` steps, after which another `2L` suffices. The resulting
+`4L` prefix gives the same asymptotic tradeoff. `ActivePowers.lean` constructs
+the native circuit with bound `120000*powerBudget n s Q_L L`, including
+`Q_L=0`. Its indexing uses `n+3` bits. Both proofs work without a separate
+depth-residue or cycle-marking argument; the generic coverage theorem is
+universe polymorphic.
 
 ## 5. Recognizable target sets: integrated and mechanized
 

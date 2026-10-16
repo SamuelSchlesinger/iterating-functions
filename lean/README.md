@@ -67,6 +67,7 @@ natural-number division in integer budgets means floor division.
 | `recurring_target_optimized` | Decides acceptance at arbitrarily large times; the bound is `240000*optimizedBudget n (s+p.size+4*n) N + p.size`. |
 | `eventually_always_target_optimized` | Decides permanent eventual acceptance; replace `p.size` by `p.size+1` in the preceding budget and add `p.size+2` outside it. |
 | `bounded_modulus_remainder` | An `m`-bit numerator modulo a nonzero `k`-bit input modulus has a circuit of size at most `2 + m*(51*(k+1)+4)`. The circuit is total; the specification requires a positive modulus. |
+| `active_mass_fixed_power` | For `1 ≤ L ≤ 2^n`, a power circuit has size at most `120000*powerBudget n s Q_L L`, where `Q_L` counts states of depth at least `L` and vertices of cycles of length at least `L`. |
 
 The explicit constants are loose accounting bounds, not practical circuit-size
 estimates. The `+1`s cover zero-width encodings and empty invariant sets.
@@ -196,6 +197,11 @@ finite types in arbitrary universes. Sparse-counter circuit statements use
     comparison, preserving carry and charging the restriction's shared zero.
     `ExponentLength.lean` combines the linear arithmetic with the gate lower
     bound to force exponential description length for hard exponents.
+14. **Charge only long trajectories.** `ActiveCheckpoints.lean` packs paths
+    inside the deep/long-cycle set, proving `|H|*L ≤ Q_L` and coverage within
+    `4L` steps. The charged set need not be invariant. `ActivePowers.lean`
+    uses `n+3` index bits and the existing reconstruction to obtain an actual
+    circuit bound, including `Q_L=0`. The count depends on `L` throughout.
 
 The construction uses classical choices of checkpoints, finite enumerations,
 and circuit witnesses. It establishes nonuniform existence, not an extracted
@@ -216,8 +222,8 @@ streaming-arithmetic ingredient is checked. The sparse-transition counting
 application and the finite-field corollary, including the use of the external
 discrete-logarithm theorem, are also outside the current Lean boundary.
 
-The active-long-trajectory refinement, affine-controller theorem, AKS
-polynomial improvement, and effective compiler are not separately formalized.
+The affine-controller theorem, AKS polynomial improvement, and effective
+compiler are not separately formalized.
 Several are only proposals in `REVIEW.md`, rather
 than theorems asserted in the manuscript. The paper's cryptographic discussion
 and literature comparisons remain prose arguments.

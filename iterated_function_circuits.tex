@@ -508,6 +508,49 @@ arithmetic on an arbitrarily large integer.  Computing the hardwired
 information is a preprocessing task outside the asserted circuit bound.
 \end{remark}
 
+\subsection{Charging only long trajectories}
+
+Let $\delta(v)$ be the distance from $v$ to its eventual cycle, and let
+$\ell(v)$ be that cycle's length.  For $1\leq L\leq N$, put
+\[
+ Q_L=|\{v:\delta(v)\geq L\}|+
+     |\{v:\delta(v)=0,\ \ell(v)\geq L\}|.
+\]
+The two sets are disjoint.  Their union contains the deep transient
+vertices and all vertices of cycles with length at least $L$.
+
+\begin{theorem}[Long-trajectory tradeoff]\label{thm:active-mass}
+For every fixed $T\geq0$ and $1\leq L\leq N$,
+\[
+ \CC(F^T)=O\!\left(Ls+n^3\left(L+\frac{Q_L}{L}\right)\right).
+\]
+\end{theorem}
+
+\begin{proof}
+Apply the path-packing argument of \cref{lem:checkpoints} only to paths
+whose $L$ vertices all lie in the union above.  Mark their endpoints.
+The resulting set $H$ satisfies $|H|L\leq Q_L$.  Every $L$-state prefix
+inside this union either repeats or meets a packed path, and hence reaches
+its marked endpoint within $2L$ steps.  This packing argument does not
+require the union to be forward invariant.
+
+If $\delta(x)\geq2L$, the first $L$ states are all deep, so that argument
+applies immediately.  Otherwise the trajectory reaches its cycle before
+$2L$ steps.  A short cycle then repeats before $3L$ steps.  On a long
+cycle all vertices lie in the union, so the packing argument gives a
+checkpoint or repetition within another $2L$ steps.  Thus every trajectory
+hits $H$ or repeats within a prefix of $4L$ steps.
+
+Use this prefix in the fixed-power construction, with payload
+$F^{T-4L}(h)$ when $T\geq4L$ and direct unrolling otherwise.  The
+dictionary has at most $Q_L/L$ entries and the prefix has $O(L)$ states,
+giving the stated cost.
+\end{proof}
+
+Short transient paths leading to short cycles incur no dictionary cost.
+The bound includes $Q_L=0$.  Since $Q_L$ itself depends on $L$, one must
+retain that dependence when choosing the tradeoff parameter.
+
 \subsection{Invariant sets and image-sensitive bounds}
 
 \begin{theorem}[Invariant-set tradeoff]\label{thm:invariant}
@@ -1680,8 +1723,12 @@ There are no \texttt{sorry} placeholders, additional axioms, or native
 evaluation shortcuts.  Noncomputable choices select checkpoints,
 enumerations, and circuit witnesses.  This is an existence formalization,
 not an extracted compiler or a preprocessing-time guarantee.
-The sharper active-trajectory parameter, affine-controller proposal,
-and AKS improvement are not separately mechanized.
+The active-mass theorem is checked by restricting the universe-polymorphic
+packing lemma to \texttt{activeVertices}.  It proves $|H|L\leq Q_L$ and
+coverage within $4L$ steps; $n+3$ index bits suffice for the resulting
+native circuit.  The theorem \texttt{active\_mass\_fixed\_power} has bound
+$120000\,\mathrm{powerBudget}(n,s,Q_L,L)$, including the case $Q_L=0$.
+The affine-controller proposal and AKS improvement are not separately mechanized.
 Nor does kernel checking establish historical priority or
 that a formal statement captures every intended circuit convention.
 

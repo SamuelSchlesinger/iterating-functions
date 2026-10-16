@@ -19,6 +19,7 @@ python3 verify_extensions.py
 PASS: extension semantic checks succeeded.
 Seed: 20261015
 absorbing-target outputs: 517,066
+active packed coverage: 97,265
 checkpoint-depth reconstructions: 97,265
 first-target times: 399,199
 hitting-time pairs: 97,265
@@ -46,10 +47,10 @@ cases check algebraic identities, not an independent enumerative oracle.
 
 Lean command: make lean-check
 cd lean && lake build --wfail
-Build completed successfully (3208 jobs).
+Build completed successfully (3210 jobs).
 
-Main.lean runs 38 guarded axiom checks. Every audited result depends exactly
-on propext, Classical.choice, and Quot.sound. All 62 Proofs modules are in
+Main.lean runs 39 guarded axiom checks. Every audited result depends exactly
+on propext, Classical.choice, and Quot.sound. All 64 Proofs modules are in
 Main's transitive import closure. No sorry, admit, added axiom, native_decide,
 or unsafe declaration appears in the project Lean sources.
 
@@ -88,6 +89,11 @@ additional native costs 1 and 100*(k+1). ExponentLength.lean constructs
 powers for T < 2^m in 110*(m+1)*(k+1) gates and proves the explicit
 hard-exponent capacity bound 2^k < 112640*(m+1)*(k+1)^2.
 
+ActiveCheckpoints.lean proves |H|*L <= Q_L and coverage within 4L steps
+over finite types in arbitrary universes. ActivePowers.lean constructs a
+circuit of size at most 120000*powerBudget n s Q_L L, including Q_L=0.
+The charged set consists of deep transient states and long-cycle vertices.
+
 The sparse fixed-power circuit has size at most 100*(n+1)*(r+1).
 Its Boolean implementation sums the displacement changes selected by input
 threshold comparisons, using shared carry chains. No arithmetic or table
@@ -100,8 +106,8 @@ Negative instances have no time-field specification. Generic finite-dynamics
 and commutation lemmas are universe polymorphic; circuit bounds charge bits.
 
 Paper command: make (three pdflatex passes).
-Output: 24 pages. Final log has no warnings, overfull boxes, or underfull boxes.
-All pages were rendered and inspected in contact sheets; new remainder/typical-power, exponent-length, visit-schedule, depth/first-time, long-input-time,
+Output: 25 pages. Final log has no warnings, overfull boxes, or underfull boxes.
+All pages were rendered and inspected in contact sheets; new active-mass, remainder/typical-power, exponent-length, visit-schedule, depth/first-time, long-input-time,
 synchronous/recurring-query, sparse-counter,
 and formalization pages were additionally inspected at readable resolution.
 The manuscript abstract matches submission_metadata.txt after expanding bits.
@@ -112,8 +118,8 @@ extracted compiler. The Python sparse-counter compiler has independent finite
 checks, but its general correctness is not a Lean theorem. The full sparse
 arc-chart live-time theorem, sparse-transition counting application, and
 finite-field corollary remain prose results; the latter uses the external
-Kleinjung--Wesolowski theorem. The active-trajectory refinement, affine-controller proposal, and AKS
-improvement are also not separately mechanized.
+Kleinjung--Wesolowski theorem. The affine-controller proposal and AKS improvement are also not separately
+mechanized.
 The public theorem map is in lean/README.md; REVIEW.md tracks the continuation.
 
 These checks do not establish historical novelty or replace independent

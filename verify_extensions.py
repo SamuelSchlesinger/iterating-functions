@@ -32,8 +32,9 @@ def prefix(f, x, count):
     return result
 
 
-def packed_checkpoints(f, length):
-    remaining, marked = set(range(len(f))), set()
+def packed_checkpoints(f, length, allowed=None):
+    remaining = set(range(len(f))) if allowed is None else set(allowed)
+    marked = set()
     while True:
         for x in sorted(remaining):
             path = prefix(f, x, length)
@@ -82,6 +83,10 @@ def check_map(f, counts):
         assert len(marked) * length <= n
         active, q = active_checkpoints(f, infos, length)
         assert len(active) * length <= 2 * q
+        charged = {v for v, info in enumerate(infos)
+                   if info[1] >= length or (info[1] == 0 and info[2] >= length)}
+        active_packed = packed_checkpoints(f, length, charged)
+        assert len(charged) == q and len(active_packed) * length <= q
         for x in range(n):
             short = prefix(f, x, length)
             assert len(set(short)) < length or set(prefix(f, x, 2 * length)) & marked
@@ -89,6 +94,9 @@ def check_map(f, counts):
             long = prefix(f, x, 3 * length + 1)
             assert set(long) & active or len(set(long)) < len(long)
             counts["packing, labels, active coverage"] += 1
+            packed_long = prefix(f, x, 4 * length)
+            assert set(packed_long) & active_packed or len(set(packed_long)) < len(packed_long)
+            counts["active packed coverage"] += 1
             path = prefix(f, x, 2 * length + 1)
             projected_path = prefix(f, projection[x], 2 * length + 1)
             if path[-1] == projected_path[-1]:

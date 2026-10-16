@@ -4,7 +4,7 @@ Preliminary research draft, October 16, 2026.
 
 ## Files
 
-- [LaTeX manuscript](iterated_function_circuits.tex): self-contained source.
+- [LaTeX manuscript](iterated_function_circuits.tex): self-contained source, introductory results table, and quantitative Lean appendix.
 - [PDF manuscript](iterated_function_circuits.pdf): compiled draft.
 - [Bibliography](references.bib): matching entries for later editing; not required to compile.
 - [Submission metadata](submission_metadata.txt): editable title, author field, keywords, and LaTeX abstract.

@@ -9,6 +9,7 @@
 \usepackage{microtype}
 \usepackage{enumitem}
 \usepackage{booktabs}
+\usepackage{array}
 \usepackage{etoolbox}
 \usepackage[hidelinks,pdfencoding=auto]{hyperref}
 \usepackage[capitalise,nameinlink,noabbrev]{cleveref}
@@ -56,37 +57,39 @@
 \maketitle
 
 \begin{abstract}
-Let $F:\bits^n\to\bits^n$ be computed by a Boolean circuit of size $s$, and
-write $A=s+n^3$.  We prove that every fixed iterate $F^T$, for an arbitrary
-integer $T\geq 0$, has a bounded-fan-in Boolean circuit of size
-\[
-  O\!\left(A+\sqrt{n^3 2^n A}\right).
-\]
-The circuit is nonuniform in $F$ and $T$, but the bound is independent of the
-magnitude and bit length of $T$.  No injectivity assumption is required.
-Consequently, all fixed iterates of a polynomial-size update rule have
-circuits of size $2^{n/2+O(\log n)}$.  The same exponential bound holds when
-an $n$-bit iteration count is part of the input.  We also give a batched
-construction that shares preprocessing across independent trajectories.
+Let $F:\bits^n\to\bits^n$ have a Boolean circuit of size $s$, and put
+$A=s+n^3$ and $B=A+\sqrt{n^3 2^nA}$.  We establish three forms of
+compression for finite deterministic dynamics.  First, every fixed
+iterate $F^T$ has a bounded-fan-in circuit of size $O(B)$, independently
+of the magnitude and bit length of $T\geq0$, without an injectivity
+assumption.  Sparse checkpoints and sorting-based lookup give this bound,
+with every lookup and arithmetic gate charged.  We also give variable-time
+and shared batched versions.
 
-The proof combines sparse checkpoints in a functional graph with a
-forward-only correction identity and batched dictionary lookup implemented
-by sorting networks.  All lookup and selection gates are included in the
-size bound.  The theorem recovers square-root-size circuits for permutation
-inversion, consistently with possible one-wayness against polynomial-size
-adversaries.  Finally, for even $n$ we construct an explicit linear-size
-permutation on $n$ bits for which some fixed power requires
-$\Omega(2^{n/2}/n)$ gates.  Such hard powers necessarily have binary
-exponents of length $\Omega(2^{n/2}/n^2)$.  The counting argument neither
-identifies an explicit hard power nor establishes one-way functions.
-We also compute canonical cycle labels, reachability, and first hitting
-times.  For permutations differing from a counter at $r$ states, all
-signed fixed powers have size $O(n(r+1))$, and an $m$-bit input time costs
-$O(n(r+m+1))$.  A Lean formalization checks the fixed-power, variable-time,
-batched, inversion, and navigation circuits and the matching-exponent
-lower bound, together with the sparse-counter fixed-power bound.  It also
-treats finite invariant sets with explicit bit
-encodings in arbitrary universes.
+Second, the same construction supports functional-graph queries.  Cycle
+labels and transient depth cost $O(B)$; reachability, exact first hitting
+times, and complete visit descriptors cost $O(nB)$.  Polynomial-size
+transitions and target predicates therefore give
+$2^{n/2}\poly(n)$-size circuits for navigation and eventual behavior,
+including reachability with two $n$-bit inputs.
+
+Third, compact orbit coordinates yield stronger bounds for structured
+systems.  If a permutation differs from a counter at $r$ states, every
+signed fixed power costs $O(n(r+1))$, and an $m$-bit input time costs
+$O(n(r+m+1))$.  An explicit edit list permits polynomial-time construction
+of the orbit chart, even when a single orbit visits all $2^n$ states.
+Transport to other coordinates charges both encoding and decoding.
+
+The general bounds are nonuniform in the transition and fixed exponent;
+they do not assert efficient preprocessing from a transition circuit.
+For even $n$, an explicit linear-size permutation has almost all powers of complexity
+$\Omega(2^{n/2}/n)$ when the exponent is uniform modulo its order.
+Those hard powers require exponentially long binary exponents, and the
+counting argument does not identify an explicit hard power.  Lean checks
+the general bounds, graph-query circuits, lower bounds, and sparse-counter
+fixed powers; the full arc-chart compiler remains outside that boundary.
+The underlying checkpoint and block ideas have established antecedents;
+historical priority for the circuit formulations remains unresolved.
 \end{abstract}
 
 \noindent\textbf{Keywords.} Boolean circuit complexity; function iteration;
@@ -145,11 +148,11 @@ $\CC(F_n)$, but not on $T$.
 The quantifiers in \cref{thm:main} are important.  For each $F$ and $T$ we
 construct a circuit that works for \emph{every} initial state.  We do not
 construct a single circuit taking an arbitrary-length exponent as input.
-Nevertheless, an $m$-bit exponent can be supplied as input at a multiplicative
-cost of $m$:
+Write $B=A+\sqrt{n^3NA}$.  For an $m$-bit input exponent, combining
+binary powering with eventual-period normalization gives
 \begin{equation}\label{eq:intro-variable}
   \CC\bigl((x,t)\mapsto F^t(x)\bigr)
-  =O\!\left(m\left(A+\sqrt{n^3NA}\right)\right),
+  =O\!\left(\min\{mB,nB+nm\}\right),
   \qquad t\in\bits^m.
 \end{equation}
 We prove this in \cref{sec:variable}.  In particular, $m=n$ preserves the
@@ -175,6 +178,59 @@ $P^{-1}$.  Thus every polynomial-size permutation on $n$ bits admits an
 exact inverter of size $2^{n/2+O(\log n)}$.  This exponential upper bound
 is compatible with one-wayness against polynomial-size circuits.
 We explain this consequence and its limitations in \cref{sec:one-way}.
+
+The graph-query results recover considerably more than one distant
+state.  They compute cycle labels, transient depth, exact first hitting
+times, visit schedules, and eventual target behavior.  For polynomial-size
+transitions, and polynomial-size predicates where needed, every such query
+has a $2^{n/2}\poly(n)$-gate circuit.  Reachability takes both $x$ and $y$
+as inputs, totaling $2n$ bits; its exponential scale is still $2^{n/2}$,
+set by the width of the evolving state.  The sparse-counter results improve
+this scale when an orbit has compact coordinates, even if that orbit
+contains every state.
+
+Table~\ref{tab:results} compares the bounds and their formalized coverage.
+For target queries put $A_P=s+a+n^3$ and
+$B_P=A_P+\sqrt{n^3NA_P}$, where $a$ is the fixed predicate's circuit size.
+
+\begin{table}[htbp]
+\centering
+\small
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.13}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{.27\linewidth}
+  >{\raggedright\arraybackslash}p{.23\linewidth}
+  >{\raggedright\arraybackslash}p{.33\linewidth}
+  >{\raggedright\arraybackslash}p{.12\linewidth}@{}}
+\toprule
+Query & Input parameters & Circuit size & Lean \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{General transitions on $n$-bit states}}\\
+Fixed iterate & $x$; fixed $T\geq0$ & $O(B)$ & Checked \\
+Input-time iterate & $x,t$; $t\in\bits^m$ & $O(\min\{mB,nB+nm\})$ & Checked \\
+Cycle labels and depth & $x$ & $O(B)$ & Checked \\
+Reachability, first hit,\newline visit descriptor & $x,y\in\bits^n$ & $O(nB)$ & Checked \\
+Synchronous coalescence & $x,y\in\bits^n$ & $O(B)$ & Checked \\
+First target; recurring\newline or permanent target & $x$; fixed $P$ of size $a$ & $O(B_P)$ & Checked \\
+Shared fixed powers & $q$ states; fixed exponents & $O(qA+\sqrt{qn^3NA})$ & Checked \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{Sparse permutations with $r$ edits in counter coordinates}}\\
+Signed fixed iterate & $x$; fixed $T\in\mathbb Z$ & $O(n(r+1))$ & Checked \\
+Input-time iterate & $x,t$; $t\in\bits^m$ & $O(n(r+m+1))$ & Partial \\
+Changed coordinates & $x$; fixed $T\in\mathbb Z$ & $K+O(n(r+1))$ & Checked \\
+\bottomrule
+\end{tabular}
+\caption{Comparison of universal and sparse-counter circuit bounds.
+Here $F$ is fixed, $m\geq1$, $1\leq q\leq N$, and
+$K=\CC(\phi)+\CC(\phi^{-1})$ charges both coordinate maps in
+\cref{cor:coordinates}.
+``Checked'' means a native Boolean-circuit existence theorem with gate
+accounting.  ``Partial'' means the streaming arithmetic is checked, while
+the arc chart and its full live-time bound have prose proofs.
+A visit descriptor specifies all visits; processing an additional deadline
+is not included in that row.}
+\label{tab:results}
+\end{table}
 
 \subsection{Proof overview}
 
@@ -943,9 +999,19 @@ absorbing-state argument as in \cref{cor:target}; use \cref{thm:depth}.
 Initialization and output decoding circuits are
 charged separately.
 \end{proof}
-The parameter $b$ includes all persistent input information, control,
-and workspace.  This is not a $2^{n/2}\poly(n)$ circuit bound for all of
-PSPACE as a function of input length $n$.
+In particular, when $s=\poly(b)$, both the final configuration and the
+first halting time have circuit size
+\[
+  2^{b/2}\poly(b).
+\]
+For a nearly in-place computation on an $n$-bit input, with complete state
+width $b=n+O(\log n)$ and a polynomial-size transition, this specializes to
+$2^{n/2}\poly(n)$.  Polynomial-size initialization and output decoding
+preserve that bound.  The parameter $b$ includes all persistent input
+information, control, and workspace; these bits are counted even when an
+abstract machine model calls part of its storage read-only.  A general
+polynomial-space machine can have far more than $n+O(\log n)$ configuration
+bits, so the corollary gives no such input-length bound for all of PSPACE.
 
 \subsection{Synchronous and recurring queries}\label{sec:eventual-queries}
 
@@ -1098,15 +1164,37 @@ The cost is $O(nr+nm+n)$.  If $r=0$, ordinary addition modulo $N$ gives
 the same bound.  This proves the second part of \cref{thm:sparse-counter}.
 For fixed signed $T$, hardwire $T\bmod\ell$ for each cycle instead.
 
-Given an explicit valid list of edited successors, the chart is
-constructible in time polynomial in $r+1$ and $n$.  Sort the cuts,
-compute arc lengths, follow the induced arc permutation, and form prefix
-sums.  Permutation preservation itself is checked by comparing edited
-outputs with the freed counter outputs.  This procedure never enumerates
-the $N$ states.  Compiling a particular signed power additionally costs
-polynomial time in the bit length of $T$.  A displacement table can be
-constructed by testing only the candidate change edges
-$E\cup F^{-T}(E)$, using the chart for these $O(r)$ queries.
+\begin{proposition}[Polynomial-time construction from an edit list]
+\label[proposition]{prop:sparse-compiler}
+Given $n$ and an explicit list of the $r$ edited successors of the
+$n$-bit counter, one can check permutation preservation and construct an
+orbit chart of $O(r+1)$ records, each of $O(n)$ bits, in time polynomial
+in $n$ and $r+1$.  For a valid list, the chart supplies the encoding and
+decoding used above.  Given also a signed binary integer $T$, one can
+construct a piecewise-translation table for $F^T$ with at most $2r+1$
+linear intervals in time polynomial in $n$, $r+1$, and $\log(|T|+2)$.
+\end{proposition}
+\begin{proof}
+Compare the edited outputs with the freed counter outputs to check
+$F(E)=R(E)$, after checking distinct input keys.  Sort the cuts, compute
+arc lengths, follow the induced permutation of the arcs, and form prefix
+sums on each of its cycles.  These operations construct the chart using
+arithmetic on $O(n)$-bit integers.  The case $r=0$ is the ordinary counter
+chart.  For a signed power, reduce $T$ modulo each chart cycle length.
+Use the chart to evaluate $F^{-T}$ on $E$, and test the $O(r)$ candidate
+change edges $E\cup F^{-T}(E)$ from \cref{prop:centralizer}.  Sorting their
+successors and evaluating the displacement at the interval starts gives
+the table; discard boundaries without a displacement change.
+\end{proof}
+
+The input here is the explicit edit list, whose entries specify where
+counter edges have changed and their new successors.  Given only a circuit
+for $F$, identifying that list is a separate task: the proposition asserts
+no polynomial-time extraction of exceptions from a transition circuit.
+The chart construction avoids enumeration of the $N=2^n$ states.
+The explicit arithmetic and selection constructions above then compile
+an $m$-bit iterator in time polynomial in $n,r+1,m$ with the gate bound
+of \cref{thm:sparse-counter}.
 
 The executable \texttt{sparse\_counter.py} implements this chart and
 interval compiler for arbitrary positive universe sizes.  An independent
@@ -1513,22 +1601,109 @@ prove nor refute the existence of one-way functions or one-way permutations.
 
 \section{Lean formalization}\label{sec:lean}
 
-The accompanying \texttt{lean/} project checks actual Boolean circuits,
-their evaluation semantics, and their gate bounds in Lean~4.  Its
-coverage includes the fixed-power, invariant-set, and image-sensitive
-tradeoffs; real square-root optimization; permutation inversion;
-variable-time and batched iteration; cycle labels; transient depth;
-pair-input reachability and first hitting times; recognizable targets;
-complete-configuration simulation; eventual synchronous coalescence; recurring
-and permanent target predicates; and the matching-exponent lower bound.
-Sparse-counter centralizers and signed fixed powers are also checked,
-including linear Boolean gate accounting.
-The proofs use CSLib's circuits and simultaneous synthesis relation,
-Mathlib's finite dynamics and arithmetic, and the verified sorting and
-circuit-counting results in the author's Circuit library, distributed
-through \texttt{complexitylib}~\cite{CSLib,Mathlib,Complexitylib}.
-The project pins Lean and all three libraries; \texttt{lean/README.md}
-gives exact revisions, theorem names, and build commands.
+The accompanying \texttt{lean/} project proves existence of actual Boolean
+circuits, with evaluation semantics and gate bounds.  Its coverage includes
+all general-map rows of \cref{tab:results}, invariant-set and image-sensitive
+bounds, the active-mass refinement, permutation inversion, and
+complete-configuration simulation.  It also checks sparse-counter
+centralizers and signed fixed powers, transport through supplied coordinate
+circuits, and the lower-bound results: hard powers, their overwhelming
+proportion, the remainder-circuit comparison, and the necessary exponent
+length.  The visit descriptor specifies every visit time and its bounded
+count; these semantics do not charge a separate deadline-processing circuit.
+
+The development uses CSLib's circuits and simultaneous synthesis relation,
+Mathlib's dynamics and arithmetic, and the author's Circuit library through
+\texttt{complexitylib}, including its sorting and counting results
+\cite{CSLib,Mathlib,Complexitylib}.  Lean and the dependencies are pinned.
+\texttt{lean/README.md} records exact revisions, public theorem names, and
+build commands.  \Cref{app:lean-details} gives concrete constants and the
+implementation walkthrough.
+
+\paragraph{Representation and proof choices.}
+The native basis consists of Boolean constants, NOT, AND, and OR.  Every
+gate is charged, including constants; wiring and fan-out are free.  Thus
+the formalization synthesizes sorting, lookup, selection, and arithmetic
+from Boolean gates.  Checkpoints are obtained by packing disjoint simple
+paths.  The dynamics identities are separated from the bit-level circuit
+construction, allowing them to be reused across representations.
+
+The semantic lemmas quantify over types in arbitrary universes.  For the
+encoded fixed-power theorem, only the relevant invariant subset
+$S\subseteq\alpha$ must be finite.  An encoding $e:\alpha\to\bits^n$
+must be injective on $S$, and a supplied
+Boolean transition circuit must agree with $F$ on encoded states.  The
+bound counts $|S|$ while retaining the actual bit width $n$; initialization
+and decoding costs are additional.  Canonical representatives require a
+linear order.  No operation on an arbitrary state type is a unit-cost gate.
+
+\paragraph{Checked boundary.}
+The exported theorems have guarded axiom lists containing only
+\texttt{propext}, \texttt{Classical.choice}, and \texttt{Quot.sound}; the
+project has no \texttt{sorry} placeholders or additional axioms.  Classical
+choices select checkpoints, enumerations, and circuit witnesses, so the
+formalization proves nonuniform existence and does not extract a compiler.
+The full arc-chart live-time theorem and \cref{prop:sparse-compiler} have
+prose proofs and an independently tested Python implementation; their
+compiler correctness and full gate bound are not checked in Lean.  The
+sparse-transition counting application and finite-field corollary also
+remain prose results, the latter using an external discrete-logarithm
+theorem.  Kernel checking supplies neither a historical-priority result
+nor independent confirmation that the statements capture every intended
+model convention.
+
+\section{Conclusion and scope}\label{sec:scope}
+
+The results give three complementary circuit bounds for finite dynamics.
+For arbitrary transitions, sparse checkpoints and charged batched lookup
+compute every fixed iterate at square-root state-space cost.  The same
+construction recovers functional-graph information: cycle labels, transient
+depth, pair-input reachability, exact hitting times, complete visit schedules,
+and eventual target behavior.  For polynomial-size transitions and
+predicates these queries all have size $2^{n/2}\poly(n)$.  Compact orbit
+coordinates can improve the bound further: $r$ permutation-preserving
+counter edits give $O(n(r+1))$ fixed powers and $O(n(r+m+1))$ live-time
+iteration, even on a single orbit through all states.
+
+The universal bounds are nonuniform in the transition and fixed exponent.
+They apply to every starting state but do not bound circuit depth or give
+an efficient method for discovering checkpoints and payloads from a
+transition circuit.  The constructive sparse-counter result has a stronger
+input assumption: an explicit edit list permits polynomial-time chart
+construction.  Transporting either result to an encoded computation must
+count every persistent configuration bit and charge the coordinate maps.
+
+The matching lower bound selects powers by counting.  Almost every power
+of the explicit linear-size permutation is hard under a uniform exponent
+residue, but hard exponents necessarily need exponentially many binary bits.
+The result identifies no explicit hard exponent and establishes no matching
+lower bound for polynomial-width input times.  The permutation-inversion
+consequence remains compatible with polynomial-size one-wayness.
+
+Checkpointing, sorting-based lookup, and the commutation/block geometry
+have established antecedents; historical priority for the circuit
+formulations remains unresolved.  The general additive conjecture
+$s+\widetilde O(2^{n/2})$ is also open.  Extending the class of systems with
+cheap, constructible orbit coordinates is a concrete direction suggested
+by the sparse-counter result.
+
+\section*{Provenance and draft status}
+
+This draft and the underlying argument were developed with assistance
+from ChatGPT (GPT-6 Astra Pro), including assistance with theorem
+formulation, proof development, exposition, and literature searches.
+The Lean development and the current revision also received assistance
+from Codex, including circuit synthesis proofs, axiom auditing, and review.
+The author field is provisional.  Historical priority and final
+attribution require author review; the draft does not represent
+independent peer verification.
+
+\appendix
+\section{Quantitative formalization and implementation details}\label{app:lean-details}
+
+This appendix records the native gate accounting and proof organization
+behind the coverage summary in \cref{sec:lean}.  Constants are deliberately
+loose and serve as checked accounting bounds.
 
 \begin{theorem}[Mechanized tradeoff]\label{thm:lean}
 Let $c$ be a circuit over the Boolean constant, NOT, AND, and OR basis,
@@ -1554,7 +1729,7 @@ $2^{\lceil n/2\rceil}\poly(n)$ consequence for polynomial-size updates.
 The constants are deliberately loose accounting bounds.  Free wiring
 and arbitrary fan-out permit sharing; constants are charged.
 Translating the paper's fixed fan-in-two basis to this basis changes
-size by an absolute factor.
+size by at most an absolute factor and an additive constant.
 
 \paragraph{Proof organization and shared tables.}
 \texttt{Statement.lean} gives the foundational statement boundary using
@@ -1702,78 +1877,12 @@ The arc-chart live-time theorem, sparse-transition counting application,
 and finite-field corollary have prose proofs; their full circuit bounds
 are not yet checked in Lean.
 
-\paragraph{Universes and representations.}
-The packing and reconstruction lemmas quantify over
-$\alpha:\mathrm{Type}\ u$ for arbitrary $u$; only the relevant invariant
-subset must be finite.  The theorem \texttt{fixed\_power\_encoded}
-transports the circuit bound to a finite invariant set $S\subseteq\alpha$
-with an encoding $e:\alpha\to\bits^n$ injective on $S$, provided
-$c(e(x))=e(F(x))$ for $x\in S$.  It computes $e(F^T(x))$ on encoded
-starting states and counts $|S|$, retaining the actual bit width $n$.
-The encoded inversion theorem assumes an injective encoding of the whole
-finite permutation domain.  Navigation circuit bounds are stated for
-bit states; their underlying finite-dynamics identities are universe
-polymorphic.  Arbitrary operations on $\alpha$ are not unit-cost gates,
-and separate initialization or decoding circuits must be charged.
-
-\paragraph{Checked boundary.}
-The principal public results have guarded axiom lists containing only
-\texttt{propext}, \texttt{Classical.choice}, and \texttt{Quot.sound}.
-There are no \texttt{sorry} placeholders, additional axioms, or native
-evaluation shortcuts.  Noncomputable choices select checkpoints,
-enumerations, and circuit witnesses.  This is an existence formalization,
-not an extracted compiler or a preprocessing-time guarantee.
+\paragraph{Active-mass refinement.}
 The active-mass theorem is checked by restricting the universe-polymorphic
 packing lemma to \texttt{activeVertices}.  It proves $|H|L\leq Q_L$ and
 coverage within $4L$ steps; $n+3$ index bits suffice for the resulting
 native circuit.  The theorem \texttt{active\_mass\_fixed\_power} has bound
 $120000\,\mathrm{powerBudget}(n,s,Q_L,L)$, including the case $Q_L=0$.
-The affine-controller proposal and AKS improvement are not separately mechanized.
-Nor does kernel checking establish historical priority or
-that a formal statement captures every intended circuit convention.
-
-\section{Scope and remaining questions}\label{sec:scope}
-
-The main theorem is an exact nonuniform upper bound for unrestricted
-bounded-fan-in circuits.  It applies to noninvertible maps and is uniform
-in the starting state, but not in the circuit construction or its
-preprocessing cost.  It gives no depth bound and no efficient procedure
-for discovering checkpoints or their payloads from a succinct
-representation of $F$.  An initial-state-dependent family of update
-rules must be encoded as a single common transition map before the
-theorem applies; any additional persistent state changes $n$ and hence
-the exponential scale of the bound.
-
-The sharpness result deliberately separates the simplicity of an update
-rule from the description complexity of a chosen power.  A stronger
-lower bound for a specified iteration count, or for an iterator with an
-$n$-bit time input, is not established here.  The explicit permutation
-used for counting cannot witness such a strengthening, by
-\cref{eq:easy-iterator,cor:exponent-length}.  The inversion consequence
-in \cref{cor:inverse} likewise leaves polynomial-size one-wayness open.
-
-The sparse-counter construction gives one answer to two structural
-questions: it improves the dependence on transition complexity, and its
-chart can be compiled from edited successors without exploring the full
-state space.  More general classes admitting these improvements remain
-to be identified.  In particular, an additive bound
-$s+\widetilde O(2^{n/2})$ for unrestricted updates is not established.
-The central
-conclusion is the unconditional total-gate tradeoff:
-a short transition circuit can be combined with a sparse table, whose
-access cost is explicitly accounted for, to compute every fixed iterate
-at square-root state-space scale.
-
-\section*{Provenance and draft status}
-
-This draft and the underlying argument were developed with assistance
-from ChatGPT (GPT-6 Astra Pro), including assistance with theorem
-formulation, proof development, exposition, and literature searches.
-The Lean development and the current revision also received assistance
-from Codex, including circuit synthesis proofs, axiom auditing, and review.
-The author field is provisional.  Historical priority and final
-attribution require author review; the draft does not represent
-independent peer verification.
 
 \begin{thebibliography}{99}
 

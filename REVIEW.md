@@ -408,3 +408,22 @@ to O(B) pair navigation. The forest theorem still needs a complete Lean
 construction and cardinality/ancestor-query proof. Earlier candidate additions
 listed above also remain distinct from checked coverage. Continue with these
 rather than treating the sparse-counter milestone as completion of the goal.
+
+
+## Manuscript organization, October 16 revision
+
+The introduction now compares the universal and sparse-counter results in a
+compact query/input/bound/Lean-coverage table. It explicitly records the
+2^(n/2) poly(n) navigation and eventual-behavior scale for polynomial-size
+transitions, including reachability on two n-bit inputs. The simulation
+corollary displays the 2^(b/2) poly(b) specialization and nearly in-place case,
+while retaining complete-configuration accounting.
+
+The polynomial-time chart construction from an explicit edit list is now a
+named proposition, separate from being given only a transition circuit. The
+main Lean section focuses on coverage, representation, and the trusted
+boundary; detailed gate constants and construction bookkeeping are in
+Appendix A. The abstract, submission metadata, and conclusion consistently
+present general iteration, functional-graph queries, and compact orbit
+coordinates, retaining nonuniformity, long hard exponents, and unresolved
+historical priority. This editorial revision does not extend the Lean boundary.

@@ -217,7 +217,7 @@ circuit of bounded cost. Otherwise the representation of a composite could
 grow with `T`. The offline composition algorithm need not be efficient for
 the fixed-power nonuniform existence statement.
 
-## 7. Almost every power is hard: valid asymptotically
+## 7. Almost every power is hard: integrated and mechanized
 
 State the result for sufficiently large even `n`. Write `U=2^(n/2)` to
 avoid colliding with the upper-bound notation `B`. The group order has
@@ -232,7 +232,13 @@ easy exponents remain legitimate exceptions. The argument identifies no
 explicit hard exponent and proves no average-case input hardness for a
 particular power.
 
-## 8. Fixed remainders: valid in the paper's constant-wire convention
+`TypicalPowers.lean` proves an explicit native bound for every `k ≥ 64`:
+the number of exponents modulo the period with circuits of size at most
+`floor(2^k/(1024*(k+1)))`, multiplied by `2^(2^(k-1))`, is at most the
+period. The proof uses injectivity of the powers, actual circuit-description
+counts, and the checked LCM bound. The paper states its probability consequence.
+
+## 8. Fixed remainders: integrated and mechanized
 
 Restricting the power circuit to `(a,0)` gives `T mod a` for `a>0` and zero
 at `a=0`. Conversely, on active states, both `b` and `r_T(a)` are below
@@ -243,10 +249,14 @@ with `O(n)` additive overhead.
 
 The exact first inequality uses free constant wires when restricting inputs.
 In the Lean model constants are gates, so that literal restriction may add
-one shared zero gate; asymptotic claims are unchanged. This particular
-equivalence has not been formalized. It exposes fixed-integer remainder
-functions as the arithmetic objects counted in the lower bound, without
-identifying a specific hard integer.
+one shared zero gate; asymptotic claims are unchanged. `CounterRemainders.lean`
+now constructs both translations, with native costs `s+1` and `s+100*(k+1)`.
+This exposes fixed-integer remainder functions as the arithmetic objects
+counted in the lower bound, without identifying a specific hard integer.
+`ExponentLength.lean` charges hardwired exponent bits and the zero-modulus
+branch. For `T < 2^m`, its power circuit has size at most
+`110*(m+1)*(k+1)`; a hard exponent therefore satisfies
+`2^k < 112640*(m+1)*(k+1)^2`. This formalizes the exponent-length corollary.
 
 ## 9. Deterministic complete configurations: integrated and mechanized
 

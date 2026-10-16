@@ -20,6 +20,8 @@ public import Proofs.EventualQueries
 public import Proofs.LongTime
 public import Proofs.TargetTimes
 public import Proofs.VisitScheduleCircuits
+public import Proofs.TypicalPowers
+public import Proofs.ExponentLength
 
 /-!
 # Public results and axiom audit
@@ -30,6 +32,27 @@ guards fail if the theorem dependencies acquire an additional axiom.
 -/
 
 namespace IteratedFunctions
+
+/-- info: 'IteratedFunctions.almost_every_counter_power' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms almost_every_counter_power
+
+/-- info: 'IteratedFunctions.ModulusCounter.remainder_of_power' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms ModulusCounter.remainder_of_power
+
+/-- info: 'IteratedFunctions.ModulusCounter.power_of_remainder' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms ModulusCounter.power_of_remainder
+
+/-- info: 'IteratedFunctions.ModulusCounter.hard_power_exponent_capacity' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms ModulusCounter.hard_power_exponent_capacity
 
 /-- info: 'IteratedFunctions.fixedPowerBound' depends on axioms:
 [propext, Classical.choice, Quot.sound] -/

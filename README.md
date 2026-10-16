@@ -55,6 +55,10 @@ A = s + n^3, the optimized bound is O(A + sqrt(n^3 N A)); for r trajectories
 it is O(r A + sqrt(r n^3 N A)).
 Writing B = A + sqrt(n^3 N A), arbitrarily wide m-bit input times cost
 O(min(m B, n B + n m)); this improved bound is also checked in Lean.
+For the explicit lower-bound permutation, almost every power is hard when
+the exponent is uniform modulo the full period. Lean also checks the
+equivalence with fixed-integer remainder circuits and an exponential lower
+bound on the description length of hard exponents.
 
 The circuit model is ordinary nonuniform bounded-fan-in Boolean circuits
 with unrestricted fan-out. All dictionary access, sorting, selection, and

@@ -1193,6 +1193,30 @@ The first coordinate is passed through unchanged.  Thus
 \end{equation}
 and the family has a direct polynomial-time circuit construction.
 
+\begin{theorem}[Powers and fixed-integer remainders]\label{thm:remainders}
+For a fixed $T\geq0$, define $r_T(a)=T\bmod a$ when $a>0$ and
+$r_T(0)=0$, using $k$ bits for both input and output.  Then
+\[
+  \CC(r_T)\leq\CC(P_n^T)\leq\CC(r_T)+O(n).
+\]
+\end{theorem}
+
+\begin{proof}
+Restrict the power circuit to inputs $(a,0)$ and retain its second
+coordinate.  This computes $r_T$, including the zero-modulus branch.
+Conversely, on an active state compute $b+r_T(a)$ using $k+1$ bits.
+Both summands are below $a$, so a comparison and at most one subtraction
+of $a$ give the result modulo $a$.  The spare bit retains the carry.
+Select the original $b$ on inactive states and copy $a$ to the output.
+All additional operations have linear-size Boolean circuits.  The first
+inequality uses the paper's free constant-wire convention; the native
+Lean model charges one shared zero gate for the restriction.
+\end{proof}
+
+Thus the arithmetic object behind the lower bound is the remainder of a
+single fixed integer as a function of its input modulus.  The theorem
+does not identify a particular hard integer.
+
 \begin{lemma}\label[lemma]{lem:lcm}
 For every integer $B\geq 1$,
 \begin{equation}\label{eq:lcm-lower}
@@ -1278,6 +1302,28 @@ $\max_T\CC(P_n^T)=O(n^3 2^{n/2})$.  Combining the upper and lower
 bounds and taking logarithms proves \cref{eq:tight-exponent}.
 \end{proof}
 
+\begin{theorem}[Almost every power is hard]\label{thm:typical-powers}
+There is an absolute $c>0$ such that, for all sufficiently large even $n$,
+\[
+ \Pr_{T\sim\mathrm{Unif}\{0,\ldots,D_B-1\}}
+ \left[\CC(P_n^T)\geq c\frac{2^{n/2}}n\right]
+ \geq 1-2^{-\Omega(2^{n/2})}.
+\]
+\end{theorem}
+
+\begin{proof}
+Set $U=2^{n/2}$.  The preceding counting argument bounds the number of
+powers with circuits of size at most $\floor{cU/n}$ by $2^{\alpha U}$,
+for some fixed $\alpha<1$ after decreasing $c$.  On the other hand,
+$D_B\geq2^{U-1}/U$.  Divide the two counts to bound the exceptional
+fraction by $U2^{1-(1-\alpha)U}=2^{-\Omega(U)}$.
+\end{proof}
+
+The probability concerns exponent residues modulo the whole group order.
+It does not concern short exponent descriptions or average-case hardness
+over inputs to any one power.  In particular, easy powers remain among
+the exceptional residues.
+
 \begin{corollary}\label[corollary]{cor:one-output}
 For all sufficiently large even $n$, some power of $P_n$ has an output
 coordinate of circuit complexity $\Omega(2^{n/2}/n^2)$.
@@ -1301,13 +1347,13 @@ bits.  The theorem does not provide a polynomial-time procedure that,
 given $n$, identifies a hard power.
 
 For the very same family, the iterator with an $m$-bit time input has
-size $O(nm+n^2)$.  On an active cycle,
+size $O(n(m+1))$.  On an active cycle,
 \begin{equation}\label{eq:easy-iterator}
   P_n^t(a,b)=(a,(b+(t\bmod a))\bmod a).
 \end{equation}
 An $m$-stage remainder computation with a $k$-bit running remainder costs
 $O(mk)$ gates, and the remaining comparison, addition, and selection
-cost at most $O(n^2)$ gates.  On the inactive states the answer is the
+cost $O(n)$ gates as in \cref{thm:remainders}.  On inactive states the answer is the
 input itself; use a dummy positive modulus when $a=0$.
 Consequently, for $m=\poly(n)$ this iterator has polynomial size.
 
@@ -1323,9 +1369,8 @@ $m_n=\max\{1,\ceil{\log_2(T_n+1)}\}$ satisfy
 
 \begin{proof}
 Hardwire the $m_n$-bit exponent into the iterator just described.
-This gives $\CC(P_n^{T_n})=O(nm_n+n^2)$.
-Comparing with the assumed lower bound and using
-$n^2=o(2^{n/2}/n)$ proves the claim.
+This gives $\CC(P_n^{T_n})=O(n(m_n+1))$.
+Comparing with the assumed lower bound proves the claim.
 \end{proof}
 
 Thus the hard powers necessarily require exponentially long binary
@@ -1576,6 +1621,24 @@ some such power requires more than
 $\floor{2^k/(1024(k+1))}$ gates.  Thus both the small update circuit and
 the hard-power conclusion of \cref{thm:lower} are checked.  The exponent
 is existential; this is not a lower bound for a specified short exponent.
+The theorem \texttt{almost\_every\_counter\_power} checks a stronger
+count: the number of easy residues, multiplied by $2^{2^{k-1}}$, is at
+most the period.  This division-free statement proves the exceptional
+fraction bound in \cref{thm:typical-powers} for the native gate threshold.
+No probability-space infrastructure is needed for this finite uniform count.
+
+The two native translations in \texttt{CounterRemainders.lean} have costs
+$s+1$ from a power circuit to a remainder circuit, and $s+100(k+1)$ in
+the opposite direction.  They check the inactive branches and the spare
+carry bit explicitly.  Hardwiring an exponent $T<2^m$ then gives a power
+circuit with at most $110(m+1)(k+1)$ gates.  The checked theorem
+\texttt{hard\_power\_exponent\_capacity} shows that any such exponent
+meeting the lower-bound threshold satisfies
+\[
+  2^k<112640(m+1)(k+1)^2.
+\]
+This supplies a quantitative native-circuit version of
+\cref{cor:exponent-length} without fixing a convention for the bit length of zero.
 
 \paragraph{Sparse-counter implementation.}
 The universe-polymorphic commutation lemma proves that the defect set
@@ -1618,9 +1681,8 @@ evaluation shortcuts.  Noncomputable choices select checkpoints,
 enumerations, and circuit witnesses.  This is an existence formalization,
 not an extracted compiler or a preprocessing-time guarantee.
 The sharper active-trajectory parameter, affine-controller proposal,
-AKS improvement, generic-hardness proportion, remainder-function
-comparison, and exponent-description-length corollary are not separately
-mechanized.  Nor does kernel checking establish historical priority or
+and AKS improvement are not separately mechanized.
+Nor does kernel checking establish historical priority or
 that a formal statement captures every intended circuit convention.
 
 \section{Scope and remaining questions}\label{sec:scope}

@@ -46,10 +46,10 @@ cases check algebraic identities, not an independent enumerative oracle.
 
 Lean command: make lean-check
 cd lean && lake build --wfail
-Build completed successfully (3205 jobs).
+Build completed successfully (3208 jobs).
 
-Main.lean runs 34 guarded axiom checks. Every audited result depends exactly
-on propext, Classical.choice, and Quot.sound. All 59 Proofs modules are in
+Main.lean runs 38 guarded axiom checks. Every audited result depends exactly
+on propext, Classical.choice, and Quot.sound. All 62 Proofs modules are in
 Main's transitive import closure. No sorry, admit, added axiom, native_decide,
 or unsafe declaration appears in the project Lean sources.
 
@@ -81,6 +81,13 @@ centralizer circuits, all signed fixed powers, and coordinate transport with
 both circuit costs. They also check a bounded-modulus remainder circuit with
 size 2 + m*(51*(k+1)+4), including semantics for every nonzero k-bit modulus.
 
+TypicalPowers.lean bounds the easy fraction of counter powers by
+2^(-2^(k-1)) for k >= 64 at threshold floor(2^k/(1024*(k+1))).
+CounterRemainders.lean constructs both remainder/power translations, with
+additional native costs 1 and 100*(k+1). ExponentLength.lean constructs
+powers for T < 2^m in 110*(m+1)*(k+1) gates and proves the explicit
+hard-exponent capacity bound 2^k < 112640*(m+1)*(k+1)^2.
+
 The sparse fixed-power circuit has size at most 100*(n+1)*(r+1).
 Its Boolean implementation sums the displacement changes selected by input
 threshold comparisons, using shared carry chains. No arithmetic or table
@@ -94,7 +101,7 @@ and commutation lemmas are universe polymorphic; circuit bounds charge bits.
 
 Paper command: make (three pdflatex passes).
 Output: 24 pages. Final log has no warnings, overfull boxes, or underfull boxes.
-All pages were rendered and inspected in contact sheets; new visit-schedule, depth/first-time, long-input-time,
+All pages were rendered and inspected in contact sheets; new remainder/typical-power, exponent-length, visit-schedule, depth/first-time, long-input-time,
 synchronous/recurring-query, sparse-counter,
 and formalization pages were additionally inspected at readable resolution.
 The manuscript abstract matches submission_metadata.txt after expanding bits.
@@ -105,9 +112,8 @@ extracted compiler. The Python sparse-counter compiler has independent finite
 checks, but its general correctness is not a Lean theorem. The full sparse
 arc-chart live-time theorem, sparse-transition counting application, and
 finite-field corollary remain prose results; the latter uses the external
-Kleinjung--Wesolowski theorem. The active-trajectory refinement, affine-controller
-proposal, AKS improvement, almost-every-power statement, remainder equivalence,
-and exponent-description-length corollary are also not separately mechanized.
+Kleinjung--Wesolowski theorem. The active-trajectory refinement, affine-controller proposal, and AKS
+improvement are also not separately mechanized.
 The public theorem map is in lean/README.md; REVIEW.md tracks the continuation.
 
 These checks do not establish historical novelty or replace independent

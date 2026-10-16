@@ -57,6 +57,9 @@ natural-number division in integer budgets means floor division.
 | `halting_time` | Under semantic absorption and termination, exact first halting times on valid initial states, with bound `3000000*B`. No recognizer circuit is needed. |
 | `visit_schedule_optimized` | A complete visit descriptor on pair inputs: one success flag, `n+1` first-time bits, and `n+1` period bits, with bound `360000000*(n+1)*B`. Period zero encodes a singleton. The theorem specifies all visit times and the number through every deadline. The deadline arithmetic is a semantic interpretation, not an additional circuit-size claim. |
 | `matching_lower_bound` | For `k ≥ 64`, a Boolean permutation circuit on `2*k` bits of size at most `50*(k+1)` has a power for which every implementing circuit has more than `2^k/(1024*(k+1))` gates. The division is integral. |
+| `almost_every_counter_power` | For `k ≥ 64`, the number of exponent residues with circuits of size at most `lowerBudget k`, times `2^(2^(k-1))`, is at most the period. Thus the easy fraction is at most `2^(-2^(k-1))`. |
+| `ModulusCounter.remainder_of_power` / `power_of_remainder` | Convert a power circuit to `a ↦ T mod a` (zero at modulus zero) with one extra gate, or convert a remainder circuit to a power with at most `100*(k+1)` extra gates. |
+| `ModulusCounter.hard_power_exponent_capacity` | If `T < 2^m` and its power exceeds `lowerBudget k`, then `2^k < 112640*(m+1)*(k+1)^2`. The proof constructs a power circuit of size at most `110*(m+1)*(k+1)`. |
 | `sparse_counter_centralizer` | If an injective word map `H` commutes with `F`, and `F` differs from increment at `r` inputs, a circuit for `H` has at most `100*(n+1)*(r+1)` gates. `F` need not be a permutation. |
 | `sparse_counter_power` | The same bound for every integer power of a permutation, including negative powers. |
 | `sparse_coordinate_power` | If a permutation `G` becomes increment under a bijection `e`, every fixed signed power of an `r`-edited `G` costs at most `encode.size + decode.size + 100*(n+1)*(r+1)`. Both coordinate circuits and their semantics are supplied and charged. |
@@ -186,6 +189,13 @@ finite types in arbitrary universes. Sparse-counter circuit statements use
     `VisitScheduleCircuits.lean` synthesizes a zero-off-cycle period field
     and appends it to the navigation result, with correctness for every time
     and deadline. No enumeration of the visit set is needed.
+13. **Quantify hard powers and their arithmetic content.** `TypicalPowers.lean`
+    counts easy exponent residues with an explicit exponential margin. Its
+    division-free count is equivalent to the finite uniform probability bound.
+    `CounterRemainders.lean` constructs both directions of the remainder
+    comparison, preserving carry and charging the restriction's shared zero.
+    `ExponentLength.lean` combines the linear arithmetic with the gate lower
+    bound to force exponential description length for hard exponents.
 
 The construction uses classical choices of checkpoints, finite enumerations,
 and circuit witnesses. It establishes nonuniform existence, not an extracted
@@ -207,9 +217,8 @@ application and the finite-field corollary, including the use of the external
 discrete-logarithm theorem, are also outside the current Lean boundary.
 
 The active-long-trajectory refinement, affine-controller theorem, AKS
-polynomial improvement, effective compiler, almost-every-power strengthening,
-remainder-function equivalence, and exponent-description-length corollary are
-not separately formalized. Several are only proposals in `REVIEW.md`, rather
+polynomial improvement, and effective compiler are not separately formalized.
+Several are only proposals in `REVIEW.md`, rather
 than theorems asserted in the manuscript. The paper's cryptographic discussion
 and literature comparisons remain prose arguments.
 

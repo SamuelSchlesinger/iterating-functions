@@ -367,10 +367,13 @@ the committed compiler and validator are new implementations.
 Synchronous coalescence in O(B) and recurring/permanent target predicates
 are now integrated and mechanized, including optimized native circuit bounds.
 `CycleProjection.lean` checks the retraction, the orbit-equality threshold,
-and normalization of all times below 2N.
+and normalization of all times below 2N. `LongTime.lean` now connects that
+normalization to cycle labels, streaming division, and binary powering,
+proving O(nB+mn) for arbitrary input-time width. Combining the two checked
+variable-time constructions gives O(min(mB,nB+mn)).
 
-The accepted work still includes long input times in O(nB+mn), transient depth
-in O(B), exact visit schedules, and a compressed-checkpoint-forest route
+The accepted work still includes transient depth in O(B), exact visit
+schedules, and a compressed-checkpoint-forest route
 to O(B) pair navigation. The forest theorem still needs a complete Lean
 construction and cardinality/ancestor-query proof. Earlier candidate additions
 listed above also remain distinct from checked coverage. Continue with these

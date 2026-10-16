@@ -588,6 +588,39 @@ bound.  Each $G_j$ is constructed from $F$ using the theorem; it is not
 obtained by duplicating the circuit for $G_{j-1}$.
 \end{proof}
 
+\begin{theorem}[Long input times]\label{thm:long-time}
+Write $B=A+\sqrt{n^3NA}$.  For every $m\geq1$,
+\[
+ \CC(\Iter_{F,m})=O\!\left(\min\{mB,\ nB+nm\}\right).
+\]
+Thus the cost of processing additional time bits is additive once the
+state width is fixed.
+\end{theorem}
+\begin{proof}
+The first bound is \cref{thm:variable}.  For the second, compute the exact
+eventual cycle length $\ell=\ell(x)$ in $O(B)$ gates using
+\cref{thm:labels}.  Replace the input time by
+\[
+ u=\begin{cases}
+ t,&t<N,\\
+ N+(t-N)\bmod\ell,&t\geq N.
+ \end{cases}
+\]
+Then $u<2N$ and $F^u(x)=F^t(x)$: in the second case both times are past
+cycle entry and have the same residue modulo $\ell$.
+
+Compute $t\bmod\ell$ by streaming its bits from most significant to least
+significant, retaining an $O(n)$-bit remainder.  Each step doubles the
+remainder, adds one bit, and conditionally subtracts $\ell$; a spare bit
+prevents overflow.  Shared-carry addition and subtraction give $O(n)$
+gates per input bit, including comparison and selection.  The bounded
+modular correction by $N$ and the final selection cost $O(n^3+m)$ with
+the arithmetic circuits already used in the proof.  Hence forming $u$
+costs $O(nm+n^3)$, and its $n+1$ bits feed \cref{thm:variable} at cost
+$O(nB)$.  Since $n^3\leq B$, the second bound follows.  If $m\leq n$,
+one may simply use the original $m$-stage construction.
+\end{proof}
+
 \subsection{Sharing a dictionary among independent trajectories}
 \label{sec:batch}
 
@@ -1401,6 +1434,13 @@ lookup, including repeated queries and absent-key flags.  It charges
 the checkpoint table once for the entire batch, yielding
 \cref{eq:batch-tradeoff,eq:batch-opt}.  Conditional binary powers give
 both single-input and independently timed batched iterators.
+The long-time construction in \texttt{LongTime.lean} computes a cycle
+length once, uses the streaming remainder circuit to normalize the input
+time below $2N$, and applies binary powering to $n+3$ internal bits.
+Its checked optimized bound is
+$33000000(n+1)\widehat B+200m(n+1)$, proving \cref{thm:long-time} together
+with the original variable-time bound.  The extra internal bits simplify
+overflow proofs and are fully charged.
 
 For a repeated pair $i<j$, the fixed-power decoder starts from the
 hardwired residue $T\bmod(j-i)$ and adds $j-i$ until the index enters
@@ -1477,10 +1517,9 @@ transport through supplied coordinate circuits.  The streaming-remainder
 circuit has bound $2+m(51(k+1)+4)$ for an $m$-bit numerator and a nonzero
 $k$-bit modulus, with a spare internal bit.  Its semantics and cost are
 both checked.
-The arc-chart compiler, its additive live-time bound, the counting
-application for large transitions, and the finite-field application have
-prose proofs and separate finite regression tests; they are not yet
-end-to-end Lean theorems.
+The arc-chart live-time theorem, sparse-transition counting application,
+and finite-field corollary have prose proofs; their full circuit bounds
+are not yet checked in Lean.
 
 \paragraph{Universes and representations.}
 The packing and reconstruction lemmas quantify over

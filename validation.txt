@@ -43,10 +43,10 @@ cases check algebraic identities, not an independent enumerative oracle.
 
 Lean command: make lean-check
 cd lean && lake build --wfail
-Build completed successfully (3199 jobs).
+Build completed successfully (3200 jobs).
 
-Main.lean runs 27 guarded axiom checks. Every audited result depends exactly
-on propext, Classical.choice, and Quot.sound. All 53 Proofs modules are in
+Main.lean runs 28 guarded axiom checks. Every audited result depends exactly
+on propext, Classical.choice, and Quot.sound. All 54 Proofs modules are in
 Main's transitive import closure. No sorry, admit, added axiom, native_decide,
 or unsafe declaration appears in the project Lean sources.
 
@@ -58,9 +58,12 @@ cycle labels, transient depth, pair-input reachability and exact first hitting
 times, synchronous coalescence, infinitely recurring and eventually permanent
 target predicates, and the matching-exponent lower bound including the linear-size update.
 The cycle projection, its exact-depth identity, and bounded-time normalization
-are checked over arbitrary finite types in arbitrary universes. The latter two
-identities are foundations; the faster depth and long-input-time circuit
-constructions are not yet connected to them.
+are checked over arbitrary finite types in arbitrary universes. LongTime.lean
+connects time normalization to cycle labels, bounded-modulus division, and
+binary powering, with optimized native gate bound
+33000000*(n+1)*B + 200*m*(n+1). The earlier m*(120000*B+4*n)
+bound remains available, giving the smaller of the two bounds. Faster depth
+via the projection identity remains to be connected to a circuit.
 The sparse-counter additions check the factor-two commutation defect estimate,
 centralizer circuits, all signed fixed powers, and coordinate transport with
 both circuit costs. They also check a bounded-modulus remainder circuit with
@@ -79,7 +82,7 @@ and commutation lemmas are universe polymorphic; circuit bounds charge bits.
 
 Paper command: make (three pdflatex passes).
 Output: 22 pages. Final log has no warnings, overfull boxes, or underfull boxes.
-All pages were rendered and inspected in contact sheets; new synchronous/recurring-query, sparse-counter,
+All pages were rendered and inspected in contact sheets; new long-input-time, synchronous/recurring-query, sparse-counter,
 and formalization pages were additionally inspected at readable resolution.
 The manuscript abstract matches submission_metadata.txt after expanding bits.
 

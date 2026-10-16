@@ -38,4 +38,8 @@ theorem binaryValue_bits (a : BitVec w) :
         exact hd
   simpa only [partialValue_all, Nat.mod_eq_of_lt a.isLt] using h w le_rfl
 
+@[simp] theorem word_toNat (bits : Fin w → Bool) :
+    (word bits).toNat = binaryValue bits := by
+  simpa only [word_bit] using (binaryValue_bits (word bits)).symm
+
 end IteratedFunctions

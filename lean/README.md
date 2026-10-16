@@ -45,6 +45,7 @@ natural-number division in integer budgets means floor division.
 | `fixed_power_polynomial` | If `s ≤ K*(n+1)^d`, the circuit size is at most `120000*(K+1)*(n+1)^(max d 3)*2^((n+1)/2)`. |
 | `permutation_inverse`, `permutation_inverse_encoded` | Exact inverse circuits with the fixed-power tradeoff, also for injectively encoded finite permutation domains in arbitrary universes. |
 | `variable_time`, `variable_time_optimized` | An `m`-bit input exponent, with optimized bound `m*(120000*B + 4*n)`. |
+| `variable_time_additive_optimized` | Arbitrarily wide input exponents with bound `33000000*(n+1)*B + 200*m*(n+1)`. Together with the preceding result, this gives the minimum of the two asymptotic bounds. |
 | `first_target_state`, `target_reachability` | Eventual recognition of a target predicate and the first visited target state; the absorbing transition costs at most `s + predicate.size + 4*n`. |
 | `halting_computation` | Final configurations on valid initial states, under semantic absorption and termination hypotheses, with the original tradeoff and a first halt before `N` steps. |
 | `batched_fixed_power_optimized` | For `1 ≤ r ≤ N`, size at most `3000000*(r*A + sqrt((n+1)^3*N*r*A))`. The checkpoint dictionary is shared across the batch. |
@@ -160,8 +161,10 @@ finite types in arbitrary universes. Sparse-counter circuit statements use
     lemma uses injectivity of iteration on periodic points. `EventualQueries.lean`
     supplies actual pair-input coalescence circuits, recurring-target circuits,
     and permanent-acceptance circuits with optimized gate bounds. The projection
-    layer also checks time normalization below `2*N`; the faster general live-time
-    circuit using this normalization remains to be connected and accounted for.
+    layer also checks time normalization below `2*N`. `LongTime.lean` connects
+    it to cycle-label circuits and streaming remainders, then powers with only
+    `n+3` internal time bits. All widths and gate costs are checked, giving
+    additive dependence on the original time width.
 
 The construction uses classical choices of checkpoints, finite enumerations,
 and circuit witnesses. It establishes nonuniform existence, not an extracted

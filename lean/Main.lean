@@ -17,6 +17,7 @@ public import Proofs.NavigationCircuits
 public import Proofs.SparseDisplacement
 public import Proofs.StreamingRemainder
 public import Proofs.EventualQueries
+public import Proofs.LongTime
 
 /-!
 # Public results and axiom audit
@@ -162,5 +163,10 @@ namespace IteratedFunctions
 [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms iterate_normalizedTime
+
+/-- info: 'IteratedFunctions.variable_time_additive_optimized' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms variable_time_additive_optimized
 
 end IteratedFunctions

@@ -103,6 +103,9 @@ in `lean/README.md` for precise statements and explicit constants.
 
 The paper and Lean also include O(B)-gate eventual synchronous coalescence
 and recurring/permanent recognizable-target queries.
+Complete visit schedules use O(n B) gates: a success flag, first visit time,
+and return period describe all visits. Lean checks the exact counting formula
+through any deadline as an arithmetic interpretation of that descriptor.
 
 The paper now includes O(B)-gate transient depth and an O(n B)-gate pair-input
 reachability/first-hitting-time theorem. The review records the other proposals

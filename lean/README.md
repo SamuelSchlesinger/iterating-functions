@@ -1,7 +1,7 @@
 # Iterated-function circuits in Lean
 
-This project checks the fixed-power Boolean circuit theorem and eight groups
-of extensions end to end: square-root optimization, permutation inversion,
+This project checks the fixed-power Boolean circuit theorem and its extensions
+end to end: square-root optimization, permutation inversion,
 variable-time iteration, recognizable targets and halting computations, cycle
 labels, reachability and first hitting times, batched evaluation, and the
 matching-exponent lower bound. The upper bounds construct actual CSLib
@@ -55,6 +55,7 @@ natural-number division in integer budgets means floor division.
 | `reachability_hitting_time` | A circuit on `2*n` input bits returning an existence flag and `n+1` time bits, in at most `300000000*(n+1)*B` gates. On positive instances the decoded time is the first hit and is strictly less than `N`. |
 | `first_target_time_optimized` | A target-existence flag and `n+2` first-time bits, with bound `3120000*optimizedBudget n (s+p.size+4*n) N + p.size`. Time is specified only on positive instances and is less than `N`. |
 | `halting_time` | Under semantic absorption and termination, exact first halting times on valid initial states, with bound `3000000*B`. No recognizer circuit is needed. |
+| `visit_schedule_optimized` | A complete visit descriptor on pair inputs: one success flag, `n+1` first-time bits, and `n+1` period bits, with bound `360000000*(n+1)*B`. Period zero encodes a singleton. The theorem specifies all visit times and the number through every deadline. The deadline arithmetic is a semantic interpretation, not an additional circuit-size claim. |
 | `matching_lower_bound` | For `k ≥ 64`, a Boolean permutation circuit on `2*k` bits of size at most `50*(k+1)` has a power for which every implementing circuit has more than `2^k/(1024*(k+1))` gates. The division is integral. |
 | `sparse_counter_centralizer` | If an injective word map `H` commutes with `F`, and `F` differs from increment at `r` inputs, a circuit for `H` has at most `100*(n+1)*(r+1)` gates. `F` need not be a permutation. |
 | `sparse_counter_power` | The same bound for every integer power of a permutation, including negative powers. |
@@ -178,6 +179,13 @@ finite types in arbitrary universes. Sparse-counter circuit statements use
     native first-time circuit. Semantic absorption and termination similarly
     yield halting times without a recognizer cost. These dynamics lemmas use
     `Finite` types in arbitrary universes.
+12. **Describe all visits.** `VisitSchedules.lean` proves that visits after the
+    first occur at exactly the multiples of the target's minimal return
+    period. This identity needs no finiteness assumption. `VisitCounts.lean`
+    proves the bounded counting formula, treating period zero separately.
+    `VisitScheduleCircuits.lean` synthesizes a zero-off-cycle period field
+    and appends it to the navigation result, with correctness for every time
+    and deadline. No enumeration of the visit set is needed.
 
 The construction uses classical choices of checkpoints, finite enumerations,
 and circuit witnesses. It establishes nonuniform existence, not an extracted

@@ -379,7 +379,14 @@ times at the square-root bound are now integrated and mechanized. The target
 time is the depth of the absorbing map, with an explicit success flag; a
 semantic halting theorem needs no recognizer circuit.
 
-The accepted work still includes exact visit schedules and a compressed-checkpoint-forest route
+Complete visit schedules are now integrated and mechanized at O(nB),
+including their exact bounded counting interpretation. The underlying
+progression identity needs no finite-state assumption once the first visit
+is supplied. Its period-zero case encodes a singleton. The circuit bound
+charges the descriptor; no bound for a separate arbitrary-width deadline
+input circuit is being silently included.
+
+The accepted work still includes a compressed-checkpoint-forest route
 to O(B) pair navigation. The forest theorem still needs a complete Lean
 construction and cardinality/ancestor-query proof. Earlier candidate additions
 listed above also remain distinct from checked coverage. Continue with these

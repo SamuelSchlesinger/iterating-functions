@@ -129,6 +129,19 @@ def check_map(f, counts):
             expected = path.index(y) if y in path else None
             assert answer == expected
             counts["hitting-time pairs"] += 1
+            return_period = infos[y][2] if infos[y][1] == 0 else 0
+            actual_count = 0
+            for t in range(2 * n + 2):
+                scheduled = answer is not None and (
+                    t == answer if return_period == 0 else
+                    t >= answer and (t - answer) % return_period == 0)
+                visiting = iterate(infos[x], t) == y
+                assert scheduled == visiting
+                actual_count += visiting
+                formula_count = (0 if answer is None or t < answer else
+                                 1 if return_period == 0 else 1 + (t - answer) // return_period)
+                assert formula_count == actual_count
+                counts["visit schedules and counts"] += 1
             pair, seen = (x, y), set()
             while pair not in seen and pair[0] != pair[1]:
                 seen.add(pair)

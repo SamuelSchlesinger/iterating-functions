@@ -19,6 +19,7 @@ public import Proofs.StreamingRemainder
 public import Proofs.EventualQueries
 public import Proofs.LongTime
 public import Proofs.TargetTimes
+public import Proofs.VisitScheduleCircuits
 
 /-!
 # Public results and axiom audit
@@ -184,5 +185,20 @@ namespace IteratedFunctions
 [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms halting_time
+
+/-- info: 'IteratedFunctions.visit_schedule_optimized' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms visit_schedule_optimized
+
+/-- info: 'IteratedFunctions.visit_schedule_of_first' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms visit_schedule_of_first
+
+/-- info: 'IteratedFunctions.visit_count_of_first' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms visit_count_of_first
 
 end IteratedFunctions

@@ -811,6 +811,38 @@ $N-1$.  Arithmetic may use $n+1$ intermediate bits.  The time field is unspecifi
 $O(n)$-gate mask can set it to zero if desired.
 \end{proof}
 
+\begin{corollary}[Complete visit schedules]\label[corollary]{cor:schedules}
+A circuit of size $O(nB)$, on input $(x,y)$, returns a success flag and
+two integers $d,p$ describing every visit time.  A zero flag denotes no
+visits.  For a positive flag, $d<N$ is the first visit, $0\leq p\leq N$,
+and
+\[
+ \{t\geq0:F^t(x)=y\}=\{d+kp:k\geq0\}.
+\]
+Here $p=0$ for transient $y$, giving the singleton $\{d\}$, and
+$p=\ell(y)$ for cyclic $y$.  The period field uses $n+1$ bits.
+\end{corollary}
+\begin{proof}
+Use \cref{thm:reachability} for the flag and $d$, and \cref{thm:labels}
+and an $O(B)$ cyclicity test for $p$.  After the first visit, a later
+time $t\geq d$ is a visit exactly when $F^{t-d}(y)=y$.  Return times of a
+cyclic point are precisely the multiples of its least positive period.
+A transient point has no positive return.  This proves the descriptor.
+\end{proof}
+
+For example, a visit occurs by deadline $T$ exactly when the flag is
+positive and $d\leq T$.  The number of visits at times $0,\ldots,T$ is
+\[
+ \begin{cases}
+ 0,&\text{flag zero or }T<d,\\
+ 1,&\text{flag positive, }T\geq d,\ p=0,\\
+ 1+\floor{(T-d)/p},&\text{flag positive, }T\geq d,\ p>0.
+ \end{cases}
+\]
+These are arithmetic consequences of the returned descriptor; the
+descriptor bound does not include a circuit for processing an additional
+deadline input of unspecified length.
+
 \paragraph{Relation to navigation data structures.}
 Function powers and path queries have established data-structure
 formulations~\cite{MRRR12,GHN19}.  In particular, nearest labeled
@@ -1499,6 +1531,17 @@ bit can therefore be discarded.  No time-field specification is imposed
 on negative instances.  Intermediate label and navigation words have
 width $n+3$.  A proved shift-and-subtract division circuit supplies
 variable remainders in $O(n^3)$ gates; all arithmetic branches are total.
+
+\texttt{VisitScheduleCircuits.lean} appends the target's minimal return
+period, using zero for a transient target.  Its descriptor has one success
+bit and two $(n+1)$-bit fields, with checked size
+$360000000(n+1)\widehat B$.  The specification describes every visit time
+and proves the displayed counting formula in \cref{cor:schedules}.
+\texttt{VisitSchedules.lean} proves the progression identity and deadline
+test from a first visit on any state type, even an infinite one;
+\texttt{VisitCounts.lean} counts the bounded progression, including period
+zero.  These counting identities are semantic consequences of the record,
+not a gate bound for an additional deadline-processing circuit.
 
 \paragraph{Applications and lower bound.}
 The inversion proof uses $P^{N!-1}=P^{-1}$, also for encoded finite

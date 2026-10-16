@@ -140,7 +140,8 @@ the Boolean ring, keeping payload vectors and Boolean wires in the same type.
    checkpoint hit or a genuine repeated pair. Batcher sorting semantics and
    routing come from the Circuit library; Boolean comparator costs are proved
    here. The repeated-interval decoder adds a hardwired residue's period at
-   most `2*L` times, within the cubic polynomial allowance.
+   most `2*L` times. Width `n+2` prevents overflow on valid witnesses, and
+   the `O(K*n^2)` decoder cost, with `K = 2*L`, fits the main budget.
 3. **Optimize and compose.** `Optimization.lean` proves an integer choice of
    `L` and the real square-root inequality. `Applications.lean` uses factorial
    exponents for inversion and cyclicity. `VariableTime.lean` conditionally
@@ -258,7 +259,9 @@ the Boolean ring, keeping payload vectors and Boolean wires in the same type.
     selecting the cycle length. `SparseCounterTime.lean` composes the native
     circuits and proves both the additive bound and coordinate transport.
     The `n+2` working bits represent a full-length cycle and prevent overflow.
-    Keeping only the encoder gives the cycle-label bound.
+    After two shared constants, encoding and decoding cost at most `220*(n+3)`
+    and `150*(n+3)` gates per interval. The middle time-processing stage costs
+    at most `200*(n+3)*(m+1)` gates. Keeping only the encoder gives the cycle-label bound.
 17. **Navigate sparse permutations from two labels.** `ReducedResidue.lean`
     implements reduced modular subtraction by comparison and shared-carry
     subtraction, in `140*(w+1)` gates at width `w`. `SparseNavigation.lean`

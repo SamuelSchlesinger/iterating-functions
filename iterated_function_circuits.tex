@@ -1,4 +1,4 @@
-% Compile twice with pdflatex.  This source is self-contained; no BibTeX run
+% Compile three times with pdflatex.  This source is self-contained; no BibTeX run
 % or external figure files are needed.  See README.md for draft status.
 \documentclass[11pt]{article}
 \usepackage[T1]{fontenc}
@@ -58,44 +58,30 @@
 
 \begin{abstract}
 Let $F:\bits^n\to\bits^n$ have a Boolean circuit of size $s$, and put
-$A=s+n^3$ and $B=A+\sqrt{n^3 2^nA}$.  We establish three forms of
-compression for finite deterministic dynamics.  First, every fixed
-iterate $F^T$ has a bounded-fan-in circuit of size $O(B)$, independently
-of the magnitude and bit length of $T\geq0$, without an injectivity
-assumption.  Sparse checkpoints and sorting-based lookup give this bound,
-with every lookup and arithmetic gate charged.  We also give variable-time
-and shared batched versions.
+$A=s+n^3$ and $B=A+\sqrt{n^3 2^nA}$.  Every fixed iterate $F^T$ has a
+bounded-fan-in circuit of size $O(B)$, independently of the magnitude of
+$T\geq0$, without assuming injectivity.  The construction uses sparse
+checkpoints and sorting-based lookup, with every access and arithmetic gate
+charged.  It is nonuniform and gives no efficient preprocessing algorithm
+from a transition circuit.
 
-Second, the same construction supports functional-graph queries.  Cycle
-labels, transient depth, reachability, exact first hitting times, and
-complete visit descriptors each cost $O(B)$.  A compressed checkpoint
-forest supports the pair-input queries.  Polynomial-size
-transitions and target predicates therefore give
-$2^{n/2}\poly(n)$-size circuits for navigation and eventual behavior,
-including reachability with two $n$-bit inputs.
+For even $n$, an explicit linear-size permutation has almost all powers of
+complexity $\Omega(2^{n/2}/n)$ under a uniform exponent modulo its order.
+This matches the upper bound's exponential scale, but identifies no explicit
+hard power; hard exponents necessarily have exponentially many binary digits.
+The upper-bound construction also gives $O(B)$-gate cycle labels, transient
+depth, pair-input reachability, exact first hitting times, and complete visit
+descriptors, together with input-time and shared batched versions.
 
-Third, compact orbit coordinates yield stronger bounds for structured
-systems.  If a permutation differs from a counter at $r$ states, every
-signed fixed power costs $O(n(r+1))$, and an $m$-bit input time costs
-$O(n(r+m+1))$.  An explicit edit list permits polynomial-time construction
-of the orbit chart, even when a single orbit visits all $2^n$ states.
-Transporting an iterate charges both encoding and decoding.
-The same chart answers pair-input reachability and exact hitting-time
-queries in $O(n(r+1))$ gates.
-A separate structural bound gives $O(2^q(q+p^2))$ gates when $q$
-autonomous control bits drive a $p$-bit affine payload.
-
-The general bounds are nonuniform in the transition and fixed exponent;
-they do not assert efficient preprocessing from a transition circuit.
-For even $n$, an explicit linear-size permutation has almost all powers of complexity
-$\Omega(2^{n/2}/n)$ when the exponent is uniform modulo its order.
-Those hard powers require exponentially long binary exponents, and the
-counting argument does not identify an explicit hard power.  Lean checks
-the general bounds, graph-query circuits, lower bounds, affine-controller
-bounds, and both sparse-counter iteration bounds; the polynomial-time
-edit-list compiler remains outside that boundary.
-The underlying checkpoint and block ideas have established antecedents;
-historical priority for the circuit formulations remains unresolved.
+Structured transitions admit stronger bounds.  A permutation differing from
+a counter at $r$ states has $O(n(r+1))$-gate signed fixed powers and navigation,
+and $O(n(r+m+1))$-gate iteration for an $m$-bit input time.  Its orbit chart
+can be constructed in polynomial time from an explicit edit list.  An
+autonomous $q$-bit controller with a $p$-bit affine payload gives
+$O(2^q(q+p^2))$-gate fixed powers.  Lean checks the circuit bounds; the
+edit-list compiler remains outside that boundary.  The checkpoint and block
+methods have established antecedents, and historical priority of these
+circuit formulations remains unresolved.
 \end{abstract}
 
 \noindent\textbf{Keywords.} Boolean circuit complexity; function iteration;
@@ -151,98 +137,7 @@ The constant hidden in $O(\log n)$ may depend on the polynomial bound for
 $\CC(F_n)$, but not on $T$.
 \end{corollary}
 
-The quantifiers in \cref{thm:main} are important.  For each $F$ and $T$ we
-construct a circuit that works for \emph{every} initial state.  We do not
-construct a single circuit taking an arbitrary-length exponent as input.
-Write $B=A+\sqrt{n^3NA}$.  For an $m$-bit input exponent, combining
-binary powering with eventual-period normalization gives
-\begin{equation}\label{eq:intro-variable}
-  \CC\bigl((x,t)\mapsto F^t(x)\bigr)
-  =O\!\left(\min\{mB,nB+nm\}\right),
-  \qquad t\in\bits^m.
-\end{equation}
-We prove this in \cref{sec:variable}.  In particular, $m=n$ preserves the
-exponent in \cref{eq:half}.  We also give a shared-dictionary construction
-for $r$ independent initial states, replacing the main square-root term
-$r\sqrt{n^3NA}$ of separate constructions by $\sqrt{rn^3NA}$; see
-\cref{sec:batch}.
-
-For arbitrary fixed powers, the exponent $1/2$ cannot be improved in
-general.  In \cref{sec:lower} we give an explicit family of permutations
-$P_n$ with $\CC(P_n)=O(n)$ and
-\begin{equation}\label{eq:intro-lower}
-  \max_{T\geq 0}\CC(P_n^T)=2^{n/2+O(\log n)}
-\end{equation}
-for even $n$.  The hard exponent is obtained by counting over a very large
-cyclic group of powers.  This is not an explicit exponential circuit lower
-bound: the permutation is explicit, but the hard power is not specified
-by an efficient procedure.  Moreover, the same permutation has an easy
-iterator when the time parameter has polynomially many bits.
-
-For a permutation $P$, choosing $T=\ord(P)-1$ recovers a circuit for
-$P^{-1}$.  Thus every polynomial-size permutation on $n$ bits admits an
-exact inverter of size $2^{n/2+O(\log n)}$.  This exponential upper bound
-is compatible with one-wayness against polynomial-size circuits.
-We explain this consequence and its limitations in \cref{sec:one-way}.
-
-The graph-query results recover considerably more than one distant
-state.  They compute cycle labels, transient depth, exact first hitting
-times, visit schedules, and eventual target behavior.  For polynomial-size
-transitions, and polynomial-size predicates where needed, every such query
-has a $2^{n/2}\poly(n)$-gate circuit.  Reachability takes both $x$ and $y$
-as inputs, totaling $2n$ bits; its exponential scale is still $2^{n/2}$,
-set by the width of the evolving state.  The sparse-counter results improve
-this scale when an orbit has compact coordinates, even if that orbit
-contains every state.
-
-Table~\ref{tab:results} compares the bounds and their formalized coverage.
-For target queries put $A_P=s+a+n^3$ and
-$B_P=A_P+\sqrt{n^3NA_P}$, where $a$ is the fixed predicate's circuit size.
-
-\begin{table}[htbp]
-\centering
-\small
-\setlength{\tabcolsep}{3pt}
-\renewcommand{\arraystretch}{1.13}
-\begin{tabular}{@{}>{\raggedright\arraybackslash}p{.27\linewidth}
-  >{\raggedright\arraybackslash}p{.23\linewidth}
-  >{\raggedright\arraybackslash}p{.33\linewidth}
-  >{\raggedright\arraybackslash}p{.12\linewidth}@{}}
-\toprule
-Query & Input parameters & Circuit size & Lean \\
-\midrule
-\multicolumn{4}{@{}l}{\emph{General transitions on $n$-bit states}}\\
-Fixed iterate & $x$; fixed $T\geq0$ & $O(B)$ & Checked \\
-Input-time iterate & $x,t$; $t\in\bits^m$ & $O(\min\{mB,nB+nm\})$ & Checked \\
-Cycle labels and depth & $x$ & $O(B)$ & Checked \\
-Reachability, first hit,\newline visit descriptor & $x,y\in\bits^n$ & $O(B)$ & Checked \\
-Synchronous coalescence & $x,y\in\bits^n$ & $O(B)$ & Checked \\
-First target; recurring\newline or permanent target & $x$; fixed $P$ of size $a$ & $O(B_P)$ & Checked \\
-Shared fixed powers & $k$ states; fixed exponents & $O(kA+\sqrt{kn^3NA})$ & Checked \\
-\midrule
-\multicolumn{4}{@{}l}{\emph{Autonomous $q$-bit controller and $p$-bit affine payload, $q+p=n$}}\\
-Fixed iterate & $u,v$; fixed $T\geq0$ & $O(2^q(q+p^2))$ & Checked \\
-Input-time iterate & $u,v,t$; $t\in\bits^m$ & $O(m2^q(q+p^2))$ & Checked \\
-\midrule
-\multicolumn{4}{@{}l}{\emph{Sparse permutations with $r$ edits in counter coordinates}}\\
-Signed fixed iterate & $x$; fixed $T\in\mathbb Z$ & $O(n(r+1))$ & Checked \\
-Input-time iterate & $x,t$; $t\in\bits^m$ & $O(n(r+m+1))$ & Checked \\
-Cycle labels & $x$ & $O(n(r+1))$ & Checked \\
-Reachability, first hit,\newline visit descriptor & $x,y\in\bits^n$ & $O(n(r+1))$ & Checked \\
-Changed coordinates & $x$; fixed $T\in\mathbb Z$ & $K+O(n(r+1))$ & Checked \\
-\bottomrule
-\end{tabular}
-\caption{Comparison of universal and structural circuit bounds.
-Here $F$ is fixed, $m\geq1$, $1\leq k\leq N$, and
-$K=\CC(\phi)+\CC(\phi^{-1})$ charges both coordinate maps in
-\cref{cor:coordinates}.
-``Checked'' means a native Boolean-circuit existence theorem with gate
-accounting.  Input-time transport also adds $K$ to the counter bound.
-The polynomial-time edit-list compiler is separate and unmechanized.
-A visit descriptor specifies all visits; processing an additional deadline
-is not included in these rows.}
-\label{tab:results}
-\end{table}
+For each fixed $F$ and $T$, the circuit works for every initial state.
 
 \subsection{Proof overview}
 
@@ -272,6 +167,66 @@ resolve all its queries together.  Sorting the queries and dictionary
 records reduces this cost to
 $\poly(n)(L+N/L)$ Boolean gates.  Combining the initial and final short
 simulations with this batched lookup gives \cref{eq:tradeoff}.
+
+\subsection{Further results and sharpness}
+
+The exponent $1/2$ is sharp for arbitrary fixed powers.  In
+\cref{sec:lower}, an explicit linear-size permutation has almost all powers
+of complexity $\Omega(2^{n/2}/n)$, when the exponent is uniform modulo its
+order.  The hard powers are selected by counting, require exponentially
+long binary exponents, and are not explicitly identified.  The same
+permutation has a polynomial-size iterator for polynomial-width input times.
+
+Write $B=A+\sqrt{n^3NA}$.  The extensions in \cref{sec:variable,sec:batch}
+handle input exponents and shared evaluation.  The graph-query circuits
+in \cref{sec:structure} compute cycle labels, transient depth, reachability,
+first hitting times, visit descriptors, and synchronous coalescence in
+$O(B)$ gates.  Pair queries take two $n$-bit states; their exponential
+scale remains $2^{n/2}$ for polynomial-size transitions.
+Recognizable targets include eventual membership and recurring or permanent
+acceptance.  For a predicate of size $a$, put $A_P=s+a+n^3$ and
+$B_P=A_P+\sqrt{n^3NA_P}$.
+
+\Cref{sec:structured} gives stronger bounds for autonomous controllers and
+sparse counter edits.  For the latter, an explicit edit list permits
+polynomial-time chart construction; transport to other coordinates charges
+their encoding and decoding circuits.  Choosing $T=\ord(P)-1$ also recovers
+the earlier square-root permutation-inversion bound, compatible with
+polynomial-size one-wayness; see \cref{sec:one-way}.
+
+\begin{table}[htbp]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{.29\linewidth}
+  >{\raggedright\arraybackslash}p{.29\linewidth}
+  >{\raggedright\arraybackslash}p{.37\linewidth}@{}}
+\toprule
+Query & Input parameters & Circuit size \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{General transitions on $n$-bit states}}\\
+Fixed iterate & $x$; fixed $T\geq0$ & $O(B)$ \\
+Input-time iterate & $x,t$; $t\in\bits^m$ & $O(\min\{mB,nB+nm\})$ \\
+Graph navigation & $x$ or $x,y$ & $O(B)$ \\
+Recognizable targets & $x$; fixed $P$ of size $a$ & $O(B_P)$ \\
+Shared fixed powers & $k$ states; common fixed $T$ & $O(kA+\sqrt{kn^3NA})$ \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Autonomous $q$-bit controller and $p$-bit affine payload, $q+p=n$}}\\
+Fixed iterate & $u,v$; fixed $T\geq0$ & $O(2^q(q+p^2))$ \\
+\midrule
+\multicolumn{3}{@{}l}{\emph{Counter permutations with $r$ edited successors}}\\
+Signed fixed iterate;\newline labels and navigation & $x$ or $x,y$; fixed $T\in\mathbb Z$ & $O(n(r+1))$ \\
+Input-time iterate & $x,t$; $t\in\bits^m$ & $O(n(r+m+1))$ \\
+\bottomrule
+\end{tabular}
+\caption{Circuit bounds for fixed transitions, with $m\geq1$ and
+$1\leq k\leq N$.  An $m$-bit input time multiplies the affine-controller
+bound by $m$.  Visit descriptors specify all visits; additional
+deadline-processing circuits are not included.
+All listed bounds are formalized; \cref{sec:lean} records the checked boundary.}
+\label{tab:results}
+\end{table}
 
 \subsection{Related work and status of the formulation}\label{sec:related}
 
@@ -414,7 +369,7 @@ satisfy $i<j$.  The remaining comparisons and selection use at most
 $O(Q(w+\log(Q+2)))$ gates.
 \end{proof}
 
-\section{Sparse checkpoints in functional graphs}\label{sec:checkpoints}
+\subsection{Sparse checkpoints in functional graphs}\label{sec:checkpoints}
 
 The functional graph of a map $F$ has one vertex for each state and the
 edge $v\to F(v)$ at every vertex.  Each weakly connected component has a
@@ -652,825 +607,57 @@ $F(F^d(x))=F^d(F(x))$.  Compute $F^d(x)$ and apply
 Optimize $L$ as in \cref{eq:L-choice}, replacing $N$ by $M_d$.
 \end{proof}
 
-\section{Input times and shared evaluation}
+\subsection{Permutation inversion and one-way functions}\label{sec:one-way}
 
-\subsection{An iteration count supplied as input}\label{sec:variable}
-
-\begin{definition}
-For $m\geq 1$, define
+\begin{corollary}[Exact permutation inversion]\label[corollary]{cor:inverse}
+Let $P:\bits^n\to\bits^n$ be a permutation with $\CC(P)\leq s$, and put
+$N=2^n$ and $A=s+n^3$.  For every $1\leq L\leq N$,
 \[
-  \Iter_{F,m}:\bits^n\times\bits^m\longrightarrow\bits^n,
-  \qquad \Iter_{F,m}(x,t)=F^{\operatorname{val}(t)}(x),
+  \CC(P^{-1})
+  =O\!\left(Ls+n^3\left(L+\frac NL\right)\right).
 \]
-where $\operatorname{val}(t)$ is the nonnegative integer encoded by $t$.
-\end{definition}
-
-\begin{theorem}[Variable-time iteration]\label{thm:variable}
-Under the assumptions of \cref{thm:main}, for every $m\geq 1$,
-\begin{equation}\label{eq:variable}
-  \CC(\Iter_{F,m})
-  =O\!\left(m\left(A+\sqrt{n^3NA}\right)\right).
-\end{equation}
 In particular,
 \[
-  \CC(\Iter_{F,n})
-  =O\!\left(n\left(A+\sqrt{n^3NA}\right)\right).
+  \CC(P^{-1})=O\!\left(A+\sqrt{n^3NA}\right).
 \]
-If $s$ and $m$ are polynomial in $n$, then
-$\CC(\Iter_{F,m})\leq 2^{n/2+O(\log n)}$.
-\end{theorem}
-
-\begin{proof}
-Write $t=\sum_{j=0}^{m-1}t_j2^j$.  For each $j$, apply
-\cref{thm:main} directly to the original map $F$ and the fixed exponent
-$2^j$, obtaining a circuit for $G_j=F^{2^j}$.  Starting with $v_0=x$, use
-\[
-  v_{j+1}=
-  \begin{cases}
-    G_j(v_j),&t_j=1,\\
-    v_j,&t_j=0.
-  \end{cases}
-\]
-Inductively,
-$v_j=F^{\sum_{a<j}t_a2^a}(x)$, so $v_m=F^t(x)$.
-There are $m$ circuits of the size in \cref{eq:optimized} and $m$
-$n$-bit multiplexers.  The extra $O(mn)$ gates are absorbed by the claimed
-bound.  Each $G_j$ is constructed from $F$ using the theorem; it is not
-obtained by duplicating the circuit for $G_{j-1}$.
-\end{proof}
-
-\begin{theorem}[Long input times]\label{thm:long-time}
-Write $B=A+\sqrt{n^3NA}$.  For every $m\geq1$,
-\[
- \CC(\Iter_{F,m})=O\!\left(\min\{mB,\ nB+nm\}\right).
-\]
-Thus the cost of processing additional time bits is additive once the
-state width is fixed.
-\end{theorem}
-\begin{proof}
-The first bound is \cref{thm:variable}.  For the second, compute the exact
-eventual cycle length $\ell=\ell(x)$ in $O(B)$ gates using
-\cref{thm:labels}.  Replace the input time by
-\[
- u=\begin{cases}
- t,&t<N,\\
- N+(t-N)\bmod\ell,&t\geq N.
- \end{cases}
-\]
-Then $u<2N$ and $F^u(x)=F^t(x)$: in the second case both times are past
-cycle entry and have the same residue modulo $\ell$.
-
-Compute $t\bmod\ell$ by streaming its bits from most significant to least
-significant, retaining an $O(n)$-bit remainder.  Each step doubles the
-remainder, adds one bit, and conditionally subtracts $\ell$; a spare bit
-prevents overflow.  Shared-carry addition and subtraction give $O(n)$
-gates per input bit, including comparison and selection.  The bounded
-modular correction by $N$ and the final selection cost $O(n^3+m)$ with
-the arithmetic circuits already used in the proof.  Hence forming $u$
-costs $O(nm+n^3)$, and its $n+1$ bits feed \cref{thm:variable} at cost
-$O(nB)$.  Since $n^3\leq B$, the second bound follows.  If $m\leq n$,
-one may simply use the original $m$-stage construction.
-\end{proof}
-
-\subsection{Sharing a dictionary among independent trajectories}
-\label{sec:batch}
-
-Let
-\[
-  B_{F,T,r}(x_1,\ldots,x_r)
-   =\bigl(F^T(x_1),\ldots,F^T(x_r)\bigr).
-\]
-The inputs $x_1,\ldots,x_r$ are independent $n$-bit words.  The following
-construction uses one checkpoint dictionary for all of them.
-
-\begin{theorem}[Batched fixed powers]\label{thm:batch}
-Under the assumptions of \cref{thm:main}, for every $1\leq r\leq N$,
-$T\geq 0$, and $1\leq L\leq N$,
-\begin{equation}\label{eq:batch-tradeoff}
-  \CC(B_{F,T,r})
-   =O\!\left(rLs+n^3\left(rL+\frac{N}{L}\right)\right).
-\end{equation}
-Consequently,
-\begin{equation}\label{eq:batch-opt}
-  \CC(B_{F,T,r})
-   =O\!\left(rA+\sqrt{rn^3NA}\right).
-\end{equation}
-\end{theorem}
-
-\begin{proof}
-Set $K=2L$.  If $T<K$, unroll $T$ copies of $F$ independently for each
-input.  Otherwise use the checkpoint set and dictionary from
-\cref{sec:fixed}.  Generate the first $K+1$ states of all $r$ trajectories.
-Together with one copy of the dictionary, these give
-\[
-  R=|H|+r(K+1)=O(N/L+rL)
-\]
-records.  Attach the trajectory number and within-trajectory position to
-each query.  Because $r\leq N$ and $L\leq N$, the record width and
-$\log(R+2)$ are $O(n)$.  One application of \cref{lem:lookup} therefore
-resolves all queries in $O(n^3(N/L+rL))$ gates and returns them in their
-original order.
-
-Select a matching checkpoint separately within each trajectory.  Run
-repeated-state detection separately on each trajectory as well; this
-costs $O(rn^3L)$ gates and does not confuse a collision between two
-different trajectories with a repetition along one trajectory.
-The correction trajectory and output selection are also performed
-separately for each input.  The fixed residue table may be implemented
-with a separate $O(nL)$-gate lookup for each trajectory, whose total
-cost is absorbed by $O(rn^3L)$.  The two simulation phases together cost
-$O(rLs)$ gates.  This proves \cref{eq:batch-tradeoff}.
-
-\begin{samepage}
-Choose
-\[
-  L=\max\left\{1,\ceil{\sqrt{n^3N/(rA)}}\right\}.
-\]
-\end{samepage}
-As before $1\leq L\leq N$.  If $rA\leq n^3N$, then
-$rAL=O(\sqrt{rn^3NA})$ and $n^3N/L=O(\sqrt{rn^3NA})$.
-If $rA>n^3N$, the choice is $L=1$ and the cost is $O(rA)$.
-This gives \cref{eq:batch-opt}.
-\end{proof}
-
-\begin{corollary}[Independent input times]\label[corollary]{cor:batch-variable}
-For $1\leq r\leq N$ and $m\geq 1$, the map
-\[
-  \bigl((x_1,t_1),\ldots,(x_r,t_r)\bigr)
-   \longmapsto
-  \bigl(F^{t_1}(x_1),\ldots,F^{t_r}(x_r)\bigr),
-  \qquad t_i\in\bits^m,
-\]
-has a circuit of size
-\begin{equation}\label{eq:batch-variable}
-  O\!\left(m\left(rA+\sqrt{rn^3NA}\right)\right).
-\end{equation}
+If $s=n^{O(1)}$, an inverter of size $2^{n/2+O(\log n)}$ is correct on
+every input.
 \end{corollary}
 
 \begin{proof}
-Use the binary-power construction of \cref{thm:variable}.  At stage $j$,
-apply \cref{thm:batch} with update map $F$ and exponent $2^j$ on the $r$
-current states, then use the $j$th bit of each $t_i$ to select whether to
-retain or update that state.  The $O(mrn)$ selection gates are absorbed
-by \cref{eq:batch-variable}.
+Let $D=\ord(P)$, the least common multiple of its cycle lengths.
+Then $P^D$ is the identity, so $P^{-1}=P^{D-1}$.
+Apply \cref{thm:main}.  The exponent may have a long binary expansion,
+but the theorem charges only the resulting tables and their access gates.
 \end{proof}
 
-For polynomial $s$ and $m$, and $r=\floor{2^{\alpha n}}$ with fixed
-$0\leq\alpha\leq 1$, \cref{eq:batch-variable} is at most
-\[
-  2^{(1+\alpha)n/2+O(\log n)}.
-\]
-This is an upper-bound sharing statement.  It is not a direct-sum
-separation against optimal circuits for a single trajectory.
+This recovers the permutation-inversion circuit bound already discussed
+by Hirahara, Ilango, and Williams~\cite[Section~3.2]{HIW24}.
+It identifies an earlier special case of the fixed-power theorem.
 
-\section{Computing the Structure of Functional Graphs}\label{sec:structure}
+One-wayness against polynomial-size circuits requires every such inverter
+to have negligible success on the image of a uniform input
+\cite[Section~7.1.1]{Goldreich08}.  The exponential-size exact inverter above
+is compatible with that requirement.  It does rule out security against
+all circuits of size $2^{(1/2+\varepsilon)n}$, for any fixed
+$\varepsilon>0$ and sufficiently large $n$; it establishes no security
+at smaller sizes.
 
-Write $B=A+\sqrt{n^3NA}$.  For a state $x$, let $\mu(x)$ be its distance
-to its eventual cycle, let $\ell(x)$ be that cycle's length, and let $c(x)$
-be the lexicographically least state on the cycle.  Define
-$\phi(x)\in\{0,\ldots,\ell(x)-1\}$ by
-\begin{equation}\label{eq:phase}
- F^t(x)=F^{(\phi(x)+t)\bmod\ell(x)}(c(x))\qquad(t\geq\mu(x)).
-\end{equation}
-The phase is an eventual-orbit label; it does not assert that a transient
-state itself lies on the cycle.  These labels are unique.  Cycle lengths
-are encoded with $n+1$ bits, since a cycle may have length $N$.
+For noninjective maps, a forward power need not find a preimage.  For
+example, the map with values $(0,0,1,0)$ on $\{0,1,2,3\}$ has unique
+preimage $2$ of $1$, while the forward orbit of $1$ stays in $\{0,1\}$.
+Hirahara, Ilango, and Williams give a separate general-function inversion
+bound of $2^{4n/5}\poly(s+n)$ gates~\cite[Theorem~3.5]{HIW24}.
+Encoding exhaustive preimage search as iteration retains both an $n$-bit
+target and an $n$-bit candidate, so the present theorem gives only
+$2^{n+O(\log n)}$ gates for that construction.
 
-\begin{theorem}[Cycle labels]\label{thm:labels}
-A circuit of size $O(B)$ computes $(\ell(x),c(x),\phi(x))$ for every $x$.
-\end{theorem}
-\begin{proof}
-Fix $L$ and use the checkpoint construction with $K=2L$.  Hardwire the
-three labels for each checkpoint.  If $F^d(x)=h$ for $d\leq K$, output
-\[
- \ell(x)=\ell(h),\qquad c(x)=c(h),\qquad
- \phi(x)=(\phi(h)-d)\bmod\ell(h).
-\]
-This follows by applying \cref{eq:phase} after both transients have ended.
-All records still have $O(n)$ bits.
-
-If there is no checkpoint hit, the prefix repeats.  Sort prefix records
-by state and then by original index.  Among adjacent equal-state pairs,
-choose the pair with smallest second index $j$, retaining its first
-index $i$.  This is the first repetition in the original trajectory:
-any earliest second occurrence is adjacent to its first occurrence in
-its equal-state run.  The states before $j$ are distinct, so
-$i=\mu(x)$ and $[i,j)$ consists of exactly one cycle traversal.
-Set $\ell=j-i$, and select the minimum state $c=x_p$ over $i\leq p<j$.
-Then $\phi(x)=(-p)\bmod\ell$.  Minimum selection and the interval mask
-cost $O(nK)$ gates, and word arithmetic costs $O(n^2)$ gates.
-Sorting and lookup cost $O(n^3(L+N/L))$, while the prefix costs $O(Ls)$.
-Optimizing $L$ proves the claim.  Discarded branches use safe positive
-dummy moduli, as in the fixed-power construction.
-\end{proof}
-
-\begin{theorem}[Transient depth]\label{thm:depth}
-The exact transient depth $\mu(x)$ is computable by a circuit of size $O(B)$.
-\end{theorem}
-\begin{proof}
-Put $D=N!$ and $R=F^D$.  Every trajectory is cyclic after $N$ steps,
-every cycle length divides $D$, and $D\geq N$.  Thus $R$ maps into the
-cyclic states, fixes each such state, and satisfies $R^2=R$.  It commutes
-with all iterates of $F$, so
-\begin{equation}\label{eq:projection-depth}
- F^i(x)=F^i(R(x))\quad\Longleftrightarrow\quad i\geq\mu(x).
-\end{equation}
-Indeed, equality is equivalent to $F^i(x)=R(F^i(x))$, which is exactly
-cyclicity.  The projection costs $O(B)$ gates by \cref{thm:main}.
-
-Fix a checkpoint parameter $L$ and set $K=2L$.  Retain the first $K+1$
-states of both trajectories and compare corresponding states.  If the
-states at position $K$ agree, select the first equality; its index is
-$\mu(x)$.  Otherwise $\mu(x)>K$, so the original prefix has no repetition
-and must meet a checkpoint $h=F^d(x)$ with $d<K$.  Every such hit is
-transient and satisfies $\mu(x)=d+\mu(h)$.
-
-Hardwire $\mu(h)$ with each checkpoint and resolve all prefix queries
-using \cref{lem:lookup}.  Either branch uses $O(n)$-bit records; comparing,
-selecting, and adding indices cost $O(nL)$ gates.  The two prefixes and
-shared lookup cost $O(Ls+n^3(L+N/L))$.  Use the same $L$ for the projection
-and these operations, then optimize as in \cref{eq:L-choice}.
-\end{proof}
-
-\begin{lemma}[Compressed checkpoint forest]\label[lemma]{lem:checkpoint-forest}
-Let $H$ be the checkpoint set from \cref{lem:checkpoints}.  Cut the outgoing
-edge of every cyclic vertex, and let $S$ be the union of the paths from
-$H$ to their first cyclic vertices, including both endpoints.  There is
-a set $J$ with $H\subseteq J\subseteq S$ and $|J|\leq2|H|$ such that:
-\begin{enumerate}
-\item Every root and every branching vertex of the forest on $S$ lies in $J$.
-\item From each nonroot $a\in J$, the next vertex of $J$ is reached after
-some $1\leq d_a\leq2L$ steps.  The segments
-$a,F(a),\ldots,F^{d_a-1}(a)$ are pairwise disjoint.
-\item Each $a\in J$ has labels $p(a),q(a)<N$ such that, for $a,h\in J$,
-\[
- p(a)\leq p(h)\leq q(a)
- \quad\Longleftrightarrow\quad
- F^t(h)=a\text{ for some }0\leq t\leq\mu(h).
-\]
-\end{enumerate}
-\end{lemma}
-\begin{proof}
-Take $J$ to be $H$ together with the roots and branching vertices of $S$.
-Every leaf belongs to $H$: any other vertex on a checkpoint path has a
-predecessor on that path.  In a rooted forest, the number of roots plus
-the number of vertices with at least two children is at most the number
-of leaves.  Indeed, summing the numbers of children gives the number of
-nonroot vertices; a branching vertex contributes at least two.  Therefore
-$|J|\leq |H|+|\text{leaves}|\leq2|H|$.
-
-Apply checkpoint coverage to $F(a)$.  A checkpoint hit gives a positive
-hit from $a$ within $2L$ steps; a repetition gives cycle entry within $L$
-steps, where a root is marked.  Hence the next marked vertex is at
-distance at most $2L$.  Between marks, each vertex of $S$ has a unique
-predecessor in $S$, so two such segments cannot merge.  Finally order
-vertices by a preorder traversal of the cut forest.  Descendants of a
-vertex occupy a contiguous interval; its first and last ranks give
-$p,q$.  Only the labels of $J$ need to be stored.  The Lean proof obtains
-the same interval property by lexicographically ordering root-to-vertex
-paths, without formalizing a traversal algorithm.
-\end{proof}
-
-\begin{theorem}[Reachability and first hitting times]\label{thm:reachability}
-A circuit of size $O(B)$, on input $(x,y)$, decides whether
-$F^t(x)=y$ for some $t\geq0$ and returns the least such $t$ when it exists.
-The output may use a separate existence flag and $n$ time bits.
-\end{theorem}
-\begin{proof}
-Use a common parameter $L$ in the depth and cycle-label constructions.
-Write $K=2L$ and construct the forest of \cref{lem:checkpoint-forest}.
-Store a dictionary of the marked vertices $a\in J$, with their states,
-depths, and interval labels.  A second dictionary has one key
-$F^{d_a-1}(a)$ for each nonroot mark $a$, with the same payload for $a$.
-These last-predecessor keys are distinct by disjointness of the segments.
-Both dictionaries have $O(N/L)$ records of $O(n)$ bits.
-
-Suppose first that $y$ is transient.  Generate the prefixes of $x$ and
-$y$ through time $K$.  If $y$ occurs in the prefix of $x$, accept.
-Otherwise select any marked vertex $h$ in that prefix; if none exists,
-reject.  To select a candidate ancestor $a$, use $a=y$ if $y\in J$.
-Otherwise query the second dictionary on the prefix of $y$, retain only
-matches with $\mu(a)\geq\mu(y)$, and select any retained record.  Reject
-if there is no such record.  Finally accept exactly when
-\[
- y\in\{a,F(a),\ldots,F^K(a)\}
- \quad\hbox{and}\quad p(a)\leq p(h)\leq q(a).
-\]
-The first test uses a third short prefix.  It is essential for rejecting
-side branches outside $S$.
-
-Every acceptance is sound: $x$ reaches $h$, the interval test says that
-$h$ reaches $a$, and the verification prefix reaches $y$.  Conversely,
-suppose $x$ reaches a transient $y$ beyond its inspected prefix.
-That prefix cannot repeat and must contain a checkpoint.  Every selected
-mark $h$ precedes $y$, so $y\in S$.  If $y$ is unmarked, it lies in a
-unique compressed segment, whose last-predecessor key appears within
-$K$ steps of $y$.  Its lower endpoint passes the depth filter.
-Moreover, every retained key has the same property: if
-$F^j(y)=F^{d_a-1}(a)$ and $\mu(a)\geq\mu(y)$, decreasing depth gives
-$j\leq d_a-1$.  Unique predecessors inside the segment then give
-$y=F^{d_a-1-j}(a)$.  A marked $h$ can reach this segment only through
-$a$.  Thus the selected record passes both final tests.  The marked-target
-case takes $a=y$ directly.
-
-Three prefixes cost $O(Ls)$ gates.  Shared lookup costs
-$O(n^3(L+N/L))$, and depth filtering, record selection, prefix equality,
-and interval comparisons add $O(nL+n^3)$ gates.  Depths and cycle labels
-fit the same tradeoff.  Optimization therefore gives $O(B)$ gates.
-For a positive transient query, the first hitting time is simply
-$\mu(x)-\mu(y)$, since depth decreases by one on each transient step.
-
-If $y$ is cyclic, it is reachable exactly when $c(x)=c(y)$.  On a positive
-instance its first hitting time is
-\[
- \mu(x)+\bigl((\phi(y)-\phi(x)-\mu(x))\bmod\ell(x)\bigr),
-\]
-where the parenthesized residue lies in $[0,\ell(x)-1]$.  This is the
-first time on or after entry into the cycle with the required phase.
-Finally $\mu(x)+\ell(x)\leq N$, so every first hitting time is at most
-$N-1$.  Arithmetic may use $n+1$ intermediate bits.  The time field is unspecified on negative instances; an additional
-$O(n)$-gate mask can set it to zero if desired.
-\end{proof}
-
-\begin{corollary}[Complete visit schedules]\label[corollary]{cor:schedules}
-A circuit of size $O(B)$, on input $(x,y)$, returns a success flag and
-two integers $d,p$ describing every visit time.  A zero flag denotes no
-visits.  For a positive flag, $d<N$ is the first visit, $0\leq p\leq N$,
-and
-\[
- \{t\geq0:F^t(x)=y\}=\{d+kp:k\geq0\}.
-\]
-Here $p=0$ for transient $y$, giving the singleton $\{d\}$, and
-$p=\ell(y)$ for cyclic $y$.  The period field uses $n+1$ bits.
-\end{corollary}
-\begin{proof}
-Use \cref{thm:reachability} for the flag and $d$, and \cref{thm:labels}
-and an $O(B)$ cyclicity test for $p$.  After the first visit, a later
-time $t\geq d$ is a visit exactly when $F^{t-d}(y)=y$.  Return times of a
-cyclic point are precisely the multiples of its least positive period.
-A transient point has no positive return.  This proves the descriptor.
-\end{proof}
-
-For example, a visit occurs by deadline $T$ exactly when the flag is
-positive and $d\leq T$.  The number of visits at times $0,\ldots,T$ is
-\[
- \begin{cases}
- 0,&\text{flag zero or }T<d,\\
- 1,&\text{flag positive, }T\geq d,\ p=0,\\
- 1+\floor{(T-d)/p},&\text{flag positive, }T\geq d,\ p>0.
- \end{cases}
-\]
-These are arithmetic consequences of the returned descriptor; the
-descriptor bound does not include a circuit for processing an additional
-deadline input of unspecified length.
-
-\paragraph{Relation to navigation data structures.}
-Function powers and path queries have established data-structure
-formulations~\cite{MRRR12,GHN19}.  In particular, nearest labeled
-successors include reachability of a fixed singleton target.
-Those results charge representation space and query time in a RAM model.
-Here the given object is a succinct transition circuit, and every gate
-accessing a nonuniform table is charged.  These differences specify the
-claim being compared; they do not establish historical novelty of the
-present bounds.  These theorems are also checked as Boolean circuit
-constructions in Lean, with the implementation choices described in
-\cref{sec:lean}.
-
-\subsection{Recognizable targets and terminating computations}
-
-\begin{corollary}[First recognizable target]\label[corollary]{cor:target}
-Let $P:\bits^n\to\bits$ have circuit size $a$, and put
-$A_P=s+a+n^3$.  Eventual target membership,
-\[
- H(x)=1\quad\Longleftrightarrow\quad
- \exists t\geq0:\ P(F^t(x))=1,
-\]
-has a circuit of size $O(A_P+\sqrt{n^3NA_P})$.  Within the same bound,
-a circuit returns the first visited target state and its exact first
-visit time on positive instances.
-\end{corollary}
-\begin{proof}
-Set $G(x)=x$ when $P(x)=1$ and $G(x)=F(x)$ otherwise.  This costs
-$O(s+a+n)$ gates.  A first target, if one exists, is visited before
-step $N$, since an earlier repeated state would preclude a later first
-visit.  Hence $G^N(x)$ is the first target state on positive instances,
-and $H(x)=P(G^N(x))$.  Apply \cref{thm:main} to $G$.
-For the time, apply \cref{thm:depth} to $G$.  On a positive instance,
-the first target is an absorbing fixed point.  A cyclic state cannot
-precede it on the trajectory: iteration is injective on cyclic states,
-so any cyclic predecessor of that fixed point is the same point.
-Consequently $\mu_G(x)$ is exactly the first target time.
-\end{proof}
-
-\begin{corollary}[Complete-configuration simulation]\label[corollary]{cor:halting}
-Suppose a deterministic computation has its entire configuration encoded
-in $b$ bits and a next-configuration circuit of size $s$.  If halting
-configurations are absorbing and every valid initial configuration
-halts, its final-configuration map on valid initial states has circuit
-size
-\[
- O\!\left(s+b^3+\sqrt{b^3 2^b(s+b^3)}\right).
-\]
-The exact first halting time can also be returned within this bound.
-\end{corollary}
-\begin{proof}
-Before halting, no configuration can repeat.  The iterate at time $2^b$
-is therefore the final configuration.  Apply \cref{thm:main} with
-state width $b$.  The first halt is the transient depth, by the same
-absorbing-state argument as in \cref{cor:target}; use \cref{thm:depth}.
-Initialization and output decoding circuits are
-charged separately.
-\end{proof}
-In particular, when $s=\poly(b)$, both the final configuration and the
-first halting time have circuit size
-\[
-  2^{b/2}\poly(b).
-\]
-For a nearly in-place computation on an $n$-bit input, with complete state
-width $b=n+O(\log n)$ and a polynomial-size transition, this specializes to
-$2^{n/2}\poly(n)$.  Polynomial-size initialization and output decoding
-preserve that bound.  The parameter $b$ includes all persistent input
-information, control, and workspace; these bits are counted even when an
-abstract machine model calls part of its storage read-only.  A general
-polynomial-space machine can have far more than $n+O(\log n)$ configuration
-bits, so the corollary gives no such input-length bound for all of PSPACE.
-
-\subsection{Synchronous and recurring queries}\label{sec:eventual-queries}
-
-The projection $R=F^{N!}$ from the proof of \cref{thm:depth} also supplies
-queries about the eventual dynamics.
-
-\begin{corollary}[Eventual synchronous coalescence]\label[corollary]{cor:coalescence}
-A circuit of size $O(B)$ decides, on input $(x,y)$, whether there exists
-$t\geq0$ such that $F^t(x)=F^t(y)$.
-\end{corollary}
-\begin{proof}
-The required equivalence is
-\[
- \exists t\geq0:\ F^t(x)=F^t(y)
- \quad\Longleftrightarrow\quad F^N(x)=F^N(y).
-\]
-Equality before time $N$ persists to time $N$.  Both states are cyclic
-by that time, and $F$ restricts to a bijection on the cyclic states.
-Therefore later equality can be canceled back to time $N$.  Compute
-two copies of $F^N$ and compare their outputs.
-\end{proof}
-
-This query requires the same elapsed time on both trajectories.  Orbit
-intersection permits different elapsed times and is a different predicate;
-for example, distinct points of one cycle never coalesce synchronously.
-
-\begin{corollary}[Recurring and permanent targets]\label[corollary]{cor:recurring}
-For a fixed predicate $P:\bits^n\to\bits$ of circuit size $a$, each of
-\[
- \forall u\ \exists t\geq u:\ P(F^t(x))=1,
- \qquad
- \exists u\ \forall t\geq u:\ P(F^t(x))=1
-\]
-is decidable by a circuit of size
-$O(A_P+\sqrt{n^3NA_P})$, where $A_P=s+a+n^3$.
-\end{corollary}
-\begin{proof}
-A target recurs arbitrarily late exactly when the eventual cycle contains
-an accepting state.  Start at $R(x)$ and use the absorbing-target
-construction in \cref{cor:target}.  If $G$ makes accepting states
-absorbing, the circuit outputs $P(G^N(R(x)))$.  A successful visit is
-periodic and hence recurs arbitrarily late; every sufficiently late visit
-from $x$ is a future visit from $R(x)$.  The projection and the target
-circuit each obey the stated bound.  Permanent eventual acceptance is
-the complement of recurrence of the predicate $1-P$, which changes the
-bound only by a constant number of gates.
-\end{proof}
-
-\section{Small controllers with affine payloads}\label{sec:controller}
-
-An orbit can visit exponentially many states while its composite updates
-remain easy to describe.  The next result isolates all exponential cost
-in an autonomous controller, allowing a much larger affine payload.
-
-\begin{theorem}[Affine-controller powering]\label{thm:affine-controller}
-Let $q+p=n\geq1$, and write a state as $(u,v)\in\bits^q\times\mathbb F_2^p$.
-Suppose
-\[
- F(u,v)=\bigl(g(u),A(u)v+b(u)\bigr),
-\]
-where $g:\bits^q\to\bits^q$, $A(u)$ is a $p\times p$ binary matrix,
-and $b(u)\in\mathbb F_2^p$.  For every fixed integer $T\geq0$,
-\[
- \CC(F^T)=O\!\left(2^q(q+p^2)\right).
-\]
-For an $m$-bit input exponent, the size bound is
-$O(m2^q(q+p^2))$.  In particular, $q=O(\log n)$ gives polynomial-size
-circuits for every fixed power, uniformly in the magnitude of $T$.
-The matrices may be singular and need not commute.
-\end{theorem}
-
-\begin{proof}
-Once the initial controller $u$ is fixed, the controller trajectory and
-all affine maps applied to $v$ are fixed.  Composition of affine maps is
-affine, so for some hardwired matrix $M_T(u)$ and vector $d_T(u)$,
-\[
- F^T(u,v)=\bigl(g^T(u),M_T(u)v+d_T(u)\bigr).
-\]
-For each of the $2^q$ controller values, evaluate its fixed affine map
-using $O(p^2)$ gates and provide its fixed controller output.  Compute
-each controller-equality flag once, and share it across the $q+p$ output
-bits.  A scan selects the matching record using
-$O(2^q(q+p))$ additional gates.  This proves the fixed-power bound,
-including a charge for every table-selection gate.
-
-For an input exponent, conditionally apply the circuits for $F^{2^j}$
-to the current full state, as in \cref{sec:variable}.  Each stage updates
-the controller as well as the payload and adds $O(q+p)$ selection gates.
-Summing over $m$ stages gives the second bound.
-\end{proof}
-
-Autonomy is essential to this argument: if the controller update depends
-on $v$, its future choices need not be determined by the initial $u$.
-No efficient algorithm for obtaining $M_T(u)$ from a succinct transition
-is asserted here.  The bound uses ordinary affine composition and finite
-selection; it does not claim a new algebraic closure principle.
-
-The same reasoning applies beyond affine maps.  Let $\mathcal M$ be a
-family of maps on $p$-bit payloads containing the identity and closed under
-composition, and suppose \emph{every} member has a circuit of size at
-most $\kappa$.  If the autonomous controller selects maps from
-$\mathcal M$, every fixed power costs
-\[
- O\!\left(2^q(\kappa+q+p+1)\right),
-\]
-and an $m$-bit input time multiplies this by $m$.  Both statements are
-checked in Lean.  Closure alone is insufficient: the uniform evaluation
-bound on composite maps is a separate hypothesis.  For nonuniform circuit
-existence, no efficient procedure for computing those composites is needed.
-
-\section{Sparse modifications of a counter}\label{sec:sparse-counter}
-
-The state-space parameter is not the only source of compression.  Identify
-$\bits^n$ with $\mathbb Z/N\mathbb Z$, where $N=2^n$, and write
-$R(x)=x+1\pmod N$.  A permutation obtained by changing a small number of
-counter successors admits a bound linear in its sparse description, even
-when it is a single cycle through all $N$ states.
-
-\begin{theorem}[Sparse-counter powers]\label{thm:sparse-counter}
-Let $n\geq1$, let $F$ be a permutation of $\mathbb Z/N\mathbb Z$, and let
-$r=|\{x:F(x)\ne R(x)\}|$.  For every fixed $T\in\mathbb Z$,
-\[
- \CC(F^T)=O\bigl(n(r+1)\bigr).
-\]
-For an unsigned $m$-bit time supplied as input,
-\[
- \CC\bigl((x,t)\mapsto F^t(x)\bigr)=O\bigl(n(r+m+1)\bigr).
-\]
-Both constants are absolute.  The dependence on time-input length is additive.
-\end{theorem}
-
-\subsection{Commutation defects and displacement}
-
-The fixed-power assertion follows from a more general statement.
-
-\begin{proposition}[Sparse-counter centralizers]\label[proposition]{prop:centralizer}
-Let $F$ be any map on $\mathbb Z/N\mathbb Z$ differing from $R$ at $r$
-inputs.  Every permutation $H$ commuting with $F$ has a displacement
-function $\delta_H(x)=H(x)-x\pmod N$ that changes on at most $2r$ counter
-edges.  Consequently, $\CC(H)=O(n(r+1))$.
-\end{proposition}
-
-\begin{proof}
-Put $E=\{x:F(x)\ne R(x)\}$.  If $x\notin E$ and $H(x)\notin E$, then
-\[
- H(R(x))=H(F(x))=F(H(x))=R(H(x)).
-\]
-Thus the set of commutation failures for $H$ and $R$ lies in
-$E\cup H^{-1}(E)$ and has size at most $2r$.  Commutation at $x$ is
-exactly $\delta_H(x+1)=\delta_H(x)$.  Cutting the ordinary linear order
-$0,\ldots,N-1$ at these changes gives at most $2r+1$ constant intervals.
-Compare the input with their endpoints, select a hardwired displacement,
-and add it modulo $N$, at cost $O(n(r+1))$.
-
-An alternative implementation, used in Lean, avoids ordering the changes.
-Let $D=\{i:\delta_H(i+1)\ne\delta_H(i)\}$, with cyclic addition in the
-arguments and ordinary integer comparisons below.  Telescoping gives
-\[
- H(x)=x+\delta_H(0)+
-       \sum_{\substack{i\in D\\i<x}}
-         \bigl(\delta_H(i+1)-\delta_H(i)\bigr)\pmod N.
-\]
-Each summand uses one comparison, a conditional constant word, and a
-linear-size adder.  The wraparound edge is never selected.  All gates,
-including the shared carry chains, are charged.
-\end{proof}
-
-Every signed power of a permutation commutes with it, proving the first
-part of \cref{thm:sparse-counter}.  The proposition only requires
-injectivity of $H$ in its cardinality argument; it does not require $F$
-to be a permutation.  Its set-containment argument works on arbitrary
-universes, before finiteness or coordinates are imposed.
-
-The geometry relating commutation failures to blocks in cycles is
-established permutation theory.  Moreno and Rivera characterize these
-blocks in their Theorem~3.8 and Corollary~3.10~\cite{MR14}.  Here we use
-the elementary defect containment and account for the Boolean cost of the
-resulting representation.  Historical priority of these precise circuit
-bounds has not been determined.
-
-\subsection{A chart constructed from the edited successors}
-
-For the live-time bound, assume first $r>0$ and cut the counter cycle
-immediately after each point of $E$.  There are $r$ nonempty circular
-arcs.  Inside an arc $F$ increments; its only possible change is at the
-last state.  Since $F$ and $R$ are permutations agreeing off $E$,
-\[
- F(E)=R(E).
-\]
-Indeed, the images of the unedited inputs coincide, so their complements
-coincide.  Therefore each edited edge leads to an arc start, and these
-edges induce a permutation of the $r$ arcs.
-
-Decompose that permutation into cycles and concatenate the arcs in each
-cycle, retaining their individual lengths.  Assign to a state the triple
-$(c,p,\ell)$ consisting of its cycle identifier, its position within that
-cycle, and its total cycle length.  The coordinate map and its inverse
-are piecewise translations on the original arcs and their concatenated
-images.  At most one original arc crosses zero; splitting it there adds
-one linear interval.  Comparisons, shared record selection, and addition
-therefore implement each direction in $O(n(r+1))$ gates.  Identifiers and
-positions use $n$ bits, while lengths use $n+1$ bits to allow $\ell=N$.
-All intermediate arithmetic uses $O(n)$ bits.
-
-In these coordinates one step preserves $c,\ell$ and increments $p$
-modulo $\ell$.  For an $m$-bit input $t$, compute its remainder by scanning
-bits from most significant to least significant.  With current remainder
-$u<\ell$, the next remainder is $2u+b$ or $2u+b-\ell$, according as
-$2u+b<\ell$ or not.  A comparison and subtraction cost $O(n)$ per bit;
-one extra bit prevents overflow.  Add $p$, reduce once more, and decode.
-The cost is $O(nr+nm+n)$.  If $r=0$, ordinary addition modulo $N$ gives
-the same bound.  This proves the second part of \cref{thm:sparse-counter}.
-For fixed signed $T$, hardwire $T\bmod\ell$ for each cycle instead.
-
-\begin{corollary}[Labels and navigation for sparse counters]\label[corollary]{cor:sparse-labels}
-For a permutation differing from the counter at $r$ states, the cycle
-length, numerically least cycle vertex, and phase of an input state can be computed
-with $O(n(r+1))$ gates.  The same bound suffices, on input $(x,y)$, for
-reachability, the exact first hitting time, and a descriptor of all visits.
-\end{corollary}
-\begin{proof}
-Cut the ordinary linear order after each exception, obtaining at most
-$r+1$ intervals.  Within each interval $[a,b)$, the trajectory follows
-ordinary addition.  Hardwire its cycle representative $c$, cycle length
-$\ell$, and phase $p_a$ at its first state.  An input $x$ in that interval
-has label $(c,\ell,(p_a+x-a)\bmod\ell)$.  The interval length is at most
-$\ell$, so one addition and conditional subtraction suffice for the phase.
-Comparisons and record selection cost $O(n)$ per interval.
-
-Compute the two labels.  Since every state is cyclic, $y$ is reachable
-from $x$ exactly when $c(x)=c(y)$.  On a positive instance, the first hit is
-\[
- d=(\phi(y)-\phi(x))\bmod\ell(x),
-\]
-and all visits occur at times $d+k\ell(x)$, $k\geq0$.  Both phases are
-already below the common cycle length, so the difference needs only
-comparison and subtraction: use $\phi(y)-\phi(x)$ when nonnegative, and
-$\ell(x)-(\phi(x)-\phi(y))$ otherwise.  This costs $O(n)$ additional gates.
-The descriptor also determines the exact bounded visit count; this is an
-arithmetic interpretation of its output, with no deadline input charged.
-\end{proof}
-
-Lean checks both iteration bounds and their charged coordinate transport,
-as well as these labels and pair queries.  Its interval construction is
-described in \cref{app:lean-details}; the algorithmic claim below has a
-separate proof.
-
-\begin{proposition}[Polynomial-time construction from an edit list]
-\label[proposition]{prop:sparse-compiler}
-Given $n$ and an explicit list of the $r$ edited successors of the
-$n$-bit counter, one can check permutation preservation and construct an
-orbit chart of $O(r+1)$ records, each of $O(n)$ bits, in time polynomial
-in $n$ and $r+1$.  For a valid list, the chart supplies the encoding and
-decoding used above.  Given also a signed binary integer $T$, one can
-construct a piecewise-translation table for $F^T$ with at most $2r+1$
-linear intervals in time polynomial in $n$, $r+1$, and $\log(|T|+2)$.
-\end{proposition}
-\begin{proof}
-Compare the edited outputs with the freed counter outputs to check
-$F(E)=R(E)$, after checking distinct input keys.  Sort the cuts, compute
-arc lengths, follow the induced permutation of the arcs, and form prefix
-sums on each of its cycles.  These operations construct the chart using
-arithmetic on $O(n)$-bit integers.  The case $r=0$ is the ordinary counter
-chart.  For a signed power, reduce $T$ modulo each chart cycle length.
-Use the chart to evaluate $F^{-T}$ on $E$, and test the $O(r)$ candidate
-change edges $E\cup F^{-T}(E)$ from \cref{prop:centralizer}.  Sorting their
-successors and evaluating the displacement at the interval starts gives
-the table; discard boundaries without a displacement change.
-\end{proof}
-
-The input here is the explicit edit list, whose entries specify where
-counter edges have changed and their new successors.  Given only a circuit
-for $F$, identifying that list is a separate task: the proposition asserts
-no polynomial-time extraction of exceptions from a transition circuit.
-The chart construction avoids enumeration of the $N=2^n$ states.
-The explicit arithmetic and selection constructions above then compile
-an $m$-bit iterator in time polynomial in $n,r+1,m$ with the gate bound
-of \cref{thm:sparse-counter}.
-
-The executable \texttt{sparse\_counter.py} implements this chart and
-interval compiler for arbitrary positive universe sizes.  An independent
-cycle-traversal oracle checks all $46{,}232$ permutations on sizes $2$
-through $8$ and all $334{,}381$ distinct powers, as well as the one-state
-case, $1{,}000$ sampled sparse permutations with signed exponents of up to
-$1{,}024$ bits, and $700$ binary-field examples.  Additional checks on
-$64$--$256$-bit universes exercise composition and inverse-coordinate
-identities without enumeration.  These finite checks establish neither
-the gate bounds nor a formal compiler-correctness theorem.
-
-\subsection{Large transitions and charged coordinate changes}
-
-The improvement can apply to transitions with genuinely exponential
-minimum circuit size.  Fix $r$ nonempty counter arcs and reconnect them
-in any single cyclic order.  This gives $(r-1)!$ distinct permutations,
-each differing from the counter at at most $r$ states and having one
-orbit of length $N$.  For $r=2^{\lfloor\alpha n\rfloor}$ with fixed
-$0<\alpha<1$, the logarithm of this family size is $\Theta(r\log r)$.
-The circuit-description bound used in \cref{sec:lower} implies that some
-members need $\Omega(r)$ gates, while all have $O(n(r+1))$-gate circuits.
-Consequently there exist families with
-\[
- \CC(F_n)=2^{\alpha n+O(\log n)},\qquad
- \sup_{T\in\mathbb Z}\CC(F_n^T)=2^{\alpha n+O(\log n)}.
-\]
-The lower bound is existential counting, not an explicit hard transition.
-Using only their transition sizes in \cref{thm:main} would instead give
-an upper bound with exponential scale $2^{(1+\alpha)n/2}$.
-
-\begin{corollary}[Charged orbit coordinates]\label[corollary]{cor:coordinates}
-Suppose a bijection $\phi:\bits^n\to\mathbb Z/N\mathbb Z$ satisfies
-$\phi(G(x))=\phi(x)+1\pmod N$.  If a permutation $F$ differs from $G$
-at $r$ states, then
-\[
- \CC(F^T)\leq \CC(\phi)+\CC(\phi^{-1})+O(n(r+1))
- \quad(T\in\mathbb Z).
-\]
-For an $m$-bit input time, the last term is $O(n(r+m+1))$.
-\end{corollary}
-\begin{proof}
-Conjugate $F$ by $\phi$.  The exceptional-set cardinality is unchanged,
-and the reference permutation becomes the counter.  Apply
-\cref{thm:sparse-counter} and compose with the two coordinate circuits.
-\end{proof}
-
-Both coordinate costs are essential.  A long orbit does not itself
-supply cheaply computable coordinates.  Conversely, these examples can
-visit the entire state space: the compressed object is the arrangement
-of arcs, without a reduction in the number of reachable states.
-
-For the pair queries of \cref{cor:sparse-labels}, coordinate transport
-needs only the forward map: encode both $x$ and $y$, then query the
-conjugated permutation.  Reachability and visit times are preserved by
-conjugacy, so the bound is $2\CC(\phi)+O(n(r+1))$.  No state is returned,
-and no inverse-coordinate circuit is required.  This transport bound is
-also checked in Lean.
-
-\subsection{Sparse edits of a primitive binary-field cycle}
-
-\begin{corollary}\label[corollary]{cor:binary-field}
-Represent $K=\mathbb F_{2^n}$ in a fixed polynomial basis and fix a
-primitive element $\omega$.  If a permutation $F$ differs from
-$L(x)=\omega x$ at $r$ states, then
-\[
- \CC(F^T)\leq n^{O(\log n)}+O(n(r+1))
- \quad(T\in\mathbb Z).
-\]
-With an $m$-bit input time the bound is
-$n^{O(\log n)}+O(n(r+m+1))$.
-\end{corollary}
-\begin{proof}
-Insert zero into the nonzero multiplicative cycle by setting
-$G(0)=1$, $G(\omega^{-1})=0$, and $G(x)=\omega x$ elsewhere.
-Then $G$ is one cycle, and $F$ differs from it at at most $r+2$ states.
-Coordinates are
-$\phi(0)=0$ and $\phi(\omega^j)=j+1$ for $0\leq j<2^n-1$.
-Decoding uses finite-field exponentiation and costs $\poly(n)$ gates.
-Encoding uses discrete logarithms.
-
-Kleinjung and Wesolowski's Theorem~1.1~\cite{KW22} gives expected time
-$n^{O(\log n)}$ for discrete logarithms in characteristic two.
-To obtain exact nonuniform circuits, let $\tau(n)$ bound this expectation
-for every input.  Truncate each trial at $2\tau(n)$ steps and verify
-candidate logarithms by exponentiation.  A trial succeeds with probability
-at least $1/2$.  Among $n+1$ independent random tapes, the probability that
-some one of the fewer than $2^n$ nonzero inputs has no successful trial is
-less than one.  Fix tapes that work for every input and select the first
-verified answer.  Circuit simulation and verification have polynomial
-overhead in $\tau(n)$ and $n$, preserving quasipolynomial size.
-Apply \cref{cor:coordinates}.  The case of bounded $n$ is absorbed by
-the constants.
-\end{proof}
-
-This corollary relies on the cited discrete-logarithm theorem and the
-nonuniform simulation argument; those ingredients are not formalized in
-our Lean development.  It concerns sparse permutation-preserving edits
-to a primitive multiplicative cycle.  It does not imply the unrestricted
-conjectural bound $s+\widetilde O(2^{n/2})$.
+Nor does the counting example in \cref{sec:lower} establish one-way
+functions.  Its update permutation has a linear-size inverse, obtained
+by decrementing the active cycle coordinate.  The selected hard powers
+have exponential worst-case forward complexity, so cannot themselves
+form a polynomial-time one-way function.  The counting argument gives
+no average-case inversion hardness.
 
 \section{A matching exponent for arbitrary fixed powers}\label{sec:lower}
 
@@ -1693,197 +880,818 @@ exponents; long descriptions are not merely allowed by the counting proof.
 Theorem~\ref{thm:lower} establishes sharpness for arbitrary fixed powers.
 It gives no hardness result for the bounded-bit-time problem.
 
-\section{Permutation inversion and one-way functions}\label{sec:one-way}
+\section{Input times and shared evaluation}
 
-\subsection{Inversion as a fixed power}
+\subsection{An iteration count supplied as input}\label{sec:variable}
 
-\begin{corollary}[Exact permutation inversion]\label[corollary]{cor:inverse}
-Let $P:\bits^n\to\bits^n$ be a permutation with $\CC(P)\leq s$, and put
-$N=2^n$ and $A=s+n^3$.  For every $1\leq L\leq N$,
+\begin{definition}
+For $m\geq 1$, define
 \[
-  \CC(P^{-1})
-  =O\!\left(Ls+n^3\left(L+\frac NL\right)\right).
+  \Iter_{F,m}:\bits^n\times\bits^m\longrightarrow\bits^n,
+  \qquad \Iter_{F,m}(x,t)=F^{\operatorname{val}(t)}(x),
 \]
+where $\operatorname{val}(t)$ is the nonnegative integer encoded by $t$.
+\end{definition}
+
+\begin{theorem}[Variable-time iteration]\label{thm:variable}
+Under the assumptions of \cref{thm:main}, for every $m\geq 1$,
+\begin{equation}\label{eq:variable}
+  \CC(\Iter_{F,m})
+  =O\!\left(m\left(A+\sqrt{n^3NA}\right)\right).
+\end{equation}
 In particular,
 \[
-  \CC(P^{-1})=O\!\left(A+\sqrt{n^3NA}\right).
+  \CC(\Iter_{F,n})
+  =O\!\left(n\left(A+\sqrt{n^3NA}\right)\right).
 \]
-If $s=n^{O(1)}$, an inverter of size $2^{n/2+O(\log n)}$ is correct on
-every input.
+If $s$ and $m$ are polynomial in $n$, then
+$\CC(\Iter_{F,m})\leq 2^{n/2+O(\log n)}$.
+\end{theorem}
+
+\begin{proof}
+Write $t=\sum_{j=0}^{m-1}t_j2^j$.  For each $j$, apply
+\cref{thm:main} directly to the original map $F$ and the fixed exponent
+$2^j$, obtaining a circuit for $G_j=F^{2^j}$.  Starting with $v_0=x$, use
+\[
+  v_{j+1}=
+  \begin{cases}
+    G_j(v_j),&t_j=1,\\
+    v_j,&t_j=0.
+  \end{cases}
+\]
+Inductively,
+$v_j=F^{\sum_{a<j}t_a2^a}(x)$, so $v_m=F^t(x)$.
+There are $m$ circuits of the size in \cref{eq:optimized} and $m$
+$n$-bit multiplexers.  The extra $O(mn)$ gates are absorbed by the claimed
+bound.  Each $G_j$ is constructed from $F$ using the theorem; it is not
+obtained by duplicating the circuit for $G_{j-1}$.
+\end{proof}
+
+\begin{theorem}[Long input times]\label{thm:long-time}
+Write $B=A+\sqrt{n^3NA}$.  For every $m\geq1$,
+\[
+ \CC(\Iter_{F,m})=O\!\left(\min\{mB,\ nB+nm\}\right).
+\]
+Thus the cost of processing additional time bits is additive once the
+state width is fixed.
+\end{theorem}
+\begin{proof}
+The first bound is \cref{thm:variable}.  For the second, compute the exact
+eventual cycle length $\ell=\ell(x)$ in $O(B)$ gates using
+\cref{thm:labels}.  Replace the input time by
+\[
+ u=\begin{cases}
+ t,&t<N,\\
+ N+(t-N)\bmod\ell,&t\geq N.
+ \end{cases}
+\]
+Then $u<2N$ and $F^u(x)=F^t(x)$: in the second case both times are past
+cycle entry and have the same residue modulo $\ell$.
+
+Compute $t\bmod\ell$ by streaming its bits from most significant to least
+significant, retaining an $O(n)$-bit remainder.  Each step doubles the
+remainder, adds one bit, and conditionally subtracts $\ell$; a spare bit
+prevents overflow.  Shared-carry addition and subtraction give $O(n)$
+gates per input bit, including comparison and selection.  The bounded
+modular correction by $N$ and the final selection cost $O(n^3+m)$ with
+the arithmetic circuits already used in the proof.  Hence forming $u$
+costs $O(nm+n^3)$, and its $n+1$ bits feed \cref{thm:variable} at cost
+$O(nB)$.  Since $n^3\leq B$, the second bound follows.  If $m\leq n$,
+one may simply use the original $m$-stage construction.
+\end{proof}
+
+\subsection{Sharing a dictionary among independent trajectories}
+\label{sec:batch}
+
+Let
+\[
+  B_{F,T,r}(x_1,\ldots,x_r)
+   =\bigl(F^T(x_1),\ldots,F^T(x_r)\bigr).
+\]
+The inputs $x_1,\ldots,x_r$ are independent $n$-bit words.  The following
+construction uses one checkpoint dictionary for all of them.
+
+\begin{theorem}[Batched fixed powers]\label{thm:batch}
+Under the assumptions of \cref{thm:main}, for every $1\leq r\leq N$,
+$T\geq 0$, and $1\leq L\leq N$,
+\begin{equation}\label{eq:batch-tradeoff}
+  \CC(B_{F,T,r})
+   =O\!\left(rLs+n^3\left(rL+\frac{N}{L}\right)\right).
+\end{equation}
+Consequently,
+\begin{equation}\label{eq:batch-opt}
+  \CC(B_{F,T,r})
+   =O\!\left(rA+\sqrt{rn^3NA}\right).
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Set $K=2L$.  If $T<K$, unroll $T$ copies of $F$ independently for each
+input.  Otherwise use the checkpoint set and dictionary from
+\cref{sec:fixed}.  Generate the first $K+1$ states of all $r$ trajectories.
+Together with one copy of the dictionary, these give
+\[
+  R=|H|+r(K+1)=O(N/L+rL)
+\]
+records.  Attach the trajectory number and within-trajectory position to
+each query.  Because $r\leq N$ and $L\leq N$, the record width and
+$\log(R+2)$ are $O(n)$.  One application of \cref{lem:lookup} therefore
+resolves all queries in $O(n^3(N/L+rL))$ gates and returns them in their
+original order.
+
+Select a matching checkpoint separately within each trajectory.  Run
+repeated-state detection separately on each trajectory as well; this
+costs $O(rn^3L)$ gates and does not confuse a collision between two
+different trajectories with a repetition along one trajectory.
+The correction trajectory and output selection are also performed
+separately for each input.  The fixed residue table may be implemented
+with a separate $O(nL)$-gate lookup for each trajectory, whose total
+cost is absorbed by $O(rn^3L)$.  The two simulation phases together cost
+$O(rLs)$ gates.  This proves \cref{eq:batch-tradeoff}.
+
+\begin{samepage}
+Choose
+\[
+  L=\max\left\{1,\ceil{\sqrt{n^3N/(rA)}}\right\}.
+\]
+\end{samepage}
+As before $1\leq L\leq N$.  If $rA\leq n^3N$, then
+$rAL=O(\sqrt{rn^3NA})$ and $n^3N/L=O(\sqrt{rn^3NA})$.
+If $rA>n^3N$, the choice is $L=1$ and the cost is $O(rA)$.
+This gives \cref{eq:batch-opt}.
+\end{proof}
+
+\begin{corollary}[Independent input times]\label[corollary]{cor:batch-variable}
+For $1\leq r\leq N$ and $m\geq 1$, the map
+\[
+  \bigl((x_1,t_1),\ldots,(x_r,t_r)\bigr)
+   \longmapsto
+  \bigl(F^{t_1}(x_1),\ldots,F^{t_r}(x_r)\bigr),
+  \qquad t_i\in\bits^m,
+\]
+has a circuit of size
+\begin{equation}\label{eq:batch-variable}
+  O\!\left(m\left(rA+\sqrt{rn^3NA}\right)\right).
+\end{equation}
 \end{corollary}
 
 \begin{proof}
-Let $D=\ord(P)$, the least common multiple of its cycle lengths.
-Then $P^D$ is the identity, so $P^{-1}=P^{D-1}$.
-Apply \cref{thm:main}.  The exponent may have a long binary expansion,
-but the theorem charges only the resulting tables and their access gates.
+Use the binary-power construction of \cref{thm:variable}.  At stage $j$,
+apply \cref{thm:batch} with update map $F$ and exponent $2^j$ on the $r$
+current states, then use the $j$th bit of each $t_i$ to select whether to
+retain or update that state.  The $O(mrn)$ selection gates are absorbed
+by \cref{eq:batch-variable}.
 \end{proof}
 
-This recovers the permutation-inversion circuit bound already discussed
-by Hirahara, Ilango, and Williams~\cite[Section~3.2]{HIW24}.
-It identifies an earlier special case of the fixed-power theorem.
+For polynomial $s$ and $m$, and $r=\floor{2^{\alpha n}}$ with fixed
+$0\leq\alpha\leq 1$, \cref{eq:batch-variable} is at most
+\[
+  2^{(1+\alpha)n/2+O(\log n)}.
+\]
+This is an upper-bound sharing statement.  It is not a direct-sum
+separation against optimal circuits for a single trajectory.
 
-\subsection{Compatibility with one-wayness}
+\section{Functional-graph navigation}\label{sec:structure}
 
-A cryptographic one-way function is computable in polynomial time, while
-every probabilistic polynomial-time inverter succeeds with only negligible
-probability on the image of a uniform input.  One may instead require
-security against every polynomial-size circuit family, a stronger
-nonuniform notion~\cite[Section~7.1.1]{Goldreich08}.  For a length-preserving
-family $f_n:\bits^n\to\bits^n$, the latter requires that, for every such
-family $C_n$,
-\begin{equation}\label{eq:one-way}
-  \Pr_{x\leftarrow\bits^n}
-  \bigl[f_n(C_n(f_n(x)))=f_n(x)\bigr]
+Write $B=A+\sqrt{n^3NA}$.  For a state $x$, let $\mu(x)$ be its distance
+to its eventual cycle, let $\ell(x)$ be that cycle's length, and let $c(x)$
+be the lexicographically least state on the cycle.  Define
+$\phi(x)\in\{0,\ldots,\ell(x)-1\}$ by
+\begin{equation}\label{eq:phase}
+ F^t(x)=F^{(\phi(x)+t)\bmod\ell(x)}(c(x))\qquad(t\geq\mu(x)).
 \end{equation}
-be negligible in $n$: smaller than $n^{-c}$ eventually for every fixed
-$c>0$.  Any preimage counts as success.  Deterministic circuits suffice
-in this definition, since random coins can be fixed to maximize average
-success.  A one-way permutation is the bijective special case.
+The phase is an eventual-orbit label; it does not assert that a transient
+state itself lies on the cycle.  These labels are unique.  Cycle lengths
+are encoded with $n+1$ bits, since a cycle may have length $N$.
 
-The guarantee in \cref{cor:inverse} is an exponential size upper bound.
-It therefore does not contradict either polynomial-time or polynomial-size
-one-wayness.  Nonuniformity alone is not the reason for compatibility:
-\cref{eq:one-way} already allows arbitrary nonuniform advice encoded in
-polynomial-size circuits.  The relevant distinction is the circuit size.
-Moreover, no efficient procedure for constructing our inverter is asserted.
+\begin{theorem}[Cycle labels]\label{thm:labels}
+A circuit of size $O(B)$ computes $(\ell(x),c(x),\phi(x))$ for every $x$.
+\end{theorem}
+\begin{proof}
+Fix $L$ and use the checkpoint construction with $K=2L$.  Hardwire the
+three labels for each checkpoint.  If $F^d(x)=h$ for $d\leq K$, output
+\[
+ \ell(x)=\ell(h),\qquad c(x)=c(h),\qquad
+ \phi(x)=(\phi(h)-d)\bmod\ell(h).
+\]
+This follows by applying \cref{eq:phase} after both transients have ended.
+All records still have $O(n)$ bits.
 
-There is a quantitative consequence.  For every fixed $\varepsilon>0$,
-every polynomial-size permutation family on $n$ bits has exact inverters
-of size at most $2^{(1/2+\varepsilon)n}$ for all sufficiently large $n$.
-Thus such a family cannot remain one-way against all circuits of that
-size, with any success bound strictly below one.  This upper bound leaves
-open security against polynomial-size circuits, and does not exclude
-security against size $2^{cn}$ for a fixed $0<c<1/2$.  It does not
-establish that either kind of security is achievable.
+If there is no checkpoint hit, the prefix repeats.  Sort prefix records
+by state and then by original index.  Among adjacent equal-state pairs,
+choose the pair with smallest second index $j$, retaining its first
+index $i$.  This is the first repetition in the original trajectory:
+any earliest second occurrence is adjacent to its first occurrence in
+its equal-state run.  The states before $j$ are distinct, so
+$i=\mu(x)$ and $[i,j)$ consists of exactly one cycle traversal.
+Set $\ell=j-i$, and select the minimum state $c=x_p$ over $i\leq p<j$.
+Then $\phi(x)=(-p)\bmod\ell$.  Minimum selection and the interval mask
+cost $O(nK)$ gates, and word arithmetic costs $O(n^2)$ gates.
+Sorting and lookup cost $O(n^3(L+N/L))$, while the prefix costs $O(Ls)$.
+Optimizing $L$ proves the claim.  Discarded branches use safe positive
+dummy moduli, as in the fixed-power construction.
+\end{proof}
 
-\subsection{General functions and the counting example}
+\begin{theorem}[Transient depth]\label{thm:depth}
+The exact transient depth $\mu(x)$ is computable by a circuit of size $O(B)$.
+\end{theorem}
+\begin{proof}
+Put $D=N!$ and $R=F^D$.  Every trajectory is cyclic after $N$ steps,
+every cycle length divides $D$, and $D\geq N$.  Thus $R$ maps into the
+cyclic states, fixes each such state, and satisfies $R^2=R$.  It commutes
+with all iterates of $F$, so
+\begin{equation}\label{eq:projection-depth}
+ F^i(x)=F^i(R(x))\quad\Longleftrightarrow\quad i\geq\mu(x).
+\end{equation}
+Indeed, equality is equivalent to $F^i(x)=R(F^i(x))$, which is exactly
+cyclicity.  The projection costs $O(B)$ gates by \cref{thm:main}.
 
-For a noninjective map, inversion is not generally a forward power.
-For example, let $f$ on $\{0,1,2,3\}$ have values $(0,0,1,0)$.
-The unique preimage of $1$ is $2$, whereas every forward iterate of $1$
-belongs to $\{0,1\}$.  Thus \cref{thm:main} does not directly provide
-square-root-size inverters for arbitrary one-way functions.
-For comparison, Hirahara, Ilango, and Williams prove a general inversion
-bound of $2^{4n/5}\poly(s+n)$ gates~\cite[Theorem~3.5]{HIW24}.
+Fix a checkpoint parameter $L$ and set $K=2L$.  Retain the first $K+1$
+states of both trajectories and compare corresponding states.  If the
+states at position $K$ agree, select the first equality; its index is
+$\mu(x)$.  Otherwise $\mu(x)>K$, so the original prefix has no repetition
+and must meet a checkpoint $h=F^d(x)$ with $d<K$.  Every such hit is
+transient and satisfies $\mu(x)=d+\mu(h)$.
 
-Encoding exhaustive preimage search as iteration does not avoid the state
-accounting.  The straightforward transition retains an $n$-bit target
-$y$, an $n$-bit candidate $x$, and a flag; it tests $f(x)=y$ and either
-halts or increments $x$.  This uses $2n+O(1)$ state bits.  For
-polynomial-size $f$, our theorem then gives size $2^{n+O(\log n)}$,
-not the half exponent measured in the preimage length.
+Hardwire $\mu(h)$ with each checkpoint and resolve all prefix queries
+using \cref{lem:lookup}.  Either branch uses $O(n)$-bit records; comparing,
+selecting, and adding indices cost $O(nL)$ gates.  The two prefixes and
+shared lookup cost $O(Ls+n^3(L+N/L))$.  Use the same $L$ for the projection
+and these operations, then optimize as in \cref{eq:L-choice}.
+\end{proof}
 
-The counting construction in \cref{sec:lower} also does not establish
-one-way functions.  Its update permutation $P_n$ has an $O(n)$-gate
-inverse: on an active cycle decrement $b$ modulo $a$, and leave inactive
-states fixed.  A family of the selected hard powers has exponential
-worst-case \emph{forward} circuit complexity, so it cannot be a
-polynomial-time one-way function.  The counting proof supplies no
-average-case inversion hardness.  The results here consequently neither
-prove nor refute the existence of one-way functions or one-way permutations.
+\begin{lemma}[Compressed checkpoint forest]\label[lemma]{lem:checkpoint-forest}
+Let $H$ be the checkpoint set from \cref{lem:checkpoints}.  Cut the outgoing
+edge of every cyclic vertex, and let $S$ be the union of the paths from
+$H$ to their first cyclic vertices, including both endpoints.  There is
+a set $J$ with $H\subseteq J\subseteq S$ and $|J|\leq2|H|$ such that:
+\begin{enumerate}
+\item Every root and every branching vertex of the forest on $S$ lies in $J$.
+\item From each nonroot $a\in J$, the next vertex of $J$ is reached after
+some $1\leq d_a\leq2L$ steps.  The segments
+$a,F(a),\ldots,F^{d_a-1}(a)$ are pairwise disjoint.
+\item Each $a\in J$ has labels $p(a),q(a)<N$ such that, for $a,h\in J$,
+\[
+ p(a)\leq p(h)\leq q(a)
+ \quad\Longleftrightarrow\quad
+ F^t(h)=a\text{ for some }0\leq t\leq\mu(h).
+\]
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+Take $J$ to be $H$ together with the roots and branching vertices of $S$.
+Every leaf belongs to $H$: any other vertex on a checkpoint path has a
+predecessor on that path.  In a rooted forest, the number of roots plus
+the number of vertices with at least two children is at most the number
+of leaves.  Indeed, summing the numbers of children gives the number of
+nonroot vertices; a branching vertex contributes at least two.  Therefore
+$|J|\leq |H|+|\text{leaves}|\leq2|H|$.
+
+Apply checkpoint coverage to $F(a)$.  A checkpoint hit gives a positive
+hit from $a$ within $2L$ steps; a repetition gives cycle entry within $L$
+steps, where a root is marked.  Hence the next marked vertex is at
+distance at most $2L$.  Between marks, each vertex of $S$ has a unique
+predecessor in $S$, so two such segments cannot merge.  Finally order
+vertices by a preorder traversal of the cut forest.  Descendants of a
+vertex occupy a contiguous interval; its first and last ranks give
+$p,q$.  Only the labels of $J$ need to be stored.  The Lean proof obtains
+the same interval property by lexicographically ordering root-to-vertex
+paths, without formalizing a traversal algorithm.
+\end{proof}
+
+\begin{theorem}[Reachability and first hitting times]\label{thm:reachability}
+A circuit of size $O(B)$, on input $(x,y)$, decides whether
+$F^t(x)=y$ for some $t\geq0$ and returns the least such $t$ when it exists.
+The output may use a separate existence flag and $n$ time bits.
+\end{theorem}
+\begin{proof}
+Use a common parameter $L$ in the depth and cycle-label constructions.
+Write $K=2L$ and construct the forest of \cref{lem:checkpoint-forest}.
+Store a dictionary of the marked vertices $a\in J$, with their states,
+depths, and interval labels.  A second dictionary has one key
+$F^{d_a-1}(a)$ for each nonroot mark $a$, with the same payload for $a$.
+These last-predecessor keys are distinct by disjointness of the segments.
+Both dictionaries have $O(N/L)$ records of $O(n)$ bits.
+
+Suppose first that $y$ is transient.  Generate the prefixes of $x$ and
+$y$ through time $K$.  If $y$ occurs in the prefix of $x$, accept.
+Otherwise select any marked vertex $h$ in that prefix; if none exists,
+reject.  To select a candidate ancestor $a$, use $a=y$ if $y\in J$.
+Otherwise query the second dictionary on the prefix of $y$, retain only
+matches with $\mu(a)\geq\mu(y)$, and select any retained record.  Reject
+if there is no such record.  Finally accept exactly when
+\[
+ y\in\{a,F(a),\ldots,F^K(a)\}
+ \quad\hbox{and}\quad p(a)\leq p(h)\leq q(a).
+\]
+The first test uses a third short prefix.  It is essential for rejecting
+side branches outside $S$.
+
+Every acceptance is sound: $x$ reaches $h$, the interval test says that
+$h$ reaches $a$, and the verification prefix reaches $y$.  Conversely,
+suppose $x$ reaches a transient $y$ beyond its inspected prefix.
+That prefix cannot repeat and must contain a checkpoint.  Every selected
+mark $h$ precedes $y$, so $y\in S$.  If $y$ is unmarked, it lies in a
+unique compressed segment, whose last-predecessor key appears within
+$K$ steps of $y$.  Its lower endpoint passes the depth filter.
+Moreover, every retained key has the same property: if
+$F^j(y)=F^{d_a-1}(a)$ and $\mu(a)\geq\mu(y)$, decreasing depth gives
+$j\leq d_a-1$.  Unique predecessors inside the segment then give
+$y=F^{d_a-1-j}(a)$.  A marked $h$ can reach this segment only through
+$a$.  Thus the selected record passes both final tests.  The marked-target
+case takes $a=y$ directly.
+
+Three prefixes cost $O(Ls)$ gates.  Shared lookup costs
+$O(n^3(L+N/L))$, and depth filtering, record selection, prefix equality,
+and interval comparisons add $O(nL+n^3)$ gates.  Depths and cycle labels
+fit the same tradeoff.  Optimization therefore gives $O(B)$ gates.
+For a positive transient query, the first hitting time is simply
+$\mu(x)-\mu(y)$, since depth decreases by one on each transient step.
+
+If $y$ is cyclic, it is reachable exactly when $c(x)=c(y)$.  On a positive
+instance its first hitting time is
+\[
+ \mu(x)+\bigl((\phi(y)-\phi(x)-\mu(x))\bmod\ell(x)\bigr),
+\]
+where the parenthesized residue lies in $[0,\ell(x)-1]$.  This is the
+first time on or after entry into the cycle with the required phase.
+Finally $\mu(x)+\ell(x)\leq N$, so every first hitting time is at most
+$N-1$.  Arithmetic may use $n+1$ intermediate bits.  The time field is unspecified on negative instances; an additional
+$O(n)$-gate mask can set it to zero if desired.
+\end{proof}
+
+\begin{corollary}[Complete visit schedules]\label[corollary]{cor:schedules}
+A circuit of size $O(B)$, on input $(x,y)$, returns a success flag and
+two integers $d,p$ describing every visit time.  A zero flag denotes no
+visits.  For a positive flag, $d<N$ is the first visit, $0\leq p\leq N$,
+and
+\[
+ \{t\geq0:F^t(x)=y\}=\{d+kp:k\geq0\}.
+\]
+Here $p=0$ for transient $y$, giving the singleton $\{d\}$, and
+$p=\ell(y)$ for cyclic $y$.  The period field uses $n+1$ bits.
+\end{corollary}
+\begin{proof}
+Use \cref{thm:reachability} for the flag and $d$, and \cref{thm:labels}
+and an $O(B)$ cyclicity test for $p$.  After the first visit, a later
+time $t\geq d$ is a visit exactly when $F^{t-d}(y)=y$.  Return times of a
+cyclic point are precisely the multiples of its least positive period.
+A transient point has no positive return.  This proves the descriptor.
+\end{proof}
+
+For example, a visit occurs by deadline $T$ exactly when the flag is
+positive and $d\leq T$.  The number of visits at times $0,\ldots,T$ is
+\[
+ \begin{cases}
+ 0,&\text{flag zero or }T<d,\\
+ 1,&\text{flag positive, }T\geq d,\ p=0,\\
+ 1+\floor{(T-d)/p},&\text{flag positive, }T\geq d,\ p>0.
+ \end{cases}
+\]
+These are arithmetic consequences of the returned descriptor; the
+descriptor bound does not include a circuit for processing an additional
+deadline input of unspecified length.
+
+\paragraph{Relation to navigation data structures.}
+Function powers and path queries have established data-structure
+formulations~\cite{MRRR12,GHN19}.  In particular, nearest labeled
+successors include reachability of a fixed singleton target.
+Those results charge representation space and query time in a RAM model.
+Here the given object is a succinct transition circuit, and every gate
+accessing a nonuniform table is charged.  These differences specify the
+claim being compared; they do not establish historical novelty of the
+present bounds.
+
+\subsection{Recognizable targets and terminating computations}
+
+\begin{corollary}[First recognizable target]\label[corollary]{cor:target}
+Let $P:\bits^n\to\bits$ have circuit size $a$, and put
+$A_P=s+a+n^3$.  Eventual target membership,
+\[
+ H(x)=1\quad\Longleftrightarrow\quad
+ \exists t\geq0:\ P(F^t(x))=1,
+\]
+has a circuit of size $O(A_P+\sqrt{n^3NA_P})$.  Within the same bound,
+a circuit returns the first visited target state and its exact first
+visit time on positive instances.
+\end{corollary}
+\begin{proof}
+Set $G(x)=x$ when $P(x)=1$ and $G(x)=F(x)$ otherwise.  This costs
+$O(s+a+n)$ gates.  A first target, if one exists, is visited before
+step $N$, since an earlier repeated state would preclude a later first
+visit.  Hence $G^N(x)$ is the first target state on positive instances,
+and $H(x)=P(G^N(x))$.  Apply \cref{thm:main} to $G$.
+For the time, apply \cref{thm:depth} to $G$.  On a positive instance,
+the first target is an absorbing fixed point.  A cyclic state cannot
+precede it on the trajectory: iteration is injective on cyclic states,
+so any cyclic predecessor of that fixed point is the same point.
+Consequently $\mu_G(x)$ is exactly the first target time.
+\end{proof}
+
+\begin{corollary}[Complete-configuration simulation]\label[corollary]{cor:halting}
+Suppose a deterministic computation has its entire configuration encoded
+in $b$ bits and a next-configuration circuit of size $s$.  If halting
+configurations are absorbing and every valid initial configuration
+halts, its final-configuration map on valid initial states has circuit
+size
+\[
+ O\!\left(s+b^3+\sqrt{b^3 2^b(s+b^3)}\right).
+\]
+The exact first halting time can also be returned within this bound.
+\end{corollary}
+\begin{proof}
+Before halting, no configuration can repeat.  The iterate at time $2^b$
+is therefore the final configuration.  Apply \cref{thm:main} with
+state width $b$.  The first halt is the transient depth, by the same
+absorbing-state argument as in \cref{cor:target}; use \cref{thm:depth}.
+Initialization and output decoding circuits are
+charged separately.
+\end{proof}
+In particular, when $s=\poly(b)$, both the final configuration and the
+first halting time have circuit size
+\[
+  2^{b/2}\poly(b).
+\]
+For a nearly in-place computation on an $n$-bit input, with complete state
+width $b=n+O(\log n)$ and a polynomial-size transition, this specializes to
+$2^{n/2}\poly(n)$.  Polynomial-size initialization and output decoding
+preserve that bound.  The parameter $b$ includes all persistent input
+information, control, and workspace; these bits are counted even when an
+abstract machine model calls part of its storage read-only.  A general
+polynomial-space machine can have far more than $n+O(\log n)$ configuration
+bits, so the corollary gives no such input-length bound for all of PSPACE.
+
+\subsection{Synchronous and recurring queries}\label{sec:eventual-queries}
+
+The projection $R=F^{N!}$ from the proof of \cref{thm:depth} also supplies
+queries about the eventual dynamics.
+
+\begin{corollary}[Eventual synchronous coalescence]\label[corollary]{cor:coalescence}
+A circuit of size $O(B)$ decides, on input $(x,y)$, whether there exists
+$t\geq0$ such that $F^t(x)=F^t(y)$.
+\end{corollary}
+\begin{proof}
+The required equivalence is
+\[
+ \exists t\geq0:\ F^t(x)=F^t(y)
+ \quad\Longleftrightarrow\quad F^N(x)=F^N(y).
+\]
+Equality before time $N$ persists to time $N$.  Both states are cyclic
+by that time, and $F$ restricts to a bijection on the cyclic states.
+Therefore later equality can be canceled back to time $N$.  Compute
+two copies of $F^N$ and compare their outputs.
+\end{proof}
+
+This query requires the same elapsed time on both trajectories.  Orbit
+intersection permits different elapsed times and is a different predicate;
+for example, distinct points of one cycle never coalesce synchronously.
+
+\begin{corollary}[Recurring and permanent targets]\label[corollary]{cor:recurring}
+For a fixed predicate $P:\bits^n\to\bits$ of circuit size $a$, each of
+\[
+ \forall u\ \exists t\geq u:\ P(F^t(x))=1,
+ \qquad
+ \exists u\ \forall t\geq u:\ P(F^t(x))=1
+\]
+is decidable by a circuit of size
+$O(A_P+\sqrt{n^3NA_P})$, where $A_P=s+a+n^3$.
+\end{corollary}
+\begin{proof}
+A target recurs arbitrarily late exactly when the eventual cycle contains
+an accepting state.  Start at $R(x)$ and use the absorbing-target
+construction in \cref{cor:target}.  If $G$ makes accepting states
+absorbing, the circuit outputs $P(G^N(R(x)))$.  A successful visit is
+periodic and hence recurs arbitrarily late; every sufficiently late visit
+from $x$ is a future visit from $R(x)$.  The projection and the target
+circuit each obey the stated bound.  Permanent eventual acceptance is
+the complement of recurrence of the predicate $1-P$, which changes the
+bound only by a constant number of gates.
+\end{proof}
+
+\section{Structured transitions}\label{sec:structured}
+
+\subsection{Small controllers with affine payloads}\label{sec:controller}
+
+An orbit can visit exponentially many states while its composite updates
+remain easy to describe.  The next result isolates all exponential cost
+in an autonomous controller, allowing a much larger affine payload.
+
+\begin{theorem}[Affine-controller powering]\label{thm:affine-controller}
+Let $q+p=n\geq1$, and write a state as $(u,v)\in\bits^q\times\mathbb F_2^p$.
+Suppose
+\[
+ F(u,v)=\bigl(g(u),A(u)v+b(u)\bigr),
+\]
+where $g:\bits^q\to\bits^q$, $A(u)$ is a $p\times p$ binary matrix,
+and $b(u)\in\mathbb F_2^p$.  For every fixed integer $T\geq0$,
+\[
+ \CC(F^T)=O\!\left(2^q(q+p^2)\right).
+\]
+For an $m$-bit input exponent, the size bound is
+$O(m2^q(q+p^2))$.  In particular, $q=O(\log n)$ gives polynomial-size
+circuits for every fixed power, uniformly in the magnitude of $T$.
+The matrices may be singular and need not commute.
+\end{theorem}
+
+\begin{proof}
+Once the initial controller $u$ is fixed, the controller trajectory and
+all affine maps applied to $v$ are fixed.  Composition of affine maps is
+affine, so for some hardwired matrix $M_T(u)$ and vector $d_T(u)$,
+\[
+ F^T(u,v)=\bigl(g^T(u),M_T(u)v+d_T(u)\bigr).
+\]
+For each of the $2^q$ controller values, evaluate its fixed affine map
+using $O(p^2)$ gates and provide its fixed controller output.  Compute
+each controller-equality flag once, and share it across the $q+p$ output
+bits.  A scan selects the matching record using
+$O(2^q(q+p))$ additional gates.  This proves the fixed-power bound,
+including a charge for every table-selection gate.
+
+For an input exponent, conditionally apply the circuits for $F^{2^j}$
+to the current full state, as in \cref{sec:variable}.  Each stage updates
+the controller as well as the payload and adds $O(q+p)$ selection gates.
+Summing over $m$ stages gives the second bound.
+\end{proof}
+
+Autonomy is essential to this argument: if the controller update depends
+on $v$, its future choices need not be determined by the initial $u$.
+No efficient algorithm for obtaining $M_T(u)$ from a succinct transition
+is asserted here.  The bound uses ordinary affine composition and finite
+selection; it does not claim a new algebraic closure principle.
+
+The same reasoning applies beyond affine maps.  Let $\mathcal M$ be a
+family of maps on $p$-bit payloads containing the identity and closed under
+composition, and suppose \emph{every} member has a circuit of size at
+most $\kappa$.  If the autonomous controller selects maps from
+$\mathcal M$, every fixed power costs
+\[
+ O\!\left(2^q(\kappa+q+p+1)\right),
+\]
+and an $m$-bit input time multiplies this by $m$.  Closure alone is insufficient: the uniform evaluation
+bound on composite maps is a separate hypothesis.  For nonuniform circuit
+existence, no efficient procedure for computing those composites is needed.
+
+\subsection{Sparse modifications of a counter}\label{sec:sparse-counter}
+
+The state-space parameter is not the only source of compression.  Identify
+$\bits^n$ with $\mathbb Z/N\mathbb Z$, where $N=2^n$, and write
+$R(x)=x+1\pmod N$.  A permutation obtained by changing a small number of
+counter successors admits a bound linear in its sparse description, even
+when it is a single cycle through all $N$ states.
+
+\begin{theorem}[Sparse-counter powers]\label{thm:sparse-counter}
+Let $n\geq1$, let $F$ be a permutation of $\mathbb Z/N\mathbb Z$, and let
+$r=|\{x:F(x)\ne R(x)\}|$.  For every fixed $T\in\mathbb Z$,
+\[
+ \CC(F^T)=O\bigl(n(r+1)\bigr).
+\]
+For an unsigned $m$-bit time supplied as input,
+\[
+ \CC\bigl((x,t)\mapsto F^t(x)\bigr)=O\bigl(n(r+m+1)\bigr).
+\]
+Both constants are absolute.  The dependence on time-input length is additive.
+\end{theorem}
+
+\subsubsection{Commutation defects and displacement}
+
+The fixed-power assertion follows from a more general statement.
+
+\begin{proposition}[Sparse-counter centralizers]\label[proposition]{prop:centralizer}
+Let $F$ be any map on $\mathbb Z/N\mathbb Z$ differing from $R$ at $r$
+inputs.  Every permutation $H$ commuting with $F$ has a displacement
+function $\delta_H(x)=H(x)-x\pmod N$ that changes on at most $2r$ counter
+edges.  Consequently, $\CC(H)=O(n(r+1))$.
+\end{proposition}
+
+\begin{proof}
+Put $E=\{x:F(x)\ne R(x)\}$.  If $x\notin E$ and $H(x)\notin E$, then
+\[
+ H(R(x))=H(F(x))=F(H(x))=R(H(x)).
+\]
+Thus the set of commutation failures for $H$ and $R$ lies in
+$E\cup H^{-1}(E)$ and has size at most $2r$.  Commutation at $x$ is
+exactly $\delta_H(x+1)=\delta_H(x)$.  Cutting the ordinary linear order
+$0,\ldots,N-1$ at these changes gives at most $2r+1$ constant intervals.
+Compare the input with their endpoints, select a hardwired displacement,
+and add it modulo $N$, at cost $O(n(r+1))$.
+
+An alternative implementation, used in Lean, avoids ordering the changes.
+Let $D=\{i:\delta_H(i+1)\ne\delta_H(i)\}$, with cyclic addition in the
+arguments and ordinary integer comparisons below.  Telescoping gives
+\[
+ H(x)=x+\delta_H(0)+
+       \sum_{\substack{i\in D\\i<x}}
+         \bigl(\delta_H(i+1)-\delta_H(i)\bigr)\pmod N.
+\]
+Each summand uses one comparison, a conditional constant word, and a
+linear-size adder.  The wraparound edge is never selected.  All gates,
+including the shared carry chains, are charged.
+\end{proof}
+
+Every signed power of a permutation commutes with it, proving the first
+part of \cref{thm:sparse-counter}.  The proposition only requires
+injectivity of $H$ in its cardinality argument; it does not require $F$
+to be a permutation.  Its set-containment argument works on arbitrary
+universes, before finiteness or coordinates are imposed.
+
+The geometry relating commutation failures to blocks in cycles is
+established permutation theory.  Moreno and Rivera characterize these
+blocks in their Theorem~3.8 and Corollary~3.10~\cite{MR14}.  Here we use
+the elementary defect containment and account for the Boolean cost of the
+resulting representation.  Historical priority of these precise circuit
+bounds has not been determined.
+
+\subsubsection{A chart constructed from the edited successors}
+
+For the live-time bound, assume first $r>0$ and cut the counter cycle
+immediately after each point of $E$.  There are $r$ nonempty circular
+arcs.  Inside an arc $F$ increments; its only possible change is at the
+last state.  Since $F$ and $R$ are permutations agreeing off $E$,
+\[
+ F(E)=R(E).
+\]
+Indeed, the images of the unedited inputs coincide, so their complements
+coincide.  Therefore each edited edge leads to an arc start, and these
+edges induce a permutation of the $r$ arcs.
+
+Decompose that permutation into cycles and concatenate the arcs in each
+cycle, retaining their individual lengths.  Assign to a state the triple
+$(c,p,\ell)$ consisting of its cycle identifier, its position within that
+cycle, and its total cycle length.  The coordinate map and its inverse
+are piecewise translations on the original arcs and their concatenated
+images.  At most one original arc crosses zero; splitting it there adds
+one linear interval.  Comparisons, shared record selection, and addition
+therefore implement each direction in $O(n(r+1))$ gates.  Identifiers and
+positions use $n$ bits, while lengths use $n+1$ bits to allow $\ell=N$.
+All intermediate arithmetic uses $O(n)$ bits.
+
+In these coordinates one step preserves $c,\ell$ and increments $p$
+modulo $\ell$.  For an $m$-bit input $t$, compute its remainder by scanning
+bits from most significant to least significant.  With current remainder
+$u<\ell$, the next remainder is $2u+b$ or $2u+b-\ell$, according as
+$2u+b<\ell$ or not.  A comparison and subtraction cost $O(n)$ per bit;
+one extra bit prevents overflow.  Add $p$, reduce once more, and decode.
+The cost is $O(nr+nm+n)$.  If $r=0$, ordinary addition modulo $N$ gives
+the same bound.  This proves the second part of \cref{thm:sparse-counter}.
+For fixed signed $T$, hardwire $T\bmod\ell$ for each cycle instead.
+
+\begin{corollary}[Labels and navigation for sparse counters]\label[corollary]{cor:sparse-labels}
+For a permutation differing from the counter at $r$ states, the cycle
+length, numerically least cycle vertex, and phase of an input state can be computed
+with $O(n(r+1))$ gates.  The same bound suffices, on input $(x,y)$, for
+reachability, the exact first hitting time, and a descriptor of all visits.
+\end{corollary}
+\begin{proof}
+Cut the ordinary linear order after each exception, obtaining at most
+$r+1$ intervals.  Within each interval $[a,b)$, the trajectory follows
+ordinary addition.  Hardwire its cycle representative $c$, cycle length
+$\ell$, and phase $p_a$ at its first state.  An input $x$ in that interval
+has label $(c,\ell,(p_a+x-a)\bmod\ell)$.  The interval length is at most
+$\ell$, so one addition and conditional subtraction suffice for the phase.
+Comparisons and record selection cost $O(n)$ per interval.
+
+Compute the two labels.  Since every state is cyclic, $y$ is reachable
+from $x$ exactly when $c(x)=c(y)$.  On a positive instance, the first hit is
+\[
+ d=(\phi(y)-\phi(x))\bmod\ell(x),
+\]
+and all visits occur at times $d+k\ell(x)$, $k\geq0$.  Both phases are
+already below the common cycle length, so the difference needs only
+comparison and subtraction: use $\phi(y)-\phi(x)$ when nonnegative, and
+$\ell(x)-(\phi(x)-\phi(y))$ otherwise.  This costs $O(n)$ additional gates.
+The descriptor also determines the exact bounded visit count; this is an
+arithmetic interpretation of its output, with no deadline input charged.
+\end{proof}
+
+\begin{proposition}[Polynomial-time construction from an edit list]
+\label[proposition]{prop:sparse-compiler}
+Given $n$ and an explicit list of the $r$ edited successors of the
+$n$-bit counter, one can check permutation preservation and construct an
+orbit chart of $O(r+1)$ records, each of $O(n)$ bits, in time polynomial
+in $n$ and $r+1$.  For a valid list, the chart supplies the encoding and
+decoding used above.  Given also a signed binary integer $T$, one can
+construct a piecewise-translation table for $F^T$ with at most $2r+1$
+linear intervals in time polynomial in $n$, $r+1$, and $\log(|T|+2)$.
+\end{proposition}
+\begin{proof}
+Compare the edited outputs with the freed counter outputs to check
+$F(E)=R(E)$, after checking distinct input keys.  Sort the cuts, compute
+arc lengths, follow the induced permutation of the arcs, and form prefix
+sums on each of its cycles.  These operations construct the chart using
+arithmetic on $O(n)$-bit integers.  The case $r=0$ is the ordinary counter
+chart.  For a signed power, reduce $T$ modulo each chart cycle length.
+Use the chart to evaluate $F^{-T}$ on $E$, and test the $O(r)$ candidate
+change edges $E\cup F^{-T}(E)$ from \cref{prop:centralizer}.  Sorting their
+successors and evaluating the displacement at the interval starts gives
+the table; discard boundaries without a displacement change.
+\end{proof}
+
+The input here is the explicit edit list, whose entries specify where
+counter edges have changed and their new successors.  Given only a circuit
+for $F$, identifying that list is a separate task: the proposition asserts
+no polynomial-time extraction of exceptions from a transition circuit.
+The chart construction avoids enumeration of the $N=2^n$ states.
+The explicit arithmetic and selection constructions above then compile
+an $m$-bit iterator in time polynomial in $n,r+1,m$ with the gate bound
+of \cref{thm:sparse-counter}.
+
+The executable \texttt{sparse\_counter.py} implements this chart and interval
+compiler.  Independent finite checks and their scope are recorded in
+\texttt{REVIEW.md}; they do not prove the gate bound or compiler correctness.
+
+\subsubsection{Large transitions and charged coordinate changes}
+
+The improvement can apply to transitions with genuinely exponential
+minimum circuit size.  Fix $r$ nonempty counter arcs and reconnect them
+in any single cyclic order.  This gives $(r-1)!$ distinct permutations,
+each differing from the counter at at most $r$ states and having one
+orbit of length $N$.  For $r=2^{\lfloor\alpha n\rfloor}$ with fixed
+$0<\alpha<1$, the logarithm of this family size is $\Theta(r\log r)$.
+The circuit-description bound used in \cref{sec:lower} implies that some
+members need $\Omega(r)$ gates, while all have $O(n(r+1))$-gate circuits.
+Consequently there exist families with
+\[
+ \CC(F_n)=2^{\alpha n+O(\log n)},\qquad
+ \sup_{T\in\mathbb Z}\CC(F_n^T)=2^{\alpha n+O(\log n)}.
+\]
+The lower bound is existential counting, not an explicit hard transition.
+Using only their transition sizes in \cref{thm:main} would instead give
+an upper bound with exponential scale $2^{(1+\alpha)n/2}$.
+
+\begin{corollary}[Charged orbit coordinates]\label[corollary]{cor:coordinates}
+Suppose a bijection $\phi:\bits^n\to\mathbb Z/N\mathbb Z$ satisfies
+$\phi(G(x))=\phi(x)+1\pmod N$.  If a permutation $F$ differs from $G$
+at $r$ states, then
+\[
+ \CC(F^T)\leq \CC(\phi)+\CC(\phi^{-1})+O(n(r+1))
+ \quad(T\in\mathbb Z).
+\]
+For an $m$-bit input time, the last term is $O(n(r+m+1))$.
+\end{corollary}
+\begin{proof}
+Conjugate $F$ by $\phi$.  The exceptional-set cardinality is unchanged,
+and the reference permutation becomes the counter.  Apply
+\cref{thm:sparse-counter} and compose with the two coordinate circuits.
+\end{proof}
+
+Both coordinate costs are essential.  A long orbit does not itself
+supply cheaply computable coordinates.  Conversely, these examples can
+visit the entire state space: the compressed object is the arrangement
+of arcs, without a reduction in the number of reachable states.
+
+For the pair queries of \cref{cor:sparse-labels}, coordinate transport
+needs only the forward map: encode both $x$ and $y$, then query the
+conjugated permutation.  Reachability and visit times are preserved by
+conjugacy, so the bound is $2\CC(\phi)+O(n(r+1))$.  No state is returned,
+and no inverse-coordinate circuit is required.
+
+A finite-field application, including the cost of discrete-logarithm
+coordinates, is given in \cref{app:binary-field}.
 
 \section{Lean formalization}\label{sec:lean}
 
 The accompanying \texttt{lean/} project proves existence of actual Boolean
-circuits, with evaluation semantics and gate bounds.  Its coverage includes
-all general-map rows of \cref{tab:results}, invariant-set and image-sensitive
-bounds, the active-mass refinement, permutation inversion, and
-complete-configuration simulation.  The affine-controller bounds and their
-generalization to bounded-cost composition-closed payload families are
-checked as well.  It also checks sparse-counter centralizers, signed fixed
-powers, additive input-time iteration, cycle labels, and pair navigation,
-including transport through supplied coordinate circuits.  The lower-bound
-results include hard powers, their overwhelming
-proportion, the remainder-circuit comparison, and the necessary exponent
-length.  The visit descriptor specifies every visit time and its bounded
-count; these semantics do not charge a separate deadline-processing circuit.
+circuits with evaluation semantics and gate bounds.  It covers
+\cref{tab:results}, the invariant-set, image-sensitive and active-mass
+refinements, permutation inversion, complete-configuration simulation,
+and the lower-bound results.  The semantic lemmas also support arbitrary
+state types with finite invariant subsets and supplied Boolean encodings;
+initialization and decoding costs remain additional.
 
 The development uses CSLib's circuits and simultaneous synthesis relation,
 Mathlib's dynamics and arithmetic, and the author's Circuit library through
 \texttt{complexitylib}, including its sorting and counting results
-\cite{CSLib,Mathlib,Complexitylib}.  Lean and the dependencies are pinned.
-\texttt{lean/README.md} records exact revisions, public theorem names, and
-build commands.  \Cref{app:lean-details} gives concrete constants and the
-implementation walkthrough.
+\cite{CSLib,Mathlib,Complexitylib}.  Its native basis consists of Boolean
+constants, NOT, AND, and OR.  Every gate is charged, including constants;
+wiring and fan-out are free.  This differs from the paper's basis by an
+absolute factor and an additive constant.
+\Cref{app:lean-details} states the native tradeoff and explains proof
+differences.  The public theorem map, detailed constants, module guide,
+pinned revisions, and build commands are maintained in \texttt{lean/README.md}.
 
-\paragraph{Representation and proof choices.}
-The native basis consists of Boolean constants, NOT, AND, and OR.  Every
-gate is charged, including constants; wiring and fan-out are free.  Thus
-the formalization synthesizes sorting, lookup, selection, and arithmetic
-from Boolean gates.  Checkpoints are obtained by packing disjoint simple
-paths.  The dynamics identities are separated from the bit-level circuit
-construction, allowing them to be reused across representations.
-For pair navigation, a compressed forest adds roots and branching vertices
-to those checkpoints.  Interval labels and depth-filtered edge records
-replace the variable-time evaluation that would otherwise cost $O(nB)$.
-
-The semantic lemmas quantify over types in arbitrary universes.  For the
-encoded fixed-power theorem, only the relevant invariant subset
-$S\subseteq\alpha$ must be finite.  An encoding $e:\alpha\to\bits^n$
-must be injective on $S$, and a supplied
-Boolean transition circuit must agree with $F$ on encoded states.  The
-bound counts $|S|$ while retaining the actual bit width $n$; initialization
-and decoding costs are additional.  Canonical representatives require a
-linear order.  No operation on an arbitrary state type is a unit-cost gate.
-
-\paragraph{Checked boundary.}
 The exported theorems have guarded axiom lists containing only
-\texttt{propext}, \texttt{Classical.choice}, and \texttt{Quot.sound}; the
-project has no \texttt{sorry} placeholders or additional axioms.  Classical
-choices select checkpoints, enumerations, and circuit witnesses, so the
-formalization proves nonuniform existence and does not extract a compiler.
-The sparse input-time theorem includes existence of the interval chart and
-the full native gate bound.  \Cref{prop:sparse-compiler} has a prose proof
-and an independently tested Python implementation; that algorithm's
-correctness and running time are not checked in Lean.  The
-sparse-transition counting application and finite-field corollary also
-remain prose results, the latter using an external discrete-logarithm
-theorem.  Kernel checking supplies neither a historical-priority result
-nor independent confirmation that the statements capture every intended
-model convention.
+\texttt{propext}, \texttt{Classical.choice}, and \texttt{Quot.sound}, with no
+\texttt{sorry} placeholders or additional axioms.  Classical choices supply
+checkpoints, enumerations, and circuit witnesses; the result is nonuniform
+existence.  The sparse chart's existence and circuit cost are checked, but
+the edit-list compiler's algorithm and runtime, sparse-transition counting
+application, and finite-field corollary remain prose results.  The
+cryptographic and literature discussions are also outside the mechanized
+boundary.  Kernel checking establishes neither historical priority nor
+independent fidelity to every intended model convention.
 
-\section{Conclusion and scope}\label{sec:scope}
+\section{Conclusion and open questions}\label{sec:scope}
 
-The results give three complementary circuit bounds for finite dynamics.
-For arbitrary transitions, sparse checkpoints and charged batched lookup
-compute every fixed iterate at square-root state-space cost.  The same
-construction recovers functional-graph information: cycle labels, transient
-depth, pair-input reachability, exact hitting times, complete visit schedules,
-and eventual target behavior.  The graph labels and pair queries share the
-same $O(B)$ bound as a fixed iterate.  For polynomial-size transitions and
-predicates these queries all have size $2^{n/2}\poly(n)$.  Compact orbit
-coordinates can improve the bound further: $r$ permutation-preserving
-counter edits give $O(n(r+1))$ fixed powers and $O(n(r+m+1))$ live-time
-iteration, even on a single orbit through all states.
-Their reachability, first hitting times, and visit descriptors also cost
-$O(n(r+1))$.
-An autonomous controller with only $O(\log n)$ bits also permits
-polynomial-size powering when its payload updates are affine; more
-generally, a uniform circuit bound on a composition-closed payload family
-isolates the exponential dependence to the controller width.
+Sparse checkpoints and charged lookup give square-root state-space bounds
+for arbitrary fixed iterates and functional-graph navigation.  The counting
+example makes the exponent sharp for unrestricted fixed powers; it does not
+establish sharpness for polynomial-width input times.
 
-The universal bounds are nonuniform in the transition and fixed exponent.
-They apply to every starting state but do not bound circuit depth or give
-an efficient method for discovering checkpoints and payloads from a
-transition circuit.  The constructive sparse-counter result has a stronger
-input assumption: an explicit edit list permits polynomial-time chart
-construction.  Transporting either result to an encoded computation must
-count every persistent configuration bit and charge the coordinate maps.
-
-The matching lower bound selects powers by counting.  Almost every power
-of the explicit linear-size permutation is hard under a uniform exponent
-residue, but hard exponents necessarily need exponentially many binary bits.
-The result identifies no explicit hard exponent and establishes no matching
-lower bound for polynomial-width input times.  The permutation-inversion
-consequence remains compatible with polynomial-size one-wayness.
-
-Checkpointing, sorting-based lookup, and the commutation/block geometry
-have established antecedents; historical priority for the circuit
-formulations remains unresolved.  The general additive conjecture
-$s+\widetilde O(2^{n/2})$ is also open.  Extending the class of systems with
-cheap, constructible orbit coordinates is a concrete direction suggested
-by the sparse-counter result.
+Two directions remain: the additive bound
+$s+\widetilde O(2^{n/2})$, and broader classes of transitions with cheaply
+constructible orbit coordinates.  The sparse-counter compiler shows how
+an explicit structural description can supply such coordinates; finding them
+from a succinct transition circuit is a separate problem.
 
 \section*{Provenance and draft status}
 
@@ -1897,11 +1705,10 @@ attribution require author review; the draft does not represent
 independent peer verification.
 
 \appendix
-\section{Quantitative formalization and implementation details}\label{app:lean-details}
+\section{Correspondence with the formalization}\label{app:lean-details}
 
-This appendix records the native gate accounting and proof organization
-behind the coverage summary in \cref{sec:lean}.  Constants are deliberately
-loose and serve as checked accounting bounds.
+The native circuit model charges constants as well as Boolean operations.
+Its foundational statement is the following.
 
 \begin{theorem}[Mechanized tradeoff]\label{thm:lean}
 Let $c$ be a circuit over the Boolean constant, NOT, AND, and OR basis,
@@ -1929,226 +1736,81 @@ and arbitrary fan-out permit sharing; constants are charged.
 Translating the paper's fixed fan-in-two basis to this basis changes
 size by at most an absolute factor and an additive constant.
 
-\paragraph{Proof organization and shared tables.}
-\texttt{Statement.lean} gives the foundational statement boundary using
-only CSLib and Mathlib.  The modules in \texttt{Proofs/} build the circuits,
-and \texttt{Main.lean} exports the results and guards their axiom lists.
-The checkpoint proof packs disjoint simple paths, as in
-\cref{lem:checkpoints}, and charges one copy of the transition circuit
-per retained orbit step.
+The public theorem map in \texttt{lean/README.md} gives the remaining exact
+constants and exported names.  Three implementation differences explain how
+the formalized constructions realize the paper's asymptotic bounds.
 
-For a single fixed power, one useful collision suffices.  The checked
-implementation sorts checkpoint records, prefix records, and tagged
-padding.  An adjacent equal-key pair with distinct nonpadding records
-gives either a checkpoint hit or a repeated prefix pair.  Comparators
-share their control bit across all payload bits.  Batcher networks cost
-$O(rR\log^2R)$ gates for $R$ records of $r$ bits.
-The batched construction additionally checks a full shared dictionary
-lookup, including repeated queries and absent-key flags.  It charges
-the checkpoint table once for the entire batch, yielding
-\cref{eq:batch-tradeoff,eq:batch-opt}.  Conditional binary powers give
-both single-input and independently timed batched iterators.
-The long-time construction in \texttt{LongTime.lean} computes a cycle
-length once, uses the streaming remainder circuit to normalize the input
-time below $2N$, and applies binary powering to $n+3$ internal bits.
-Its checked optimized bound is
-$33000000(n+1)\widehat B+200m(n+1)$, proving \cref{thm:long-time} together
-with the original variable-time bound.  The extra internal bits simplify
-overflow proofs and are fully charged.
+\begin{enumerate}
+\item For a single fixed power, one useful collision suffices.  The circuit
+sorts checkpoint and prefix records with tagged padding, then selects an
+adjacent equal-key pair witnessing either a checkpoint hit or a repeated
+state.  Batches use the full shared dictionary lookup of \cref{lem:lookup}.
+The repeated-state decoder adds the period to a hardwired residue until the
+index lies in the repeated interval; its $O(Kn^2)$ cost, with $K=2L$, fits
+the main budget.
+\item Cycle labels are computed after projecting by $F^{N!}$, which reaches
+the cycle and preserves its labels.  A short cyclic prefix either meets a
+checkpoint or contains the whole cycle, allowing a scan for its minimum and
+period.  This replaces the direct first-repetition argument in
+\cref{thm:labels}.  The forest proof obtains ancestry intervals by ordering
+root-to-vertex paths, without implementing a traversal algorithm.
+\item Sparse-counter charts use at most $r+1$ ordinary linear intervals,
+with hardwired canonical cycle labels, rather than compiling the weighted
+arc permutation.  Encoding and decoding handle phase wraparound within
+those intervals.  Both coordinate circuits and one streaming remainder
+computation are charged.  This proves the claimed circuit existence without
+verifying the edit-list compiler.
+\end{enumerate}
 
-For a repeated pair $i<j$, the fixed-power decoder starts from the
-hardwired residue $T\bmod(j-i)$ and adds $j-i$ until the index enters
-$[i,j)$.  At most $K$ corrections suffice.  Width $n+2$ prevents overflow
-on valid witnesses, and the checked $O(Kn^2)$ cost fits the main budget.
-No gate processes the full binary expansion of the fixed exponent $T$.
+Internal arithmetic uses spare bits to represent full-length cycles and
+prevent overflow.  The checked first-hitting-time circuit returns $n+1$
+time bits; its bound below $2^n$ on positive instances permits discarding
+the top bit.  Visit descriptors use a success flag and two $(n+1)$-bit
+fields, with period zero denoting a singleton.  Their all-time semantics
+and bounded-count interpretation do not include an additional
+deadline-processing circuit.
 
-\paragraph{Navigation implementation.}
-The finite-dynamics layer defines transient depth, minimal cycle length,
-the least cycle state, and phase, and proves the reachability and
-first-hitting-time identities in \cref{sec:structure}.  These semantic
-lemmas apply to finite types in arbitrary universes; canonical
-representatives additionally use a linear order.
+\section{Sparse edits of a primitive binary-field cycle}\label{app:binary-field}
 
-The circuit for cycle labels uses a slight variation on the proof above.
-First apply $F^{N!}$.  This reaches the cycle and preserves its labels,
-including phase, since every possible cycle length divides $N!$.
-On these cyclic inputs, a short prefix with no checkpoint contains the
-whole cycle.  A scan finds its least state, its first positive return,
-and its first visit to that least state.  Otherwise the shared dictionary
-supplies a checkpoint label and modular subtraction corrects its phase.
-This yields the checked bound $30120000\widehat B$.
-
-\texttt{CheckpointDepth.lean} implements \cref{thm:depth}: it retains
-both short orbits, selects their first equality when present, and otherwise
-adds the prefix index to a checkpoint's stored depth.  Its checked bound
-is $3000000\widehat B$.  The earlier binary-search implementation is
-retained as a separate, weaker theorem.
-\texttt{CheckpointForest.lean} proves $|J|\leq2|H|$;
-\texttt{ForestSegments.lean} proves shortness, disjointness, and the
-depth-filtered predecessor test.  \texttt{ForestIntervals.lean} constructs
-bounded ancestry labels on every finite universe.
-\texttt{ForestNavigation.lean} checks the abstract query, including the
-final prefix verification.  The record and synthesis modules encode it
-using two shared dictionaries and three short transition chains.
-\texttt{ForestCircuits.lean} gives transient reachability with bound
-$20000000\operatorname{powerBudget}(n,s,2^n,L)$ and full reachability
-with bound $50000000\operatorname{powerBudget}(n,s,2^n,L)$.
-Two depth records, two cycle-label records, and bounded-word arithmetic
-then give the first hitting time.
-The checked navigation circuit has $2n$ input bits, an existence flag,
-and $n+1$ time bits, with size at most
-$300000000\widehat B$.  On positive instances its decoded time
-is proved to be the first hit and strictly less than $2^n$; its top time
-bit can therefore be discarded.  No time-field specification is imposed
-on negative instances.  Intermediate label and navigation words have
-width $n+3$.  A proved shift-and-subtract division circuit supplies
-variable remainders in $O(n^3)$ gates; all arithmetic branches are total.
-
-\texttt{VisitScheduleCircuits.lean} appends the target's minimal return
-period, using zero for a transient target.  Its descriptor has one success
-bit and two $(n+1)$-bit fields, with checked size
-$360000000\widehat B$.  The specification describes every visit time
-and proves the displayed counting formula in \cref{cor:schedules}.
-\texttt{VisitSchedules.lean} proves the progression identity and deadline
-test from a first visit on any state type, even an infinite one;
-\texttt{VisitCounts.lean} counts the bounded progression, including period
-zero.  These counting identities are semantic consequences of the record,
-not a gate bound for an additional deadline-processing circuit.
-
-\paragraph{Applications and lower bound.}
-The inversion proof uses $P^{N!-1}=P^{-1}$, also for encoded finite
-permutations.  Absorbing target states give \cref{cor:target}; absorption
-and termination hypotheses give \cref{cor:halting}, with the complete
-configuration counted in the state width.
-\texttt{TargetTimes.lean} proves that absorption turns the first successful
-visit time into transient depth.  It supplies a target-existence flag
-and first time with bound
-$3120000\widehat B_P+a$, where
-$\widehat B_P=\operatorname{optimizedBudget}(n,s+a+4n,2^n)$.
-The checked first-halting-time circuit has bound $3000000\widehat B$
-under semantic absorption and termination hypotheses, without requiring
-a recognizer circuit.  Both time specifications are bounded by $N$;
-the target-time field is unspecified on negative instances.
-
-The cycle-projection layer proves idempotence,
-\cref{eq:projection-depth}, and the finite-state equivalence used in
-\cref{cor:coalescence}.  The checked coalescence circuit costs at most
-$240000\widehat B+6n+1$ gates.  The recurring-target circuit composes the
-factorial projection with absorbing-target reachability; Boolean
-complements give permanent eventual acceptance.  Their optimized bounds
-are checked with the predicate and its complement charged explicitly.
-
-The lower-bound development constructs the modulus-counter permutation
-as a native Boolean circuit of size at most $50(k+1)$ on $2k$ bits.
-It proves injectivity of its powers below
-$\lcm(1,\ldots,2^k-1)$, applies Mathlib's exponential lower bound for this
-least common multiple, and counts circuit descriptions including output
-wires using the Circuit library.  For every $k\geq64$, it proves that
-some such power requires more than
-$\floor{2^k/(1024(k+1))}$ gates.  Thus both the small update circuit and
-the hard-power conclusion of \cref{thm:lower} are checked.  The exponent
-is existential; this is not a lower bound for a specified short exponent.
-The theorem \texttt{almost\_every\_counter\_power} checks a stronger
-count: the number of easy residues, multiplied by $2^{2^{k-1}}$, is at
-most the period.  This division-free statement proves the exceptional
-fraction bound in \cref{thm:typical-powers} for the native gate threshold.
-No probability-space infrastructure is needed for this finite uniform count.
-
-The two native translations in \texttt{CounterRemainders.lean} have costs
-$s+1$ from a power circuit to a remainder circuit, and $s+100(k+1)$ in
-the opposite direction.  They check the inactive branches and the spare
-carry bit explicitly.  Hardwiring an exponent $T<2^m$ then gives a power
-circuit with at most $110(m+1)(k+1)$ gates.  The checked theorem
-\texttt{hard\_power\_exponent\_capacity} shows that any such exponent
-meeting the lower-bound threshold satisfies
+\begin{corollary}\label[corollary]{cor:binary-field}
+Represent $K=\mathbb F_{2^n}$ in a fixed polynomial basis and fix a
+primitive element $\omega$.  If a permutation $F$ differs from
+$L(x)=\omega x$ at $r$ states, then
 \[
-  2^k<112640(m+1)(k+1)^2.
+ \CC(F^T)\leq n^{O(\log n)}+O(n(r+1))
+ \quad(T\in\mathbb Z).
 \]
-This supplies a quantitative native-circuit version of
-\cref{cor:exponent-length} without fixing a convention for the bit length of zero.
+With an $m$-bit input time the bound is
+$n^{O(\log n)}+O(n(r+m+1))$.
+\end{corollary}
+\begin{proof}
+Insert zero into the nonzero multiplicative cycle by setting
+$G(0)=1$, $G(\omega^{-1})=0$, and $G(x)=\omega x$ elsewhere.
+Then $G$ is one cycle, and $F$ differs from it at at most $r+2$ states.
+Coordinates are
+$\phi(0)=0$ and $\phi(\omega^j)=j+1$ for $0\leq j<2^n-1$.
+Decoding uses finite-field exponentiation and costs $\poly(n)$ gates.
+Encoding uses discrete logarithms.
 
-\paragraph{Sparse-counter implementation.}
-The universe-polymorphic commutation lemma proves that the defect set
-lies in $E\cup H^{-1}(E)$; on a finite type, injectivity of $H$ gives the
-factor-two cardinality bound.  For binary words, a sparse telescoping sum
-reconstructs displacement.  Each threshold correction uses an unsigned
-comparison, a word selector, and a shared-carry adder.  The resulting
-native circuit has at most $100(n+1)(r+1)$ gates.  The theorem
-\texttt{sparse\_counter\_centralizer} requires injectivity of $H$ and
-commutation with $F$, while \texttt{sparse\_counter\_power} specializes
-to a permutation and any integer exponent, including negative powers.
-The theorem \texttt{sparse\_coordinate\_power} checks the charged fixed-power
-transport through supplied coordinate circuits.  The streaming-remainder
-circuit has bound $2+m(51(k+1)+4)$ for an $m$-bit numerator and a nonzero
-$k$-bit modulus, with a spare internal bit.  Its semantics and cost are
-both checked.
-For live time, \texttt{CounterIntervals.lean} cuts the ordinary linear
-order after each exceptional successor and proves existence of at most
-$r+1$ intervals on which iteration is ordinary addition.  Permutation
-injectivity bounds each interval length by its cycle length.  The chart
-hardwires numerically least cycle representatives, lengths, and starting phases.
-Its encoding adds the distance from the interval start to the stored
-phase.  Its decoding tests the cycle representative and the modular phase
-distance from each interval start, covering intervals that cross phase
-zero without extra records.  After two shared constants, the two directions
-cost at most $220(n+3)$ and $150(n+3)$ gates per interval.
+Kleinjung and Wesolowski's Theorem~1.1~\cite{KW22} gives expected time
+$n^{O(\log n)}$ for discrete logarithms in characteristic two.
+To obtain exact nonuniform circuits, let $\tau(n)$ bound this expectation
+for every input.  Truncate each trial at $2\tau(n)$ steps and verify
+candidate logarithms by exponentiation.  A trial succeeds with probability
+at least $1/2$.  Among $n+1$ independent random tapes, the probability that
+some one of the fewer than $2^n$ nonzero inputs has no successful trial is
+less than one.  Fix tapes that work for every input and select the first
+verified answer.  Circuit simulation and verification have polynomial
+overhead in $\tau(n)$ and $n$, preserving quasipolynomial size.
+Apply \cref{cor:coordinates}.  The case of bounded $n$ is absorbed by
+the constants.
+\end{proof}
 
-The middle stage streams the time bits modulo the selected cycle length
-and advances the phase, once for the whole table.  It costs at most
-$200(n+3)(m+1)$ gates.  The theorem
-\texttt{sparse\_counter\_variable\_time} therefore constructs a native
-circuit with bound $1000(n+3)(r+m+1)$, without a supplied chart certificate
-or an unpriced lookup assumption.  Internal words have $n+2$ bits to
-represent $N$ and prevent intermediate overflow.  The theorem
-\texttt{sparse\_coordinate\_variable\_time} additionally charges both
-coordinate circuits.  Keeping only the encoder gives
-\texttt{sparse\_counter\_labels}, with bound $500(n+3)(r+1)$.
-
-\texttt{ReducedResidue.lean} implements modular subtraction of two
-already reduced $w$-bit residues in $140(w+1)$ gates, without general
-division.  \texttt{SparseNavigation.lean} uses two label circuits and this
-subtraction to obtain reachability, exact first hits, and complete visit
-descriptors in $1200(n+3)(r+1)$ gates.  The first-time field has $n+1$
-bits and is specified on reachable pairs; the period field also has
-$n+1$ bits, allowing a cycle of length $N$.  The visit-set and bounded-count
-interpretations are both checked.  Transport through coordinates adds
-$2\,\mathrm{encode.size}$, with no decoder assumption or cost.
-
-This nonuniform chart proof does not verify the Python compiler's
-weighted arc-permutation algorithm or its running time.  Those claims,
-the sparse-transition counting application, and the finite-field corollary
-remain outside the Lean boundary.
-
-\paragraph{Active-mass refinement.}
-The active-mass theorem is checked by restricting the universe-polymorphic
-packing lemma to \texttt{activeVertices}.  It proves $|H|L\leq Q_L$ and
-coverage within $4L$ steps; $n+3$ index bits suffice for the resulting
-native circuit.  The theorem \texttt{active\_mass\_fixed\_power} has bound
-$120000\,\mathrm{powerBudget}(n,s,Q_L,L)$, including the case $Q_L=0$.
-
-\paragraph{Controllers and affine payloads.}
-The universe-polymorphic \texttt{controlledPayload\_mem} proves closure of
-the composite payload map without any finiteness hypothesis.  For Boolean
-states, \texttt{controlled\_family\_power} constructs a native circuit with
-at most $2+2^q(\kappa+6q+4p+1)$ gates, assuming every family member costs
-at most $\kappa$.  The controller equality flags are shared across output
-bits; all $2^q$ candidate payload circuits are charged.
-
-Affine payloads use Mathlib's \texttt{AffineMap} over the Boolean ring,
-whose addition is XOR.  This keeps the semantic vectors and native circuit
-wires in the same type.  \texttt{AffinePayload.lean} identifies an affine
-map with the coefficient-seed representation already used by the Circuit
-library and reuses its charged affine-evaluation circuit, of size at most
-$p(5(p+1)+1)$.  Consequently \texttt{affine\_controller\_power} has bound
-\[
- D_{q,p}=2+2^q\bigl[p(5(p+1)+1)+6q+4p+1\bigr]
- \leq32\cdot2^q(q+p^2+1).
-\]
-The corresponding live-time circuit costs $m(D_{q,p}+4(q+p))$.
-The checked polynomial specialization assumes
-$2^q\leq K(q+p+1)^d$ and bounds every fixed power by
-$32K(q+p+1)^{d+2}$ gates.  The added ones cover zero-width encodings;
-neither invertibility nor commutation is assumed.
+This corollary relies on the cited discrete-logarithm theorem and the
+nonuniform simulation argument; those ingredients are not formalized in
+our Lean development.  It concerns sparse permutation-preserving edits
+to a primitive multiplicative cycle.  It does not imply the unrestricted
+conjectural bound $s+\widetilde O(2^{n/2})$.
 
 \begin{thebibliography}{99}
 

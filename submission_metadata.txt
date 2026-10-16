@@ -9,44 +9,30 @@ Boolean circuit complexity; function iteration; functional graphs; nonuniform co
 
 ABSTRACT (LATEX)
 Let $F:\{0,1\}^n\to\{0,1\}^n$ have a Boolean circuit of size $s$, and put
-$A=s+n^3$ and $B=A+\sqrt{n^3 2^nA}$.  We establish three forms of
-compression for finite deterministic dynamics.  First, every fixed
-iterate $F^T$ has a bounded-fan-in circuit of size $O(B)$, independently
-of the magnitude and bit length of $T\geq0$, without an injectivity
-assumption.  Sparse checkpoints and sorting-based lookup give this bound,
-with every lookup and arithmetic gate charged.  We also give variable-time
-and shared batched versions.
+$A=s+n^3$ and $B=A+\sqrt{n^3 2^nA}$.  Every fixed iterate $F^T$ has a
+bounded-fan-in circuit of size $O(B)$, independently of the magnitude of
+$T\geq0$, without assuming injectivity.  The construction uses sparse
+checkpoints and sorting-based lookup, with every access and arithmetic gate
+charged.  It is nonuniform and gives no efficient preprocessing algorithm
+from a transition circuit.
 
-Second, the same construction supports functional-graph queries.  Cycle
-labels, transient depth, reachability, exact first hitting times, and
-complete visit descriptors each cost $O(B)$.  A compressed checkpoint
-forest supports the pair-input queries.  Polynomial-size
-transitions and target predicates therefore give
-$2^{n/2}\operatorname{poly}(n)$-size circuits for navigation and eventual behavior,
-including reachability with two $n$-bit inputs.
+For even $n$, an explicit linear-size permutation has almost all powers of
+complexity $\Omega(2^{n/2}/n)$ under a uniform exponent modulo its order.
+This matches the upper bound's exponential scale, but identifies no explicit
+hard power; hard exponents necessarily have exponentially many binary digits.
+The upper-bound construction also gives $O(B)$-gate cycle labels, transient
+depth, pair-input reachability, exact first hitting times, and complete visit
+descriptors, together with input-time and shared batched versions.
 
-Third, compact orbit coordinates yield stronger bounds for structured
-systems.  If a permutation differs from a counter at $r$ states, every
-signed fixed power costs $O(n(r+1))$, and an $m$-bit input time costs
-$O(n(r+m+1))$.  An explicit edit list permits polynomial-time construction
-of the orbit chart, even when a single orbit visits all $2^n$ states.
-Transporting an iterate charges both encoding and decoding.
-The same chart answers pair-input reachability and exact hitting-time
-queries in $O(n(r+1))$ gates.
-A separate structural bound gives $O(2^q(q+p^2))$ gates when $q$
-autonomous control bits drive a $p$-bit affine payload.
-
-The general bounds are nonuniform in the transition and fixed exponent;
-they do not assert efficient preprocessing from a transition circuit.
-For even $n$, an explicit linear-size permutation has almost all powers of complexity
-$\Omega(2^{n/2}/n)$ when the exponent is uniform modulo its order.
-Those hard powers require exponentially long binary exponents, and the
-counting argument does not identify an explicit hard power.  Lean checks
-the general bounds, graph-query circuits, lower bounds, affine-controller
-bounds, and both sparse-counter iteration bounds; the polynomial-time
-edit-list compiler remains outside that boundary.
-The underlying checkpoint and block ideas have established antecedents;
-historical priority for the circuit formulations remains unresolved.
+Structured transitions admit stronger bounds.  A permutation differing from
+a counter at $r$ states has $O(n(r+1))$-gate signed fixed powers and navigation,
+and $O(n(r+m+1))$-gate iteration for an $m$-bit input time.  Its orbit chart
+can be constructed in polynomial time from an explicit edit list.  An
+autonomous $q$-bit controller with a $p$-bit affine payload gives
+$O(2^q(q+p^2))$-gate fixed powers.  Lean checks the circuit bounds; the
+edit-list compiler remains outside that boundary.  The checkpoint and block
+methods have established antecedents, and historical priority of these
+circuit formulations remains unresolved.
 
 STATUS
 Preliminary draft, October 16, 2026. Historical priority and final attribution require author review. See the provenance note and README.

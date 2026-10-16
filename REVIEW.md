@@ -360,6 +360,25 @@ packing, reconstruction, Boolean synthesis and accounting, optimization,
 navigation, and the resulting upper and lower bounds. See `lean/README.md` for the pinned
 dependencies and exact checked boundary.
 
+## Submission preparation
+
+The author field is provisionally Samuel Schlesinger. Confirm authorship and
+final attribution before submission, retaining the paper's account of AI
+assistance. No affiliation or email address is assumed, and no submission has
+been made. The LaTeX abstract is mirrored in `submission_metadata.txt`.
+
+Historical venue check, September 29, 2026: ECCC's
+[submission instructions](https://eccc.weizmann.ac.il/static/colloquium/how_to_use/)
+required a PDF and separately entered title, abstract, authors, and keywords.
+At that check, its [homepage](https://eccc.weizmann.ac.il/) warned that a
+submission with an essential AI-generated component may be rejected regardless
+of merit. These are dated preparation notes, not a current eligibility review.
+
+The mathematical sources are credited in the paper's related-work sections
+and bibliography. Accessible primary texts were consulted except for Batcher,
+whose reference uses the original publication's bibliographic record. Section
+and theorem numbers for Hirahara--Ilango--Williams refer to the ECCC full version.
+
 ## Validation
 
 - `make lean-check`: checked circuits and guarded axiom audits; no additional

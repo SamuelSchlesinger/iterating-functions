@@ -168,6 +168,24 @@ records reduces this cost to
 $\poly(n)(L+N/L)$ Boolean gates.  Combining the initial and final short
 simulations with this batched lookup gives \cref{eq:tradeoff}.
 
+\paragraph{A worked example.}
+Consider eight states, encoded by three bits, with transitions
+\[
+  0\to1\to2\to3\to4\to5\to2,
+  \qquad 6\to7\to6.
+\]
+Take $L=3$, $K=6$, and $H=\{2,5\}$, the endpoints of the disjoint
+three-vertex paths $(0,1,2)$ and $(3,4,5)$.  Fix $T=101$.
+Starting at $x=1$, the first checkpoint is $h=2$, reached at $d=1$.
+Its stored payload is $z_2=F^{95}(2)=5$, so the forward correction gives
+\[
+  F^{K-d}(z_2)=F^5(5)=2=F^{101}(1).
+\]
+Starting instead at $x=6$, the prefix $6,7,6$ repeats without meeting a
+checkpoint.  The repeated indices $i=0$, $j=2$ give period $p=2$.
+The answer is prefix entry $i+((101-i)\bmod p)=1$, namely $7$.
+Thus the two-cycle needs no dictionary entry.
+
 \subsection{Further results and sharpness}
 
 The exponent $1/2$ is sharp for arbitrary fixed powers.  In
@@ -1370,11 +1388,18 @@ bound only by a constant number of gates.
 
 \section{Structured transitions}\label{sec:structured}
 
+The universal bound uses only the state width and the size of one
+transition.  Additional structure can give compact circuits for whole
+iterates even when an orbit visits exponentially many states.  Affine
+payload updates stay affine along each autonomous controller trajectory;
+sparse counter edits give orbit coordinates described by a few intervals.
+In both cases, selecting and evaluating the resulting description has a
+charged circuit cost that can improve on the universal bound.
+
 \subsection{Small controllers with affine payloads}\label{sec:controller}
 
-An orbit can visit exponentially many states while its composite updates
-remain easy to describe.  The next result isolates all exponential cost
-in an autonomous controller, allowing a much larger affine payload.
+The next result isolates all exponential cost in the autonomous controller,
+allowing a much larger affine payload.
 
 \begin{theorem}[Affine-controller powering]\label{thm:affine-controller}
 Let $q+p=n\geq1$, and write a state as $(u,v)\in\bits^q\times\mathbb F_2^p$.

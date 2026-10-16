@@ -78,7 +78,9 @@ systems.  If a permutation differs from a counter at $r$ states, every
 signed fixed power costs $O(n(r+1))$, and an $m$-bit input time costs
 $O(n(r+m+1))$.  An explicit edit list permits polynomial-time construction
 of the orbit chart, even when a single orbit visits all $2^n$ states.
-Transport to other coordinates charges both encoding and decoding.
+Transporting an iterate charges both encoding and decoding.
+The same chart answers pair-input reachability and exact hitting-time
+queries in $O(n(r+1))$ gates.
 A separate structural bound gives $O(2^q(q+p^2))$ gates when $q$
 autonomous control bits drive a $p$-bit affine payload.
 
@@ -225,6 +227,7 @@ Input-time iterate & $u,v,t$; $t\in\bits^m$ & $O(m2^q(q+p^2))$ & Checked \\
 Signed fixed iterate & $x$; fixed $T\in\mathbb Z$ & $O(n(r+1))$ & Checked \\
 Input-time iterate & $x,t$; $t\in\bits^m$ & $O(n(r+m+1))$ & Checked \\
 Cycle labels & $x$ & $O(n(r+1))$ & Checked \\
+Reachability, first hit,\newline visit descriptor & $x,y\in\bits^n$ & $O(n(r+1))$ & Checked \\
 Changed coordinates & $x$; fixed $T\in\mathbb Z$ & $K+O(n(r+1))$ & Checked \\
 \bottomrule
 \end{tabular}
@@ -236,7 +239,7 @@ $K=\CC(\phi)+\CC(\phi^{-1})$ charges both coordinate maps in
 accounting.  Input-time transport also adds $K$ to the counter bound.
 The polynomial-time edit-list compiler is separate and unmechanized.
 A visit descriptor specifies all visits; processing an additional deadline
-is not included in that row.}
+is not included in these rows.}
 \label{tab:results}
 \end{table}
 
@@ -1234,10 +1237,11 @@ The cost is $O(nr+nm+n)$.  If $r=0$, ordinary addition modulo $N$ gives
 the same bound.  This proves the second part of \cref{thm:sparse-counter}.
 For fixed signed $T$, hardwire $T\bmod\ell$ for each cycle instead.
 
-\begin{corollary}[Sparse cycle labels]\label[corollary]{cor:sparse-labels}
+\begin{corollary}[Labels and navigation for sparse counters]\label[corollary]{cor:sparse-labels}
 For a permutation differing from the counter at $r$ states, the cycle
 length, numerically least cycle vertex, and phase of an input state can be computed
-with $O(n(r+1))$ gates.
+with $O(n(r+1))$ gates.  The same bound suffices, on input $(x,y)$, for
+reachability, the exact first hitting time, and a descriptor of all visits.
 \end{corollary}
 \begin{proof}
 Cut the ordinary linear order after each exception, obtaining at most
@@ -1247,10 +1251,22 @@ $\ell$, and phase $p_a$ at its first state.  An input $x$ in that interval
 has label $(c,\ell,(p_a+x-a)\bmod\ell)$.  The interval length is at most
 $\ell$, so one addition and conditional subtraction suffice for the phase.
 Comparisons and record selection cost $O(n)$ per interval.
+
+Compute the two labels.  Since every state is cyclic, $y$ is reachable
+from $x$ exactly when $c(x)=c(y)$.  On a positive instance, the first hit is
+\[
+ d=(\phi(y)-\phi(x))\bmod\ell(x),
+\]
+and all visits occur at times $d+k\ell(x)$, $k\geq0$.  Both phases are
+already below the common cycle length, so the difference needs only
+comparison and subtraction: use $\phi(y)-\phi(x)$ when nonnegative, and
+$\ell(x)-(\phi(x)-\phi(y))$ otherwise.  This costs $O(n)$ additional gates.
+The descriptor also determines the exact bounded visit count; this is an
+arithmetic interpretation of its output, with no deadline input charged.
 \end{proof}
 
 Lean checks both iteration bounds and their charged coordinate transport,
-as well as these cycle labels.  Its interval construction is
+as well as these labels and pair queries.  Its interval construction is
 described in \cref{app:lean-details}; the algorithmic claim below has a
 separate proof.
 
@@ -1335,6 +1351,13 @@ Both coordinate costs are essential.  A long orbit does not itself
 supply cheaply computable coordinates.  Conversely, these examples can
 visit the entire state space: the compressed object is the arrangement
 of arcs, without a reduction in the number of reachable states.
+
+For the pair queries of \cref{cor:sparse-labels}, coordinate transport
+needs only the forward map: encode both $x$ and $y$, then query the
+conjugated permutation.  Reachability and visit times are preserved by
+conjugacy, so the bound is $2\CC(\phi)+O(n(r+1))$.  No state is returned,
+and no inverse-coordinate circuit is required.  This transport bound is
+also checked in Lean.
 
 \subsection{Sparse edits of a primitive binary-field cycle}
 
@@ -1698,8 +1721,8 @@ bounds, the active-mass refinement, permutation inversion, and
 complete-configuration simulation.  The affine-controller bounds and their
 generalization to bounded-cost composition-closed payload families are
 checked as well.  It also checks sparse-counter centralizers, signed fixed
-powers, additive input-time iteration, and cycle labels, with transport of
-both iteration bounds through supplied coordinate circuits.  The lower-bound
+powers, additive input-time iteration, cycle labels, and pair navigation,
+including transport through supplied coordinate circuits.  The lower-bound
 results include hard powers, their overwhelming
 proportion, the remainder-circuit comparison, and the necessary exponent
 length.  The visit descriptor specifies every visit time and its bounded
@@ -1758,6 +1781,8 @@ predicates these queries all have size $2^{n/2}\poly(n)$.  Compact orbit
 coordinates can improve the bound further: $r$ permutation-preserving
 counter edits give $O(n(r+1))$ fixed powers and $O(n(r+m+1))$ live-time
 iteration, even on a single orbit through all states.
+Their reachability, first hitting times, and visit descriptors also cost
+$O(n(r+1))$.
 An autonomous controller with only $O(\log n)$ bits also permits
 polynomial-size powering when its payload updates are affine; more
 generally, a uniform circuit bound on a composition-closed payload family
@@ -1992,6 +2017,16 @@ represent $N$ and prevent intermediate overflow.  The theorem
 \texttt{sparse\_coordinate\_variable\_time} additionally charges both
 coordinate circuits.  Keeping only the encoder gives
 \texttt{sparse\_counter\_labels}, with bound $500(n+3)(r+1)$.
+
+\texttt{ReducedResidue.lean} implements modular subtraction of two
+already reduced $w$-bit residues in $140(w+1)$ gates, without general
+division.  \texttt{SparseNavigation.lean} uses two label circuits and this
+subtraction to obtain reachability, exact first hits, and complete visit
+descriptors in $1200(n+3)(r+1)$ gates.  The first-time field has $n+1$
+bits and is specified on reachable pairs; the period field also has
+$n+1$ bits, allowing a cycle of length $N$.  The visit-set and bounded-count
+interpretations are both checked.  Transport through coordinates adds
+$2\,\mathrm{encode.size}$, with no decoder assumption or cost.
 
 This nonuniform chart proof does not verify the Python compiler's
 weighted arc-permutation algorithm or its running time.  Those claims,

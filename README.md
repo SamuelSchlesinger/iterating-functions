@@ -78,8 +78,11 @@ commutation/block geometry is credited to Moreno and Rivera.
 
 Lean checks the sparse fixed-power, centralizer, and additive input-time
 bounds, with both coordinate costs charged. The interval encoder also gives
-cycle labels in O(n(r+1)) gates. The chart existence proof and all Boolean
-gate costs are checked; the Python edit-list compiler's algorithm and runtime,
+cycle labels in O(n(r+1)) gates. Two encoders and linear modular subtraction
+give pair-input reachability, exact first hits, and complete visit schedules
+within the same bound. For these pair queries, transport adds twice the
+forward-coordinate circuit size and needs no decoder. The chart existence
+proof and all Boolean gate costs are checked; the Python edit-list compiler's algorithm and runtime,
 and the finite-field application, remain outside the Lean boundary.
 
 The counting result does not identify an explicit hard exponent. Every

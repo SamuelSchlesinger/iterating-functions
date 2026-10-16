@@ -47,10 +47,10 @@ cases check algebraic identities, not an independent enumerative oracle.
 
 Lean command: make lean-check
 cd lean && lake build --wfail
-Build completed successfully (3767 jobs).
+Build completed successfully (3769 jobs).
 
-Main.lean runs 47 guarded axiom checks. Every audited result depends exactly
-on propext, Classical.choice, and Quot.sound. All 73 Proofs modules are in
+Main.lean runs 50 guarded axiom checks. Every audited result depends exactly
+on propext, Classical.choice, and Quot.sound. All 75 Proofs modules are in
 Main's transitive import closure. No sorry, admit, added axiom, native_decide,
 or unsafe declaration appears in the project Lean sources.
 
@@ -92,6 +92,13 @@ into an actual n+m input circuit of size at most 1000*(n+3)*(r+m+1), with
 no supplied chart certificate. The charged coordinate-transport theorem
 adds both circuit sizes. The encoder alone gives canonical cycle labels
 in 500*(n+3)*(r+1) gates, with the numerical order on words.
+ReducedResidue.lean checks modular subtraction of already reduced w-bit
+residues in 140*(w+1) gates. SparseNavigation.lean constructs pair-input
+reachability and exact first hits, with bound 1200*(n+3)*(r+1). A separate
+public theorem gives the full visit schedule and its exact bounded-count
+interpretation at the same bound. These reuse the existing output format
+and progression semantics. The coordinate theorem adds only 2*encode.size;
+it assumes and charges no decoder circuit.
 
 TypicalPowers.lean bounds the easy fraction of counter powers by
 2^(-2^(k-1)) for k >= 64 at threshold floor(2^k/(1024*(k+1))).
@@ -135,8 +142,10 @@ abstract, introductory comparison table, simulation specialization, named
 edit-list compiler proposition, concise Lean section, conclusion, and appendix
 were additionally inspected at readable resolution. The table now records the
 checked sparse input-time and cycle-label bounds alongside the general-map
-and affine-controller bounds. The cycle-label corollary and appendix's chart
-implementation were also inspected at readable resolution. The general
+and affine-controller bounds. It also compares pair-input sparse navigation
+at O(n(r+1)) to the general O(nB) bound. The expanded sparse-query corollary,
+forward-only coordinate transport, and appendix's query implementation were
+also inspected at readable resolution. The general
 nonuniformity and historical-priority qualifications remain explicit.
 The abstract matches submission_metadata.txt after expanding its LaTeX macros.
 All source labels are unique and all cross-references resolve.

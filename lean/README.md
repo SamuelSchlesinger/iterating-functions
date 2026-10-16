@@ -13,6 +13,9 @@ This includes the stronger centralizer result and charged coordinate changes.
 An `m`-bit input time costs at most `1000*(n+3)*(r+m+1)` gates, including
 the interval chart, both coordinate directions, and streaming division.
 The same encoder computes canonical cycle labels in `500*(n+3)*(r+1)` gates.
+Reachability, exact first hits, and complete visit schedules on two state
+inputs cost `1200*(n+3)*(r+1)` gates. Their coordinate transport charges two
+encodings and does not require a decoder circuit.
 The small-controller development checks fixed and variable-time powering
 for affine payloads, and for general composition-closed payload families
 with uniformly bounded circuit cost.
@@ -71,6 +74,9 @@ natural-number division in integer budgets means floor division.
 | `sparse_counter_variable_time` | For an `r`-edited counter permutation, the circuit on `n+m` input bits costs at most `1000*(n+3)*(r+m+1)`. The interval chart is constructed in the existence proof, not supplied as a hypothesis. |
 | `sparse_counter_labels` | The numerically least cycle state, cycle length, and phase cost at most `500*(n+3)*(r+1)` gates. Length and phase fields have `n+2` bits. |
 | `sparse_coordinate_variable_time` | Transferring the input-time bound to a cyclic permutation with supplied coordinates adds exactly `encode.size + decode.size` to the preceding iterator budget. |
+| `sparse_counter_hitting_time` | On two `n`-bit inputs, reachability and exact first hitting time cost at most `1200*(n+3)*(r+1)` gates. The time field has `n+1` bits, is specified only on reachable pairs, and is less than `2^n`. |
+| `sparse_counter_visit_schedule` | The same bound returns a complete visit descriptor, with all-time semantics and its exact bounded-count interpretation. The period field has `n+1` bits; no deadline-processing circuit is included. |
+| `sparse_coordinate_visit_schedule` | Coordinate transport of the descriptor costs `2*encode.size + 1200*(n+3)*(r+1)`. Only a forward-coordinate circuit is supplied; no decoder is required. |
 | `synchronous_coalescence_optimized` | On a pair `(x,y)`, decides whether equal-time iterates ever meet, with bound `240000*B + 6*n + 1`. |
 | `recurring_target_optimized` | Decides acceptance at arbitrarily large times; the bound is `240000*optimizedBudget n (s+p.size+4*n) N + p.size`. |
 | `eventually_always_target_optimized` | Decides permanent eventual acceptance; replace `p.size` by `p.size+1` in the preceding budget and add `p.size+2` outside it. |
@@ -244,6 +250,15 @@ the Boolean ring, keeping payload vectors and Boolean wires in the same type.
     circuits and proves both the additive bound and coordinate transport.
     The `n+2` working bits represent a full-length cycle and prevent overflow.
     Keeping only the encoder gives the cycle-label bound.
+17. **Navigate sparse permutations from two labels.** `ReducedResidue.lean`
+    implements reduced modular subtraction by comparison and shared-carry
+    subtraction, in `140*(w+1)` gates at width `w`. `SparseNavigation.lean`
+    compares cycle representatives and subtracts phases to obtain the exact
+    first hit. It reuses the existing visit-progression and counting identities.
+    The output format is the same as for general maps. Conjugacy preserves all
+    visit times, allowing coordinate transport with two forward encodings and
+    no inverse circuit. The native synthesis theorem can be reused with any
+    supplied cycle-label circuit of the specified format.
 
 The construction uses classical choices of checkpoints, finite enumerations,
 and circuit witnesses. It establishes nonuniform existence, not an extracted

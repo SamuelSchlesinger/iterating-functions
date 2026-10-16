@@ -25,6 +25,7 @@ public import Proofs.ExponentLength
 public import Proofs.ActivePowers
 public import Proofs.AffineController
 public import Proofs.SparseCounterTime
+public import Proofs.SparseNavigation
 
 /-!
 # Public results and axiom audit
@@ -35,6 +36,21 @@ guards fail if the theorem dependencies acquire an additional axiom.
 -/
 
 namespace IteratedFunctions
+
+/-- info: 'IteratedFunctions.sparse_counter_hitting_time' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sparse_counter_hitting_time
+
+/-- info: 'IteratedFunctions.sparse_counter_visit_schedule' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sparse_counter_visit_schedule
+
+/-- info: 'IteratedFunctions.sparse_coordinate_visit_schedule' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sparse_coordinate_visit_schedule
 
 /-- info: 'IteratedFunctions.sparse_counter_variable_time' depends on axioms:
 [propext, Classical.choice, Quot.sound] -/

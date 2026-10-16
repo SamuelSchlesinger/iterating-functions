@@ -29,7 +29,9 @@ systems.  If a permutation differs from a counter at $r$ states, every
 signed fixed power costs $O(n(r+1))$, and an $m$-bit input time costs
 $O(n(r+m+1))$.  An explicit edit list permits polynomial-time construction
 of the orbit chart, even when a single orbit visits all $2^n$ states.
-Transport to other coordinates charges both encoding and decoding.
+Transporting an iterate charges both encoding and decoding.
+The same chart answers pair-input reachability and exact hitting-time
+queries in $O(n(r+1))$ gates.
 A separate structural bound gives $O(2^q(q+p^2))$ gates when $q$
 autonomous control bits drive a $p$-bit affine payload.
 

@@ -469,3 +469,22 @@ formalization section retains the distinction between nonuniform circuit
 existence and the polynomial-time compiler from an explicit edit list.
 The explicit compiler, sparse-transition counting, finite-field application,
 and remaining accepted work above retain their stated separate scope.
+
+## Sparse navigation continuation
+
+The sparse chart now gives reachability, exact first hits, and complete visit
+descriptors in O(n(r+1)) gates, including pair inputs. For a permutation all
+states are cyclic: compare representatives and subtract the reduced phases
+modulo the common cycle length. ReducedResidue.lean charges linear arithmetic,
+and SparseNavigation.lean proves the actual bound 1200*(n+3)*(r+1), all visit
+times, and the descriptor's bounded-count interpretation. It does not claim
+an extra deadline-input circuit at that bound. The first time is specified
+on positive instances and is strictly less than 2^n.
+
+The coordinate version adds 2*encode.size and has no decoder hypothesis.
+This suffices because conjugacy preserves visit times and the output contains
+only a flag and integers. The paper's sparse-label corollary now includes
+these queries, and the introductory table compares their bound to O(nB)
+for general maps. These are deductions from the checked chart, without a
+historical-priority claim. The compressed-forest route to O(B) pair navigation
+for general maps remains separate accepted work.

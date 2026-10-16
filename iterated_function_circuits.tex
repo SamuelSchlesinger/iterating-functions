@@ -79,6 +79,8 @@ signed fixed power costs $O(n(r+1))$, and an $m$-bit input time costs
 $O(n(r+m+1))$.  An explicit edit list permits polynomial-time construction
 of the orbit chart, even when a single orbit visits all $2^n$ states.
 Transport to other coordinates charges both encoding and decoding.
+A separate structural bound gives $O(2^q(q+p^2))$ gates when $q$
+autonomous control bits drive a $p$-bit affine payload.
 
 The general bounds are nonuniform in the transition and fixed exponent;
 they do not assert efficient preprocessing from a transition circuit.
@@ -86,8 +88,9 @@ For even $n$, an explicit linear-size permutation has almost all powers of compl
 $\Omega(2^{n/2}/n)$ when the exponent is uniform modulo its order.
 Those hard powers require exponentially long binary exponents, and the
 counting argument does not identify an explicit hard power.  Lean checks
-the general bounds, graph-query circuits, lower bounds, and sparse-counter
-fixed powers; the full arc-chart compiler remains outside that boundary.
+the general bounds, graph-query circuits, lower bounds, affine-controller
+bounds, and sparse-counter fixed powers; the full arc-chart compiler
+remains outside that boundary.
 The underlying checkpoint and block ideas have established antecedents;
 historical priority for the circuit formulations remains unresolved.
 \end{abstract}
@@ -212,7 +215,11 @@ Cycle labels and depth & $x$ & $O(B)$ & Checked \\
 Reachability, first hit,\newline visit descriptor & $x,y\in\bits^n$ & $O(nB)$ & Checked \\
 Synchronous coalescence & $x,y\in\bits^n$ & $O(B)$ & Checked \\
 First target; recurring\newline or permanent target & $x$; fixed $P$ of size $a$ & $O(B_P)$ & Checked \\
-Shared fixed powers & $q$ states; fixed exponents & $O(qA+\sqrt{qn^3NA})$ & Checked \\
+Shared fixed powers & $k$ states; fixed exponents & $O(kA+\sqrt{kn^3NA})$ & Checked \\
+\midrule
+\multicolumn{4}{@{}l}{\emph{Autonomous $q$-bit controller and $p$-bit affine payload, $q+p=n$}}\\
+Fixed iterate & $u,v$; fixed $T\geq0$ & $O(2^q(q+p^2))$ & Checked \\
+Input-time iterate & $u,v,t$; $t\in\bits^m$ & $O(m2^q(q+p^2))$ & Checked \\
 \midrule
 \multicolumn{4}{@{}l}{\emph{Sparse permutations with $r$ edits in counter coordinates}}\\
 Signed fixed iterate & $x$; fixed $T\in\mathbb Z$ & $O(n(r+1))$ & Checked \\
@@ -220,8 +227,8 @@ Input-time iterate & $x,t$; $t\in\bits^m$ & $O(n(r+m+1))$ & Partial \\
 Changed coordinates & $x$; fixed $T\in\mathbb Z$ & $K+O(n(r+1))$ & Checked \\
 \bottomrule
 \end{tabular}
-\caption{Comparison of universal and sparse-counter circuit bounds.
-Here $F$ is fixed, $m\geq1$, $1\leq q\leq N$, and
+\caption{Comparison of universal and structural circuit bounds.
+Here $F$ is fixed, $m\geq1$, $1\leq k\leq N$, and
 $K=\CC(\phi)+\CC(\phi^{-1})$ charges both coordinate maps in
 \cref{cor:coordinates}.
 ``Checked'' means a native Boolean-circuit existence theorem with gate
@@ -1060,6 +1067,68 @@ the complement of recurrence of the predicate $1-P$, which changes the
 bound only by a constant number of gates.
 \end{proof}
 
+\section{Small controllers with affine payloads}\label{sec:controller}
+
+An orbit can visit exponentially many states while its composite updates
+remain easy to describe.  The next result isolates all exponential cost
+in an autonomous controller, allowing a much larger affine payload.
+
+\begin{theorem}[Affine-controller powering]\label{thm:affine-controller}
+Let $q+p=n\geq1$, and write a state as $(u,v)\in\bits^q\times\mathbb F_2^p$.
+Suppose
+\[
+ F(u,v)=\bigl(g(u),A(u)v+b(u)\bigr),
+\]
+where $g:\bits^q\to\bits^q$, $A(u)$ is a $p\times p$ binary matrix,
+and $b(u)\in\mathbb F_2^p$.  For every fixed integer $T\geq0$,
+\[
+ \CC(F^T)=O\!\left(2^q(q+p^2)\right).
+\]
+For an $m$-bit input exponent, the size bound is
+$O(m2^q(q+p^2))$.  In particular, $q=O(\log n)$ gives polynomial-size
+circuits for every fixed power, uniformly in the magnitude of $T$.
+The matrices may be singular and need not commute.
+\end{theorem}
+
+\begin{proof}
+Once the initial controller $u$ is fixed, the controller trajectory and
+all affine maps applied to $v$ are fixed.  Composition of affine maps is
+affine, so for some hardwired matrix $M_T(u)$ and vector $d_T(u)$,
+\[
+ F^T(u,v)=\bigl(g^T(u),M_T(u)v+d_T(u)\bigr).
+\]
+For each of the $2^q$ controller values, evaluate its fixed affine map
+using $O(p^2)$ gates and provide its fixed controller output.  Compute
+each controller-equality flag once, and share it across the $q+p$ output
+bits.  A scan selects the matching record using
+$O(2^q(q+p))$ additional gates.  This proves the fixed-power bound,
+including a charge for every table-selection gate.
+
+For an input exponent, conditionally apply the circuits for $F^{2^j}$
+to the current full state, as in \cref{sec:variable}.  Each stage updates
+the controller as well as the payload and adds $O(q+p)$ selection gates.
+Summing over $m$ stages gives the second bound.
+\end{proof}
+
+Autonomy is essential to this argument: if the controller update depends
+on $v$, its future choices need not be determined by the initial $u$.
+No efficient algorithm for obtaining $M_T(u)$ from a succinct transition
+is asserted here.  The bound uses ordinary affine composition and finite
+selection; it does not claim a new algebraic closure principle.
+
+The same reasoning applies beyond affine maps.  Let $\mathcal M$ be a
+family of maps on $p$-bit payloads containing the identity and closed under
+composition, and suppose \emph{every} member has a circuit of size at
+most $\kappa$.  If the autonomous controller selects maps from
+$\mathcal M$, every fixed power costs
+\[
+ O\!\left(2^q(\kappa+q+p+1)\right),
+\]
+and an $m$-bit input time multiplies this by $m$.  Both statements are
+checked in Lean.  Closure alone is insufficient: the uniform evaluation
+bound on composite maps is a separate hypothesis.  For nonuniform circuit
+existence, no efficient procedure for computing those composites is needed.
+
 \section{Sparse modifications of a counter}\label{sec:sparse-counter}
 
 The state-space parameter is not the only source of compression.  Identify
@@ -1605,7 +1674,9 @@ The accompanying \texttt{lean/} project proves existence of actual Boolean
 circuits, with evaluation semantics and gate bounds.  Its coverage includes
 all general-map rows of \cref{tab:results}, invariant-set and image-sensitive
 bounds, the active-mass refinement, permutation inversion, and
-complete-configuration simulation.  It also checks sparse-counter
+complete-configuration simulation.  The affine-controller bounds and their
+generalization to bounded-cost composition-closed payload families are
+checked as well.  It also checks sparse-counter
 centralizers and signed fixed powers, transport through supplied coordinate
 circuits, and the lower-bound results: hard powers, their overwhelming
 proportion, the remainder-circuit comparison, and the necessary exponent
@@ -1664,6 +1735,10 @@ predicates these queries all have size $2^{n/2}\poly(n)$.  Compact orbit
 coordinates can improve the bound further: $r$ permutation-preserving
 counter edits give $O(n(r+1))$ fixed powers and $O(n(r+m+1))$ live-time
 iteration, even on a single orbit through all states.
+An autonomous controller with only $O(\log n)$ bits also permits
+polynomial-size powering when its payload updates are affine; more
+generally, a uniform circuit bound on a composition-closed payload family
+isolates the exponential dependence to the controller width.
 
 The universal bounds are nonuniform in the transition and fixed exponent.
 They apply to every starting state but do not bound circuit depth or give
@@ -1883,6 +1958,30 @@ packing lemma to \texttt{activeVertices}.  It proves $|H|L\leq Q_L$ and
 coverage within $4L$ steps; $n+3$ index bits suffice for the resulting
 native circuit.  The theorem \texttt{active\_mass\_fixed\_power} has bound
 $120000\,\mathrm{powerBudget}(n,s,Q_L,L)$, including the case $Q_L=0$.
+
+\paragraph{Controllers and affine payloads.}
+The universe-polymorphic \texttt{controlledPayload\_mem} proves closure of
+the composite payload map without any finiteness hypothesis.  For Boolean
+states, \texttt{controlled\_family\_power} constructs a native circuit with
+at most $2+2^q(\kappa+6q+4p+1)$ gates, assuming every family member costs
+at most $\kappa$.  The controller equality flags are shared across output
+bits; all $2^q$ candidate payload circuits are charged.
+
+Affine payloads use Mathlib's \texttt{AffineMap} over the Boolean ring,
+whose addition is XOR.  This keeps the semantic vectors and native circuit
+wires in the same type.  \texttt{AffinePayload.lean} identifies an affine
+map with the coefficient-seed representation already used by the Circuit
+library and reuses its charged affine-evaluation circuit, of size at most
+$p(5(p+1)+1)$.  Consequently \texttt{affine\_controller\_power} has bound
+\[
+ D_{q,p}=2+2^q\bigl[p(5(p+1)+1)+6q+4p+1\bigr]
+ \leq32\cdot2^q(q+p^2+1).
+\]
+The corresponding live-time circuit costs $m(D_{q,p}+4(q+p))$.
+The checked polynomial specialization assumes
+$2^q\leq K(q+p+1)^d$ and bounds every fixed power by
+$32K(q+p+1)^{d+2}$ gates.  The added ones cover zero-width encodings;
+neither invertibility nor commutation is assumed.
 
 \begin{thebibliography}{99}
 

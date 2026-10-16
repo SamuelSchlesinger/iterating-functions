@@ -11,6 +11,9 @@ The sparse-counter development also checks a different bound: every signed
 fixed power of an `r`-edited counter has at most `100*(n+1)*(r+1)` gates.
 This includes the stronger centralizer result and charged coordinate changes.
 Streaming division has a checked cost linear in the product of the bit widths.
+The small-controller development checks fixed and variable-time powering
+for affine payloads, and for general composition-closed payload families
+with uniformly bounded circuit cost.
 
 ```sh
 cd lean
@@ -68,6 +71,11 @@ natural-number division in integer budgets means floor division.
 | `eventually_always_target_optimized` | Decides permanent eventual acceptance; replace `p.size` by `p.size+1` in the preceding budget and add `p.size+2` outside it. |
 | `bounded_modulus_remainder` | An `m`-bit numerator modulo a nonzero `k`-bit input modulus has a circuit of size at most `2 + m*(51*(k+1)+4)`. The circuit is total; the specification requires a positive modulus. |
 | `active_mass_fixed_power` | For `1 ≤ L ≤ 2^n`, a power circuit has size at most `120000*powerBudget n s Q_L L`, where `Q_L` counts states of depth at least `L` and vertices of cycles of length at least `L`. |
+| `controlled_family_power` | For an autonomous `q`-bit controller and `p`-bit payload, a composition-closed family containing identity and having circuit bound `K` gives every fixed power a circuit of size at most `2 + 2^q*(K + 6*q + 4*p + 1)`. |
+| `controlled_family_variable_time` | An `m`-bit exponent multiplies the preceding bound, plus `4*(q+p)` conditional-selection gates per stage, by `m`. |
+| `affine_controller_power` | Arbitrary Boolean affine payload maps give bound `D = 2 + 2^q*(p*(5*(p+1)+1) + 6*q + 4*p + 1) ≤ 32*2^q*(q+p^2+1)`. Neither injectivity nor commutation is required. |
+| `affine_controller_polynomial` | If `2^q ≤ K*(q+p+1)^d`, every fixed power has a circuit of size at most `32*K*(q+p+1)^(d+2)`. |
+| `affine_controller_variable_time` | The affine-controller iterator with an `m`-bit time input has at most `m*(D + 4*(q+p))` gates. |
 
 The explicit constants are loose accounting bounds, not practical circuit-size
 estimates. The `+1`s cover zero-width encodings and empty invariant sets.
@@ -101,6 +109,11 @@ and interpretation carriers. The commutation-defect containment is valid on
 arbitrary types without finiteness; its cardinality and relabeling lemmas use
 finite types in arbitrary universes. Sparse-counter circuit statements use
 `BitVec n` coordinates with the same native Boolean gate model.
+The controlled-product and payload-closure identities quantify independently
+over controller and payload types in arbitrary universes, without finiteness.
+The corresponding gate bounds use Boolean encodings and enumerate only the
+controller states. The affine specialization uses Mathlib's `AffineMap` over
+the Boolean ring, keeping payload vectors and Boolean wires in the same type.
 
 ## Proof choices
 
@@ -202,6 +215,17 @@ finite types in arbitrary universes. Sparse-counter circuit statements use
     `4L` steps. The charged set need not be invariant. `ActivePowers.lean`
     uses `n+3` index bits and the existing reconstruction to obtain an actual
     circuit bound, including `Q_L=0`. The count depends on `L` throughout.
+15. **Separate a small controller from a closed payload family.**
+    `ControlledMaps.lean` proves the semantic composition invariant and
+    synthesizes every candidate payload circuit, then shares controller
+    equality flags across a record-selection scan. Its uniform evaluation
+    budget applies to all composite maps, not just the individual updates.
+    `AffinePayload.lean` expresses an affine map as the coefficient seed
+    used by the Circuit library's affine-hash circuitry and reuses its
+    four-gate XOR implementation. `AffineController.lean` specializes the
+    generic theorem, proves the polynomial bound, and uses the general
+    conditional binary-powering theorem in `VariableTime.lean` for input
+    exponents. Each stage updates both controller and payload.
 
 The construction uses classical choices of checkpoints, finite enumerations,
 and circuit witnesses. It establishes nonuniform existence, not an extracted
@@ -222,10 +246,9 @@ streaming-arithmetic ingredient is checked. The sparse-transition counting
 application and the finite-field corollary, including the use of the external
 discrete-logarithm theorem, are also outside the current Lean boundary.
 
-The affine-controller theorem, AKS polynomial improvement, and effective
-compiler are not separately formalized.
-Several are only proposals in `REVIEW.md`, rather
-than theorems asserted in the manuscript. The paper's cryptographic discussion
+The AKS polynomial improvement and full-state-space effective compiler are
+still proposals in `REVIEW.md`, not separately formalized or asserted as
+theorems in the manuscript. The paper's cryptographic discussion
 and literature comparisons remain prose arguments.
 
 Pinned dependencies, also recorded in the Lake manifest:

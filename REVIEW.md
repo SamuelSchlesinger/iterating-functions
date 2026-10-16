@@ -80,8 +80,8 @@ noninjective map an inverse need not be a forward iterate; persisting a target
 while searching for a preimage enlarges the full state. The original manuscript
 explicitly records both limitations. No fatal correctness defect was found in
 these arguments. The circuit constructions and matching-exponent lower bound
-now have kernel-checked proofs; the short-exponent corollary and cryptographic
-interpretations remain prose arguments.
+now have kernel-checked proofs, including the short-exponent capacity
+corollary. The cryptographic interpretations remain prose arguments.
 
 ## 1. Cycle labels: integrated and mechanized
 
@@ -206,7 +206,7 @@ The related retraction claim is also correct. `D≥N` because `D` is a
 positive multiple of `N`; thus `F^D` maps every state to a cycle, fixes all
 cycle states, and is idempotent.
 
-## 6. Small nonlinear controller: valid, not mechanized
+## 6. Small nonlinear controller: integrated and mechanized
 
 The controller must evolve autonomously as `g(u)`. Then the whole sequence
 of affine maps applied to the payload is determined by the initial `u`.
@@ -223,6 +223,18 @@ every composite to have a representation of bounded length and an evaluation
 circuit of bounded cost. Otherwise the representation of a composite could
 grow with `T`. The offline composition algorithm need not be efficient for
 the fixed-power nonuniform existence statement.
+
+`ControlledMaps.lean` now proves the generic composition-closed-family
+theorem, including Boolean synthesis of the controller table and all payload
+circuits. Its semantic composition lemmas work over arbitrary universes.
+The affine specialization reuses the Circuit library's affine-evaluation
+circuits after identifying Mathlib Boolean-ring `AffineMap` coefficients
+with its seed encoding. Its exact fixed-power budget is
+`D = 2 + 2^q*(p*(5*(p+1)+1)+6*q+4*p+1) ≤ 32*2^q*(q+p^2+1)`.
+The live-time budget is `m*(D+4*(q+p))`. The polynomial specialization
+and generic family live-time theorem are checked too, with guarded axiom
+lists. The paper includes this result and its assumptions, while the new
+gate constants and representation choices stay in the appendix.
 
 ## 7. Almost every power is hard: integrated and mechanized
 
@@ -427,3 +439,15 @@ Appendix A. The abstract, submission metadata, and conclusion consistently
 present general iteration, functional-graph queries, and compact orbit
 coordinates, retaining nonuniformity, long hard exponents, and unresolved
 historical priority. This editorial revision does not extend the Lean boundary.
+
+## Affine-controller continuation
+
+The next milestone adds the affine-controller result to the manuscript and
+the introduction's table, with both fixed and input-time bounds checked in
+Lean. The generalized closed-payload-family theorem is also checked. The
+main formalization section adds only coverage; coefficient encodings and
+gate budgets are recorded in Appendix A. `make lean-check` passes all
+44 axiom guards and 67 proof modules, and the 28-page PDF builds without
+warnings and has been visually reviewed. The sparse chart compiler, its full
+additive live-time gate bound, and the remaining accepted work described above
+are not claimed complete by this milestone.

@@ -107,6 +107,14 @@ and halting complete configurations. It also checks the matching-exponent
 lower bound, including the linear-size update circuit. See the theorem map
 in `lean/README.md` for precise statements and explicit constants.
 
+An autonomous q-bit controller acting on a p-bit affine payload has
+O(2^q(q+p^2)) gates for every fixed power, and m times this bound for an
+m-bit input time. Both statements are now checked in Lean, together with
+a polynomial specialization for polynomially many controller states.
+The result allows singular and noncommuting affine maps. A generic checked
+theorem replaces affine maps by any composition-closed family whose every
+member has a uniformly bounded evaluation circuit.
+
 The paper and Lean also include O(B)-gate eventual synchronous coalescence
 and recurring/permanent recognizable-target queries.
 Complete visit schedules use O(n B) gates: a success flag, first visit time,

@@ -23,6 +23,7 @@ public import Proofs.VisitScheduleCircuits
 public import Proofs.TypicalPowers
 public import Proofs.ExponentLength
 public import Proofs.ActivePowers
+public import Proofs.AffineController
 
 /-!
 # Public results and axiom audit
@@ -33,6 +34,31 @@ guards fail if the theorem dependencies acquire an additional axiom.
 -/
 
 namespace IteratedFunctions
+
+/-- info: 'IteratedFunctions.controlled_family_power' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms controlled_family_power
+
+/-- info: 'IteratedFunctions.controlled_family_variable_time' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms controlled_family_variable_time
+
+/-- info: 'IteratedFunctions.affine_controller_power' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms affine_controller_power
+
+/-- info: 'IteratedFunctions.affine_controller_polynomial' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms affine_controller_polynomial
+
+/-- info: 'IteratedFunctions.affine_controller_variable_time' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms affine_controller_variable_time
 
 /-- info: 'IteratedFunctions.active_mass_fixed_power' depends on axioms:
 [propext, Classical.choice, Quot.sound] -/

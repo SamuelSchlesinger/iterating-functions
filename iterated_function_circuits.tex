@@ -89,8 +89,8 @@ $\Omega(2^{n/2}/n)$ when the exponent is uniform modulo its order.
 Those hard powers require exponentially long binary exponents, and the
 counting argument does not identify an explicit hard power.  Lean checks
 the general bounds, graph-query circuits, lower bounds, affine-controller
-bounds, and sparse-counter fixed powers; the full arc-chart compiler
-remains outside that boundary.
+bounds, and both sparse-counter iteration bounds; the polynomial-time
+edit-list compiler remains outside that boundary.
 The underlying checkpoint and block ideas have established antecedents;
 historical priority for the circuit formulations remains unresolved.
 \end{abstract}
@@ -223,7 +223,8 @@ Input-time iterate & $u,v,t$; $t\in\bits^m$ & $O(m2^q(q+p^2))$ & Checked \\
 \midrule
 \multicolumn{4}{@{}l}{\emph{Sparse permutations with $r$ edits in counter coordinates}}\\
 Signed fixed iterate & $x$; fixed $T\in\mathbb Z$ & $O(n(r+1))$ & Checked \\
-Input-time iterate & $x,t$; $t\in\bits^m$ & $O(n(r+m+1))$ & Partial \\
+Input-time iterate & $x,t$; $t\in\bits^m$ & $O(n(r+m+1))$ & Checked \\
+Cycle labels & $x$ & $O(n(r+1))$ & Checked \\
 Changed coordinates & $x$; fixed $T\in\mathbb Z$ & $K+O(n(r+1))$ & Checked \\
 \bottomrule
 \end{tabular}
@@ -232,8 +233,8 @@ Here $F$ is fixed, $m\geq1$, $1\leq k\leq N$, and
 $K=\CC(\phi)+\CC(\phi^{-1})$ charges both coordinate maps in
 \cref{cor:coordinates}.
 ``Checked'' means a native Boolean-circuit existence theorem with gate
-accounting.  ``Partial'' means the streaming arithmetic is checked, while
-the arc chart and its full live-time bound have prose proofs.
+accounting.  Input-time transport also adds $K$ to the counter bound.
+The polynomial-time edit-list compiler is separate and unmechanized.
 A visit descriptor specifies all visits; processing an additional deadline
 is not included in that row.}
 \label{tab:results}
@@ -1233,6 +1234,26 @@ The cost is $O(nr+nm+n)$.  If $r=0$, ordinary addition modulo $N$ gives
 the same bound.  This proves the second part of \cref{thm:sparse-counter}.
 For fixed signed $T$, hardwire $T\bmod\ell$ for each cycle instead.
 
+\begin{corollary}[Sparse cycle labels]\label[corollary]{cor:sparse-labels}
+For a permutation differing from the counter at $r$ states, the cycle
+length, numerically least cycle vertex, and phase of an input state can be computed
+with $O(n(r+1))$ gates.
+\end{corollary}
+\begin{proof}
+Cut the ordinary linear order after each exception, obtaining at most
+$r+1$ intervals.  Within each interval $[a,b)$, the trajectory follows
+ordinary addition.  Hardwire its cycle representative $c$, cycle length
+$\ell$, and phase $p_a$ at its first state.  An input $x$ in that interval
+has label $(c,\ell,(p_a+x-a)\bmod\ell)$.  The interval length is at most
+$\ell$, so one addition and conditional subtraction suffice for the phase.
+Comparisons and record selection cost $O(n)$ per interval.
+\end{proof}
+
+Lean checks both iteration bounds and their charged coordinate transport,
+as well as these cycle labels.  Its interval construction is
+described in \cref{app:lean-details}; the algorithmic claim below has a
+separate proof.
+
 \begin{proposition}[Polynomial-time construction from an edit list]
 \label[proposition]{prop:sparse-compiler}
 Given $n$ and an explicit list of the $r$ edited successors of the
@@ -1676,9 +1697,10 @@ all general-map rows of \cref{tab:results}, invariant-set and image-sensitive
 bounds, the active-mass refinement, permutation inversion, and
 complete-configuration simulation.  The affine-controller bounds and their
 generalization to bounded-cost composition-closed payload families are
-checked as well.  It also checks sparse-counter
-centralizers and signed fixed powers, transport through supplied coordinate
-circuits, and the lower-bound results: hard powers, their overwhelming
+checked as well.  It also checks sparse-counter centralizers, signed fixed
+powers, additive input-time iteration, and cycle labels, with transport of
+both iteration bounds through supplied coordinate circuits.  The lower-bound
+results include hard powers, their overwhelming
 proportion, the remainder-circuit comparison, and the necessary exponent
 length.  The visit descriptor specifies every visit time and its bounded
 count; these semantics do not charge a separate deadline-processing circuit.
@@ -1714,9 +1736,10 @@ The exported theorems have guarded axiom lists containing only
 project has no \texttt{sorry} placeholders or additional axioms.  Classical
 choices select checkpoints, enumerations, and circuit witnesses, so the
 formalization proves nonuniform existence and does not extract a compiler.
-The full arc-chart live-time theorem and \cref{prop:sparse-compiler} have
-prose proofs and an independently tested Python implementation; their
-compiler correctness and full gate bound are not checked in Lean.  The
+The sparse input-time theorem includes existence of the interval chart and
+the full native gate bound.  \Cref{prop:sparse-compiler} has a prose proof
+and an independently tested Python implementation; that algorithm's
+correctness and running time are not checked in Lean.  The
 sparse-transition counting application and finite-field corollary also
 remain prose results, the latter using an external discrete-logarithm
 theorem.  Kernel checking supplies neither a historical-priority result
@@ -1948,9 +1971,32 @@ transport through supplied coordinate circuits.  The streaming-remainder
 circuit has bound $2+m(51(k+1)+4)$ for an $m$-bit numerator and a nonzero
 $k$-bit modulus, with a spare internal bit.  Its semantics and cost are
 both checked.
-The arc-chart live-time theorem, sparse-transition counting application,
-and finite-field corollary have prose proofs; their full circuit bounds
-are not yet checked in Lean.
+For live time, \texttt{CounterIntervals.lean} cuts the ordinary linear
+order after each exceptional successor and proves existence of at most
+$r+1$ intervals on which iteration is ordinary addition.  Permutation
+injectivity bounds each interval length by its cycle length.  The chart
+hardwires numerically least cycle representatives, lengths, and starting phases.
+Its encoding adds the distance from the interval start to the stored
+phase.  Its decoding tests the cycle representative and the modular phase
+distance from each interval start, covering intervals that cross phase
+zero without extra records.  After two shared constants, the two directions
+cost at most $220(n+3)$ and $150(n+3)$ gates per interval.
+
+The middle stage streams the time bits modulo the selected cycle length
+and advances the phase, once for the whole table.  It costs at most
+$200(n+3)(m+1)$ gates.  The theorem
+\texttt{sparse\_counter\_variable\_time} therefore constructs a native
+circuit with bound $1000(n+3)(r+m+1)$, without a supplied chart certificate
+or an unpriced lookup assumption.  Internal words have $n+2$ bits to
+represent $N$ and prevent intermediate overflow.  The theorem
+\texttt{sparse\_coordinate\_variable\_time} additionally charges both
+coordinate circuits.  Keeping only the encoder gives
+\texttt{sparse\_counter\_labels}, with bound $500(n+3)(r+1)$.
+
+This nonuniform chart proof does not verify the Python compiler's
+weighted arc-permutation algorithm or its running time.  Those claims,
+the sparse-transition counting application, and the finite-field corollary
+remain outside the Lean boundary.
 
 \paragraph{Active-mass refinement.}
 The active-mass theorem is checked by restricting the universe-polymorphic

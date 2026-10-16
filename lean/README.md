@@ -10,7 +10,9 @@ circuits and prove their semantics and native gate counts.
 The sparse-counter development also checks a different bound: every signed
 fixed power of an `r`-edited counter has at most `100*(n+1)*(r+1)` gates.
 This includes the stronger centralizer result and charged coordinate changes.
-Streaming division has a checked cost linear in the product of the bit widths.
+An `m`-bit input time costs at most `1000*(n+3)*(r+m+1)` gates, including
+the interval chart, both coordinate directions, and streaming division.
+The same encoder computes canonical cycle labels in `500*(n+3)*(r+1)` gates.
 The small-controller development checks fixed and variable-time powering
 for affine payloads, and for general composition-closed payload families
 with uniformly bounded circuit cost.
@@ -66,6 +68,9 @@ natural-number division in integer budgets means floor division.
 | `sparse_counter_centralizer` | If an injective word map `H` commutes with `F`, and `F` differs from increment at `r` inputs, a circuit for `H` has at most `100*(n+1)*(r+1)` gates. `F` need not be a permutation. |
 | `sparse_counter_power` | The same bound for every integer power of a permutation, including negative powers. |
 | `sparse_coordinate_power` | If a permutation `G` becomes increment under a bijection `e`, every fixed signed power of an `r`-edited `G` costs at most `encode.size + decode.size + 100*(n+1)*(r+1)`. Both coordinate circuits and their semantics are supplied and charged. |
+| `sparse_counter_variable_time` | For an `r`-edited counter permutation, the circuit on `n+m` input bits costs at most `1000*(n+3)*(r+m+1)`. The interval chart is constructed in the existence proof, not supplied as a hypothesis. |
+| `sparse_counter_labels` | The numerically least cycle state, cycle length, and phase cost at most `500*(n+3)*(r+1)` gates. Length and phase fields have `n+2` bits. |
+| `sparse_coordinate_variable_time` | Transferring the input-time bound to a cyclic permutation with supplied coordinates adds exactly `encode.size + decode.size` to the preceding iterator budget. |
 | `synchronous_coalescence_optimized` | On a pair `(x,y)`, decides whether equal-time iterates ever meet, with bound `240000*B + 6*n + 1`. |
 | `recurring_target_optimized` | Decides acceptance at arbitrarily large times; the bound is `240000*optimizedBudget n (s+p.size+4*n) N + p.size`. |
 | `eventually_always_target_optimized` | Decides permanent eventual acceptance; replace `p.size` by `p.size+1` in the preceding budget and add `p.size+2` outside it. |
@@ -226,6 +231,19 @@ the Boolean ring, keeping payload vectors and Boolean wires in the same type.
     generic theorem, proves the polynomial bound, and uses the general
     conditional binary-powering theorem in `VariableTime.lean` for input
     exponents. Each stage updates both controller and payload.
+16. **Select orbit coordinates before processing time.** `CounterIntervals.lean`
+    cuts the numerical order after each exceptional edge, giving at most
+    `r+1` linear intervals. Each follows ordinary addition and has length
+    at most its permutation cycle length. `CounterChart.lean` stores the
+    numerically least cycle state, period, and phase at each interval start;
+    one modular addition encodes the whole interval. `CounterChartDecode.lean`
+    tests modular phase distance, so intervals crossing phase zero need no
+    extra records. `CounterChartCircuits.lean` charges both scans and all
+    arithmetic. `CounterChartTime.lean` processes the input time once, after
+    selecting the cycle length. `SparseCounterTime.lean` composes the native
+    circuits and proves both the additive bound and coordinate transport.
+    The `n+2` working bits represent a full-length cycle and prevent overflow.
+    Keeping only the encoder gives the cycle-label bound.
 
 The construction uses classical choices of checkpoints, finite enumerations,
 and circuit witnesses. It establishes nonuniform existence, not an extracted
@@ -239,10 +257,11 @@ contains exactly `propext`, `Classical.choice`, and `Quot.sound`. There are no
 `sorry` placeholders, added axioms, or `native_decide` steps in the project.
 Kernel checking does not establish statement fidelity or historical novelty.
 
-The sparse arc-chart construction and its full additive live-time bound are
-proved in the manuscript and implemented in `../sparse_counter.py`, but the
-chart's existence and gate-count bridge are not yet checked in Lean. Its
-streaming-arithmetic ingredient is checked. The sparse-transition counting
+The sparse input-time theorem now includes the interval chart's existence,
+semantics, and full native gate bound. Its proof hardwires canonical cycle
+labels nonuniformly. This does not verify the weighted arc-permutation
+algorithm in `../sparse_counter.py`, its polynomial-time edit-list compilation,
+or extraction of an edit list from a transition circuit. The sparse-transition counting
 application and the finite-field corollary, including the use of the external
 discrete-logarithm theorem, are also outside the current Lean boundary.
 

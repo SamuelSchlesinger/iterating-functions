@@ -24,6 +24,7 @@ public import Proofs.TypicalPowers
 public import Proofs.ExponentLength
 public import Proofs.ActivePowers
 public import Proofs.AffineController
+public import Proofs.SparseCounterTime
 
 /-!
 # Public results and axiom audit
@@ -34,6 +35,21 @@ guards fail if the theorem dependencies acquire an additional axiom.
 -/
 
 namespace IteratedFunctions
+
+/-- info: 'IteratedFunctions.sparse_counter_variable_time' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sparse_counter_variable_time
+
+/-- info: 'IteratedFunctions.sparse_counter_labels' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sparse_counter_labels
+
+/-- info: 'IteratedFunctions.sparse_coordinate_variable_time' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sparse_coordinate_variable_time
 
 /-- info: 'IteratedFunctions.controlled_family_power' depends on axioms:
 [propext, Classical.choice, Quot.sound] -/

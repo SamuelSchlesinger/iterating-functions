@@ -90,4 +90,26 @@ theorem synthesis_chooseRecord (s : Set ((Fin n → Bool) → Bool))
         (Or.inr (Synthesis.mem_stages q t ⟨bit, rfl⟩)))
     simpa [q, chooseRecord, ht, ite_apply, Nat.mul_comm] using h
 
+/-- Construct all flagged records and select one, sharing every flag across its
+output bits. The all-false fallback is an already available constant. -/
+theorem synthesis_flaggedRecords (s : Set ((Fin n → Bool) → Bool))
+    (flags : Fin R → (Fin n → Bool) → Bool)
+    (records : Fin R → (Fin n → Bool) → Fin w → Bool) (K : ℕ)
+    (hz : (fun _ => false) ∈ s)
+    (hrows : ∀ j, Synthesis Boolean.interpretation s
+      ({flags j} ∪ Set.range (fun i x => records j x i)) K) :
+    Synthesis Boolean.interpretation s
+      (Set.range fun i x => chooseRecord (fun j => flags j x)
+        (fun j => records j x) (fun _ => false) R i)
+      (R * (K + 4 * w)) := by
+  have hall := Synthesis.iUnion
+    (fun j => {flags j} ∪ Set.range (fun i x => records j x i)) (fun _ => K) hrows
+  have hselect := synthesis_chooseRecord
+    (s ∪ ⋃ j, {flags j} ∪ Set.range (fun i x => records j x i))
+    (fun x j => flags j x) (fun x j => records j x) (fun _ _ => false)
+    (fun j => Or.inr (Set.mem_iUnion.mpr ⟨j, Or.inl rfl⟩))
+    (fun j bit => Or.inr (Set.mem_iUnion.mpr ⟨j, Or.inr ⟨bit, rfl⟩⟩))
+    (fun _ => Or.inl hz)
+  simpa [Nat.mul_add] using hall.trans hselect
+
 end IteratedFunctions

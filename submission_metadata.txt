@@ -40,8 +40,8 @@ $\Omega(2^{n/2}/n)$ when the exponent is uniform modulo its order.
 Those hard powers require exponentially long binary exponents, and the
 counting argument does not identify an explicit hard power.  Lean checks
 the general bounds, graph-query circuits, lower bounds, affine-controller
-bounds, and sparse-counter fixed powers; the full arc-chart compiler
-remains outside that boundary.
+bounds, and both sparse-counter iteration bounds; the polynomial-time
+edit-list compiler remains outside that boundary.
 The underlying checkpoint and block ideas have established antecedents;
 historical priority for the circuit formulations remains unresolved.
 

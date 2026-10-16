@@ -372,8 +372,15 @@ in an edit list, and a cycle of length 2^n. The latter requires n+1 length bits.
 It validates permutation preservation by comparing the edited images with the
 freed images. A fixed-power compiler must additionally charge the bit length
 of its exponent; building the chart itself needs only the edit list and n.
-The new bounded-modulus remainder theorem proves the O(nm) arithmetic cost,
-but the full chart-to-circuit existence theorem remains to be formalized.
+The bounded-modulus remainder theorem proves the O(nm) arithmetic cost.
+The full chart-to-circuit existence theorem is now checked too: the Lean
+construction cuts the ordinary order into at most r+1 intervals and hardwires
+their cycle labels. It proves encoding and decoding, including phase-zero
+wraparound, and charges the single streaming remainder after cycle selection.
+The resulting native bound is 1000*(n+3)*(r+m+1). Both coordinate circuits
+are charged in its transport theorem. The encoder alone computes cycle labels
+in 500*(n+3)*(r+1) gates. This proof does not verify the Python compiler's
+weighted arc-permutation algorithm or its running time.
 
 The counting argument is existential, using at most r edits; it does not give
 an explicit family of exponentially hard transitions. The finite-field result
@@ -450,4 +457,15 @@ gate budgets are recorded in Appendix A. `make lean-check` passes all
 44 axiom guards and 67 proof modules, and the 28-page PDF builds without
 warnings and has been visually reviewed. The sparse chart compiler, its full
 additive live-time gate bound, and the remaining accepted work described above
-are not claimed complete by this milestone.
+were not claimed complete by that milestone.
+
+## Sparse input-time continuation
+
+The interval-chart proof now closes the full sparse input-time gate bound in
+Lean, together with charged coordinate transport and the cycle-label corollary.
+The results table now marks this bound checked, and the appendix explains the
+interval representation, phase-wrap handling, and gate accounting. The main
+formalization section retains the distinction between nonuniform circuit
+existence and the polynomial-time compiler from an explicit edit list.
+The explicit compiler, sparse-transition counting, finite-field application,
+and remaining accepted work above retain their stated separate scope.

@@ -76,10 +76,11 @@ transported to other cycles. A binary-field application uses Kleinjung and
 Wesolowski's fixed-characteristic discrete-logarithm theorem. The classical
 commutation/block geometry is credited to Moreno and Rivera.
 
-Lean checks the sparse fixed-power and centralizer bounds, charged coordinate
-transport, and O(m(k+1)) bounded-modulus division. The complete arc-chart
-live-time theorem and the finite-field application still have prose proofs,
-not end-to-end Lean proofs.
+Lean checks the sparse fixed-power, centralizer, and additive input-time
+bounds, with both coordinate costs charged. The interval encoder also gives
+cycle labels in O(n(r+1)) gates. The chart existence proof and all Boolean
+gate costs are checked; the Python edit-list compiler's algorithm and runtime,
+and the finite-field application, remain outside the Lean boundary.
 
 The counting result does not identify an explicit hard exponent. Every
 exponent witnessing the stated lower bound necessarily has binary length

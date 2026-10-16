@@ -47,10 +47,10 @@ cases check algebraic identities, not an independent enumerative oracle.
 
 Lean command: make lean-check
 cd lean && lake build --wfail
-Build completed successfully (3761 jobs).
+Build completed successfully (3767 jobs).
 
-Main.lean runs 44 guarded axiom checks. Every audited result depends exactly
-on propext, Classical.choice, and Quot.sound. All 67 Proofs modules are in
+Main.lean runs 47 guarded axiom checks. Every audited result depends exactly
+on propext, Classical.choice, and Quot.sound. All 73 Proofs modules are in
 Main's transitive import closure. No sorry, admit, added axiom, native_decide,
 or unsafe declaration appears in the project Lean sources.
 
@@ -81,6 +81,17 @@ The sparse-counter additions check the factor-two commutation defect estimate,
 centralizer circuits, all signed fixed powers, and coordinate transport with
 both circuit costs. They also check a bounded-modulus remainder circuit with
 size 2 + m*(51*(k+1)+4), including semantics for every nonzero k-bit modulus.
+CounterIntervals.lean proves the existence of at most r+1 numerical intervals
+following unedited counter edges. CounterChart.lean and CounterChartDecode.lean
+prove encoding and decoding from hardwired canonical cycle labels, including
+phase-zero wraparound. CounterChartCircuits.lean charges the two directions
+at 220*(n+3)*R and 150*(n+3)*R gates after shared constants, for R intervals.
+CounterChartTime.lean advances the selected phase using one streamed time
+remainder, with bound 200*(n+3)*(m+1). SparseCounterTime.lean composes them
+into an actual n+m input circuit of size at most 1000*(n+3)*(r+m+1), with
+no supplied chart certificate. The charged coordinate-transport theorem
+adds both circuit sizes. The encoder alone gives canonical cycle labels
+in 500*(n+3)*(r+1) gates, with the numerical order on words.
 
 TypicalPowers.lean bounds the easy fraction of counter powers by
 2^(-2^(k-1)) for k >= 64 at threshold floor(2^k/(1024*(k+1))).
@@ -118,25 +129,25 @@ Negative instances have no time-field specification. Generic finite-dynamics
 and commutation lemmas are universe polymorphic; circuit bounds charge bits.
 
 Paper command: make (three pdflatex passes).
-Output: 28 pages. Final log has no warnings, overfull boxes, or underfull boxes.
+Output: 29 pages. Final log has no warnings, overfull boxes, or underfull boxes.
 All final pages were rendered and inspected in contact sheets. The revised
 abstract, introductory comparison table, simulation specialization, named
 edit-list compiler proposition, concise Lean section, conclusion, and appendix
-were additionally inspected at readable resolution. The table distinguishes
-checked circuit bounds from the partially formalized sparse live-time result.
-It now includes both affine-controller bounds. The new theorem, its proof,
-and the appendix's controller implementation were also inspected at readable
-resolution. The general nonuniformity and historical-priority qualifications
-remain explicit.
+were additionally inspected at readable resolution. The table now records the
+checked sparse input-time and cycle-label bounds alongside the general-map
+and affine-controller bounds. The cycle-label corollary and appendix's chart
+implementation were also inspected at readable resolution. The general
+nonuniformity and historical-priority qualifications remain explicit.
 The abstract matches submission_metadata.txt after expanding its LaTeX macros.
 All source labels are unique and all cross-references resolve.
 
 The implementation uses the existing pinned Lean, Mathlib, CSLib, and
 Complexitylib revisions. Lean proves nonuniform circuit existence, not an
 extracted compiler. The Python sparse-counter compiler has independent finite
-checks, but its general correctness is not a Lean theorem. The full sparse
-arc-chart live-time theorem, sparse-transition counting application, and
-finite-field corollary remain prose results; the latter uses the external
+checks, but its general correctness and running time are not Lean theorems.
+The sparse input-time circuit bound is now fully checked using a nonuniform
+interval chart. The sparse-transition counting application and finite-field
+corollary remain prose results; the latter uses the external
 Kleinjung--Wesolowski theorem. The AKS improvement and full-state-space
 effective compiler are still proposals rather than separately mechanized
 theorems.

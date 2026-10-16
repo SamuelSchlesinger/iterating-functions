@@ -50,7 +50,7 @@
 \title{Square-Root Circuit Bounds\\for Iterated Functions}
 % Author field is provisional and editable; no affiliation is assumed.
 \author{Samuel Schlesinger}
-\date{September 29, 2026\\[3pt]\small Preliminary draft}
+\date{October 15, 2026\\[3pt]\small Preliminary draft}
 
 \begin{document}
 \maketitle
@@ -79,6 +79,10 @@ permutation on $n$ bits for which some fixed power requires
 $\Omega(2^{n/2}/n)$ gates.  Such hard powers necessarily have binary
 exponents of length $\Omega(2^{n/2}/n^2)$.  The counting argument neither
 identifies an explicit hard power nor establishes one-way functions.
+A Lean formalization checks the fixed-power tradeoff, its invariant-set
+and image-sensitive extensions, and transport to encoded state types in
+arbitrary universes.  We also derive cycle labels, reachability, and
+first hitting times; these navigation results are not yet mechanized.
 \end{abstract}
 
 \noindent\textbf{Keywords.} Boolean circuit complexity; function iteration;
@@ -348,46 +352,26 @@ the cycle.
 
 \begin{lemma}[Checkpoint or repetition]\label[lemma]{lem:checkpoints}
 Let $F$ be a function on a set of $N$ states, and let $1\leq L\leq N$.
-There is a set $H$ of at most $2N/L$ states such that, for every $x$, the
-list
-\[
-  x,F(x),\ldots,F^{2L}(x)
-\]
-either contains an element of $H$ or contains a repeated state.
+There is a set $H$ of at most $\floor{N/L}$ states such that, for every $x$,
+either two of $x,F(x),\ldots,F^{L-1}(x)$ are equal or
+$F^d(x)\in H$ for some $d<2L$.
+More generally, the same conclusion holds for starting states in any
+finite forward-invariant set $S$, with $|H|L\leq |S|$ and $H\subseteq S$.
+The ambient state type need not be finite.
 \end{lemma}
 
 \begin{proof}
-Let $N_{\mathrm{tree}}$ and $N_{\mathrm{cycle}}$ be the numbers of noncycle
-and cycle vertices.  Among the $L$ residue classes of noncycle depths
-modulo $L$, choose one of minimum cardinality, and put every vertex in
-that class into $H$.  This adds at most $N_{\mathrm{tree}}/L$ vertices.
-The choice is global across all components; choosing a residue separately
-for every tree is unnecessary.
-
-For each cycle of length $\ell\geq L$, number its vertices consecutively
-in the forward direction and mark vertices with indices
-$0,L,2L,\ldots$ below $\ell$.  Consecutive marked vertices, including the
-last and first around the cycle, are at forward distance at most $L$.
-The number of marks on that cycle is
-\[
-  \ceil{\ell/L}\leq 2\ell/L.
-\]
-Leave cycles of length less than $L$ unmarked.  The total number of marks
-is at most
-\[
-  \frac{N_{\mathrm{tree}}}{L}
-    +\frac{2N_{\mathrm{cycle}}}{L}
-  \leq \frac{2N}{L}.
-\]
-
-If the starting depth is at least $L$, the first $L$ depths encountered
-include every residue class modulo $L$, so a marked noncycle vertex is
-encountered.  If the starting depth is less than $L$, the trajectory
-reaches a cycle in fewer than $L$ steps.  On a cycle of length at least
-$L$, it reaches a marked vertex in at most another $L$ steps.  On a
-shorter cycle, it repeats a state in fewer than another $L$ steps.  The
-same cycle analysis applies to a trajectory starting on a cycle.  All
-cases are covered by the displayed list.
+Choose a maximal family of pairwise vertex-disjoint simple directed paths,
+each consisting of $L$ vertices in $S$.  Put the last vertex of each path
+into $H$.  Disjointness gives $|H|L\leq |S|$.
+If the first $L$ states of an orbit are distinct, they form such a path
+in $S$.  By maximality this path meets a chosen path: say
+$F^i(x)=F^j(a)$, where $i,j<L$ and the chosen path starts at $a$.
+Its marked endpoint is reached from $x$ after
+$i+(L-1-j)<2L$ steps.  If the prefix is not simple, it already contains a
+repetition.  Taking $S$ to be the entire state space proves the first
+claim.  The Lean proof implements the same packing argument by induction
+on $|S|$, removing one simple path at a time.
 \end{proof}
 
 \begin{remark}
@@ -413,7 +397,7 @@ $n$-bit payload
   z_h=F^{T-K}(h).
 \end{equation}
 The dictionary is fixed independently of the input $x$ and has at most
-$2N/L$ entries.
+$N/L$ entries.
 
 On input $x$, first compute
 \begin{equation}\label{eq:prefix}
@@ -519,6 +503,39 @@ of $T$ on a long hidden input tape, and it does not perform uncharged
 arithmetic on an arbitrarily large integer.  Computing the hardwired
 information is a preprocessing task outside the asserted circuit bound.
 \end{remark}
+
+\subsection{Invariant sets and image-sensitive bounds}
+
+\begin{theorem}[Invariant-set tradeoff]\label{thm:invariant}
+Let $S\subseteq\bits^n$ be forward invariant under $F$, with $|S|=M$.
+For every fixed $T\geq0$ and $1\leq L\leq N$, there is a circuit agreeing
+with $F^T$ on $S$ of size
+\[
+ O\!\left(Ls+n^3\left(L+\frac{M}{L}\right)\right).
+\]
+The circuit is total on $\bits^n$; correctness outside $S$ is not asserted.
+\end{theorem}
+\begin{proof}
+Use the invariant-set version of \cref{lem:checkpoints}, and otherwise
+apply the fixed-power construction unchanged.  A state still occupies
+$n$ bits, but the dictionary contains only $O(M/L)$ records.
+\end{proof}
+
+\begin{corollary}[Image sensitivity]\label{cor:image}
+Put $M_d=|\operatorname{im}(F^d)|$.  For $T\geq d$ and $1\leq L\leq M_d$,
+\[
+ \CC(F^T)\leq \CC(F^d)+
+ O\!\left(Ls+n^3\left(L+\frac{M_d}{L}\right)\right).
+\]
+Consequently this is at most
+$\CC(F^d)+O(A+\sqrt{n^3M_dA})$.
+\end{corollary}
+\begin{proof}
+The image of $F^d$ is forward invariant, since
+$F(F^d(x))=F^d(F(x))$.  Compute $F^d(x)$ and apply
+\cref{thm:invariant} on its image for $T-d$ more steps.
+Optimize $L$ as in \cref{eq:L-choice}, replacing $N$ by $M_d$.
+\end{proof}
 
 \section{Input times and shared evaluation}
 
@@ -657,6 +674,96 @@ $0\leq\alpha\leq 1$, \cref{eq:batch-variable} is at most
 \]
 This is an upper-bound sharing statement.  It is not a direct-sum
 separation against optimal circuits for a single trajectory.
+
+\section{Computing the Structure of Functional Graphs}\label{sec:structure}
+
+Write $B=A+\sqrt{n^3NA}$.  For a state $x$, let $\mu(x)$ be its distance
+to its eventual cycle, let $\ell(x)$ be that cycle's length, and let $c(x)$
+be the lexicographically least state on the cycle.  Define
+$\phi(x)\in\{0,\ldots,\ell(x)-1\}$ by
+\begin{equation}\label{eq:phase}
+ F^t(x)=F^{(\phi(x)+t)\bmod\ell(x)}(c(x))\qquad(t\geq\mu(x)).
+\end{equation}
+The phase is an eventual-orbit label; it does not assert that a transient
+state itself lies on the cycle.  These labels are unique.  Cycle lengths
+are encoded with $n+1$ bits, since a cycle may have length $N$.
+
+\begin{theorem}[Cycle labels]\label{thm:labels}
+A circuit of size $O(B)$ computes $(\ell(x),c(x),\phi(x))$ for every $x$.
+\end{theorem}
+\begin{proof}
+Fix $L$ and use the checkpoint construction with $K=2L$.  Hardwire the
+three labels for each checkpoint.  If $F^d(x)=h$ for $d\leq K$, output
+\[
+ \ell(x)=\ell(h),\qquad c(x)=c(h),\qquad
+ \phi(x)=(\phi(h)-d)\bmod\ell(h).
+\]
+This follows by applying \cref{eq:phase} after both transients have ended.
+All records still have $O(n)$ bits.
+
+If there is no checkpoint hit, the prefix repeats.  Sort prefix records
+by state and then by original index.  Among adjacent equal-state pairs,
+choose the pair with smallest second index $j$, retaining its first
+index $i$.  This is the first repetition in the original trajectory:
+any earliest second occurrence is adjacent to its first occurrence in
+its equal-state run.  The states before $j$ are distinct, so
+$i=\mu(x)$ and $[i,j)$ consists of exactly one cycle traversal.
+Set $\ell=j-i$, and select the minimum state $c=x_p$ over $i\leq p<j$.
+Then $\phi(x)=(-p)\bmod\ell$.  Minimum selection and the interval mask
+cost $O(nK)$ gates, and word arithmetic costs $O(n^2)$ gates.
+Sorting and lookup cost $O(n^3(L+N/L))$, while the prefix costs $O(Ls)$.
+Optimizing $L$ proves the claim.  Discarded branches use safe positive
+dummy moduli, as in the fixed-power construction.
+\end{proof}
+
+\begin{theorem}[Reachability and first hitting times]\label{thm:reachability}
+A circuit of size $O(n^2B)$, on input $(x,y)$, decides whether
+$F^t(x)=y$ for some $t\geq0$ and returns the least such $t$ when it exists.
+The output may use a separate existence flag and $n$ time bits.
+\end{theorem}
+\begin{proof}
+Let $D=\lcm(1,\ldots,N)$.  A state $z$ is cyclic if and only if $F^D(z)=z$:
+a cyclic state has period dividing $D$, whereas any positive return makes
+$z$ cyclic.  Thus cyclicity has an $O(B)$-gate test by \cref{thm:main}.
+For each $x$, the predicate ``$F^j(x)$ is cyclic'' is monotone in $j$ and
+is true at $j=N-1$.  Binary search on the inclusive interval $[0,N-1]$
+therefore finds $\mu(x)$ in $O(n)$ adaptive stages.  Unroll these stages
+as a circuit.  Each uses the $n$-bit iterator of \cref{thm:variable}, of
+size $O(nB)$, followed by the cyclicity test.  Compute $\mu(y)$ similarly;
+the total is $O(n^2B)$.
+
+Compute both sets of cycle labels using \cref{thm:labels}.  If $y$ is
+transient, it is reachable exactly when
+\[
+ \mu(x)\geq\mu(y)\quad\hbox{and}\quad
+ F^{\mu(x)-\mu(y)}(x)=y.
+\]
+Indeed, transient depth decreases by exactly one per step until the cycle
+is reached.  In this case the displayed exponent is the first hitting
+time.  The variable-time iterator evaluates this final test.
+
+If $y$ is cyclic, it is reachable exactly when $c(x)=c(y)$.  On a positive
+instance its first hitting time is
+\[
+ \mu(x)+\bigl((\phi(y)-\phi(x)-\mu(x))\bmod\ell(x)\bigr),
+\]
+where the parenthesized residue lies in $[0,\ell(x)-1]$.  This is the
+first time on or after entry into the cycle with the required phase.
+Finally $\mu(x)+\ell(x)\leq N$, so every first hitting time is at most
+$N-1$.  Arithmetic may use $n+1$ intermediate bits.  Return zero in the
+time field on negative instances.
+\end{proof}
+
+\paragraph{Relation to navigation data structures.}
+Function powers and path queries have established data-structure
+formulations~\cite{MRRR12,GHN19}.  In particular, nearest labeled
+successors include reachability of a fixed singleton target.
+Those results charge representation space and query time in a RAM model.
+Here the given object is a succinct transition circuit, and every gate
+accessing a nonuniform table is charged.  These differences specify the
+claim being compared; they do not establish historical novelty of the
+present bounds.  The two theorems in this section have mathematical
+proofs here but are outside the current Lean formalization.
 
 \section{A matching exponent for arbitrary fixed powers}\label{sec:lower}
 
@@ -924,6 +1031,99 @@ polynomial-time one-way function.  The counting proof supplies no
 average-case inversion hardness.  The results here consequently neither
 prove nor refute the existence of one-way functions or one-way permutations.
 
+\section{Lean formalization}\label{sec:lean}
+
+The accompanying \texttt{lean/} project checks the fixed-power tradeoff
+and its invariant-set and image-sensitive extensions in Lean~4.  Its
+public statement file imports only CSLib and Mathlib.  The proofs use
+CSLib's circuits and simultaneous synthesis relation, together with the
+composition, iteration, and verified sorting-network semantics in the
+author's Circuit library as distributed through
+\texttt{complexitylib}~\cite{CSLib,Mathlib,Complexitylib}.
+The project pins Lean and all three libraries; \texttt{lean/README.md}
+gives exact revisions and commands.
+
+\begin{theorem}[Mechanized tradeoff]\label{thm:lean}
+Let $c$ be a circuit over the Boolean constant, NOT, AND, and OR basis,
+with $n$ inputs and $n$ outputs, and let $S\subseteq\bits^n$ be finite
+and invariant under its evaluation $F$.  For all natural numbers $T$ and
+$1\leq L\leq2^n$, Lean proves the existence of a circuit $d$ agreeing
+with $F^T$ on $S$ such that
+\[
+ |d|\leq40000\left[L|c|+(n+1)^3
+       \left(L+\floor{|S|/L}+1\right)\right].
+\]
+Here circuit size counts every gate, including constant gates.
+\end{theorem}
+
+The harmless $+1$s cover zero-width and empty-set cases.  For $n,L\geq1$
+the displayed expression implies the paper's asymptotic tradeoff; the
+real square-root optimization is the argument already given above, not a
+separate checked Lean theorem.  The constant $40000$ is a deliberately
+loose explicit accounting bound.  The formal result counts actual
+Boolean gates and is not conditional on an assumed lookup compiler.
+Free wires and arbitrary fan-out permit sharing; the two Boolean
+constants are generated once.  Translating the paper's fixed fan-in-two
+basis to this basis changes size by an absolute constant factor.
+
+\paragraph{Proof organization.}
+\texttt{Statement.lean} states the claims,
+\texttt{Proofs/} contains their proofs, and \texttt{Main.lean} imports the
+public results and guards their axiom dependencies.  The proof uses the
+path-packing version of \cref{lem:checkpoints}.  It retains the complete
+short orbit, with one copy of $c$ per transition.
+
+For the fixed-power circuit it suffices to find one useful collision.
+The mechanized implementation sorts a single array containing checkpoint
+records, prefix records, and explicitly tagged padding.  Its detector
+selects adjacent records with equal state keys, unequal complete records,
+and no padding.  Such a pair supplies either a checkpoint hit or two
+distinct prefix positions with the same state.  A sorted equal-key run
+containing two distinct records has an adjacent unequal pair, which is
+proved explicitly; identical records cannot create a spurious witness.
+This avoids needing the full multiquery dictionary interface in the
+formal proof.  The shared comparator computes its comparison once and
+uses it for every payload bit.  Its Batcher sorting bound is
+$O(rR\log^2R)$ for $R$ records of $r$ bits.
+
+For a repeated pair $i<j$, put $p=j-i$.  Starting at the hardwired residue
+$T\bmod p$, the checked arithmetic adds $p$ while the current value is
+below $i$.  At most $K$ steps suffice, since $i\leq K$; the resulting
+index lies in $[i,j)$ and is congruent to $T$ modulo $p$.
+Words have width $n+2$ when $K=2L$, and absence of overflow on valid
+witnesses is proved.  This uses $O(Kn^2)$ gates instead of formalizing
+variable division, which fits within the asserted $O(n^3L)$ budget.
+Every branch is total, even when its output is discarded.  No operation
+on the full binary expansion of $T$ is performed by the resulting circuit.
+
+\paragraph{Universes and representations.}
+The packing and reconstruction lemmas quantify over
+$\alpha:\mathrm{Type}\ u$ for arbitrary $u$; only the relevant invariant
+subset must be finite.  The theorem \texttt{fixed\_power\_encoded}
+transports the circuit bound to a finite invariant set $S\subseteq\alpha$
+with an encoding $e:\alpha\to\bits^n$ injective on $S$, provided
+$c(e(x))=e(F(x))$ for $x\in S$.  The result computes $e(F^T(x))$ on
+encoded starting states and counts $|S|$, retaining the actual bit width
+$n$.  No unit-cost primitive for an arbitrary operation on $\alpha$ is
+introduced.  Separate initialization and decoding circuits, when needed,
+must be charged separately.
+
+\paragraph{Checked boundary.}
+The fixed-power and invariant-set claims are exported as
+\texttt{fixedPowerBound} and \texttt{fixedPowerOnBound}.
+The encoded-state and image-sensitive claims are
+\texttt{fixed\_power\_encoded} and \texttt{image\_sensitive}.
+All four are checked end to end, including circuit existence, semantics, and size.
+Their guarded axiom lists contain only \texttt{propext},
+\texttt{Classical.choice}, and \texttt{Quot.sound}.  There are no
+\texttt{sorry} placeholders or additional axioms.  Noncomputable choices
+select checkpoints, enumeration orders, and circuit witnesses; this is
+an existence formalization, not an extracted efficient compiler.
+The navigation theorems, variable-time and batched bounds, counting lower
+bound, and additional proposals are not claimed to be mechanized.
+Nor does kernel checking establish historical priority or that the
+formal statement captures every possible intended circuit convention.
+
 \section{Scope and remaining questions}\label{sec:scope}
 
 The main theorem is an exact nonuniform upper bound for unrestricted
@@ -944,12 +1144,12 @@ used for counting cannot witness such a strengthening, by
 \cref{eq:easy-iterator,cor:exponent-length}.  The inversion consequence
 in \cref{cor:inverse} likewise leaves polynomial-size one-wayness open.
 
-Two questions remain distinct.  First, can stronger upper bounds hold
-when the exponent is restricted to polynomially many bits or when the
-functional graph has additional structure?  Second, under what conditions
-can the required preprocessing be performed substantially faster than
-exploring the full state space?  The present proof addresses neither
-question.  Its conclusion is the unconditional total-gate tradeoff:
+Two further questions remain distinct.  First, can one improve the
+upper bound for short exponent descriptions, or exploit structure beyond
+the invariant-set reduction above?  Second, under what conditions can the
+required preprocessing be performed substantially faster than exploring
+the full state space?  These questions remain open here.  The central
+conclusion is the unconditional total-gate tradeoff:
 a short transition circuit can be combined with a sparse table, whose
 access cost is explicitly accounted for, to compute every fixed iterate
 at square-root state-space scale.
@@ -959,11 +1159,13 @@ at square-root state-space scale.
 This draft and the underlying argument were developed with assistance
 from ChatGPT (GPT-6 Astra Pro), including assistance with theorem
 formulation, proof development, exposition, and literature searches.
+The Lean development and the current revision also received assistance
+from Codex, including circuit synthesis proofs, axiom auditing, and review.
 The author field is provisional.  Historical priority and final
 attribution require author review; the draft does not represent
 independent peer verification.
 
-\begin{thebibliography}{9}
+\begin{thebibliography}{99}
 
 \bibitem{Batcher68}
 Kenneth E. Batcher.
@@ -1006,6 +1208,31 @@ Oded Goldreich.
 \newblock Cambridge University Press, 2008.
 \newblock Author's draft, Chapter~7:
 \href{https://www.wisdom.weizmann.ac.il/~oded/CC/r3.pdf}{one-way function definitions}.
+
+\bibitem{GHN19}
+Travis Gagie, Meng He, and Gonzalo Navarro.
+\newblock Path queries on functions.
+\newblock \emph{Theoretical Computer Science}, 770:34--50, 2019.
+\newblock \href{https://doi.org/10.1016/j.tcs.2018.10.021}{doi:10.1016/j.tcs.2018.10.021}.
+\newblock \href{https://users.dcc.uchile.cl/~gnavarro/ps/tcs18.2.pdf}{Author-hosted full text}.
+
+\bibitem{CSLib}
+The CSLib contributors.
+\newblock CSLib: a Lean library for computer science.
+\newblock \url{https://github.com/leanprover/cslib}.
+\newblock Pinned revisions are in the accompanying Lean dependency manifest.
+
+\bibitem{Mathlib}
+The mathlib community.
+\newblock The Lean mathematical library.
+\newblock In \emph{Proceedings of CPP}, pages 367--381, 2020.
+\newblock \href{https://doi.org/10.1145/3372885.3373824}{doi:10.1145/3372885.3373824}.
+\newblock Lean 4 implementation: \url{https://github.com/leanprover-community/mathlib4}.
+
+\bibitem{Complexitylib}
+Samuel Schlesinger and contributors.
+\newblock Complexitylib, including the Circuit library and verified sorting networks.
+\newblock \url{https://github.com/SamuelSchlesinger/complexitylib}.
 
 \end{thebibliography}
 

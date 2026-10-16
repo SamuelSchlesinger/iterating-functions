@@ -31,6 +31,10 @@ permutation on $n$ bits for which some fixed power requires
 $\Omega(2^{n/2}/n)$ gates.  Such hard powers necessarily have binary
 exponents of length $\Omega(2^{n/2}/n^2)$.  The counting argument neither
 identifies an explicit hard power nor establishes one-way functions.
+A Lean formalization checks the fixed-power tradeoff, its invariant-set
+and image-sensitive extensions, and transport to encoded state types in
+arbitrary universes.  We also derive cycle labels, reachability, and
+first hitting times; these navigation results are not yet mechanized.
 
 STATUS
-Preliminary draft, September 29, 2026. Historical priority and final attribution require author review. See the provenance note and README.
+Preliminary draft, October 15, 2026. Historical priority and final attribution require author review. See the provenance note and README.

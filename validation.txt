@@ -1,3 +1,6 @@
+Validation, October 15, 2026
+
+python3 verify_small_instances.py
 PASS: all finite semantic checks succeeded.
 Seed: 20260929
 batch-lookup instances: 2,000
@@ -11,3 +14,42 @@ outputs: repetition: 34,344
 outputs: short-time: 49,074
 permutation family instances: 5
 These checks do not replace a proof or establish historical novelty.
+python3 verify_extensions.py
+PASS: extension semantic checks succeeded.
+Seed: 20261015
+absorbing-target outputs: 517,066
+hitting-time pairs: 97,265
+maps: 3,446
+packing, labels, active coverage: 97,265
+Finite checks do not establish circuit size or historical novelty.
+
+Lean command: make lean-check
+cd lean && lake build --wfail
+✔ [1105/1115] Built Statement (2.1s)
+✔ [1114/1115] Built Main (1.2s)
+Build completed successfully (1115 jobs).
+
+Main.lean guards the axiom dependencies of fixedPowerBound, fixedPowerOnBound,
+fixed_power_encoded, and image_sensitive. Each guard permits exactly
+propext, Classical.choice, and Quot.sound.
+No sorry, admit, added axiom, native_decide, or unsafe declaration appears
+in the project Lean sources.
+
+Paper command: make (three pdflatex passes).
+Output: 17 pages. Final log has no warnings, overfull boxes, or underfull boxes.
+Rendered pages inspected for layout; the new navigation and formalization
+pages additionally inspected at readable resolution.
+
+Scope: Lean checks the parameterized Boolean gate tradeoff, its invariant-set
+form, transport to encoded states in arbitrary universes, and image sensitivity.
+The real square-root optimization and the other manuscript results are not
+claimed to be mechanized. Finite checks do not establish historical novelty.
+
+Publication packaging check
+The pinned Mathlib, CSLib, and Complexitylib commits were verified through
+the public GitHub API. Complexitylib is pinned to the published revision
+add0aca8ee0d71e68969f2cb45cf91554a50f787; the previously selected local revision
+was unpublished. The circuit modules used here are unchanged at the public pin.
+cd lean && lake build --wfail
+Build completed successfully (1115 jobs).
+The manuscript abstract matches submission_metadata.txt; the PDF is current.

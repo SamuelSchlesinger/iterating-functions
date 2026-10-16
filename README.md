@@ -1,15 +1,18 @@
 # Square-Root Circuit Bounds for Iterated Functions
 
-Preliminary research draft, September 29, 2026.
+Preliminary research draft, October 15, 2026.
 
 ## Files
 
 - [LaTeX manuscript](iterated_function_circuits.tex): self-contained source.
-- [PDF manuscript](iterated_function_circuits.pdf): compiled 13-page draft.
+- [PDF manuscript](iterated_function_circuits.pdf): compiled draft.
 - [Bibliography](references.bib): matching entries for later editing; not required to compile.
 - [Submission metadata](submission_metadata.txt): editable title, author field, keywords, and LaTeX abstract.
 - [Semantic checks](verify_small_instances.py): finite checks using only the Python standard library.
 - [Validation results](validation.txt): output of the checks in this package.
+- [Lean formalization](lean/README.md): checked fixed-power circuits and extensions.
+- [Detailed review](REVIEW.md): all ten proposals, proof requirements, and attribution.
+- [Extension checks](verify_extensions.py): graph labels, hitting times, and checkpoint refinements.
 - [Makefile](Makefile): compilation and checking commands.
 
 ## Build
@@ -28,8 +31,17 @@ pdflatex -interaction=nonstopmode -halt-on-error iterated_function_circuits.tex
 To run the semantic checks:
 
 ```sh
-python3 verify_small_instances.py
+make check
 ```
+
+To check the formalization, with the pinned Lean toolchain installed:
+
+```sh
+make lean-check
+```
+
+See [lean/README.md](lean/README.md) for fresh-checkout setup, exact dependency
+revisions, the public statements, and the axiom audit.
 
 ## Mathematical scope
 
@@ -42,9 +54,9 @@ it is O(r A + sqrt(r n^3 N A)).
 
 The circuit model is ordinary nonuniform bounded-fan-in Boolean circuits
 with unrestricted fan-out. All dictionary access, sorting, selection, and
-arithmetic gates are charged. The preprocessing needed to determine the
-hardwired tables is not time-bounded. In the fixed-power theorem, the
-circuit can depend on F and T but works for every starting state.
+arithmetic gates are charged. The circuit theorem does not charge the
+preprocessing needed to determine the hardwired tables. In the fixed-power
+theorem, the circuit can depend on F and T but works for every starting state.
 
 The counting result does not identify an explicit hard exponent. Every
 exponent witnessing the stated lower bound necessarily has binary length
@@ -62,8 +74,18 @@ average-case inversion hardness.
 The finite checks exercise the combinatorial construction and its
 arithmetic identities, including 258-bit exponents and repeated-state
 cases, plus exact inversion on every permutation of at most five states.
-They are not a proof assistant formalization, an independently
-synthesized gate-count verification, or evidence of historical novelty.
+These finite tests do not establish gate counts or historical novelty.
+Separately, the Lean development checks actual Boolean circuit constructions,
+semantics, and size for the fixed-power tradeoff and its invariant-set,
+image-sensitive, and encoded-state forms. The optimized real square-root
+formula, navigation theorems, variable-time and batched results, and lower
+bounds remain outside the current mechanized boundary.
+
+The paper now includes cycle labels and an O(n^2 B)-gate pair-input
+reachability/first-hitting-time theorem. The review records the other proposals
+and their qualifications. The checkpoint proof uses disjoint path packing,
+giving at most floor(|S|/L) checkpoints on an invariant set S, including
+finite subsets of state types in arbitrary universes.
 
 ## Before submission
 
@@ -83,8 +105,8 @@ The draft includes a provenance note covering AI assistance in statement
 development, proof development, writing, and literature search.
 
 ECCC's official instructions, checked September 29, 2026, require a PDF
-and separately entered title, abstract, authors, and keywords. Its current
-homepage also warns that a submission with an essential AI-generated
+and separately entered title, abstract, authors, and keywords. At that check,
+its homepage also warned that a submission with an essential AI-generated
 component may be rejected regardless of merit. This package is not a claim
 of submission eligibility or acceptance, and no submission has been made.
 
@@ -97,7 +119,9 @@ Official sources:
 The mathematical exposition cites Batcher's sorting networks, Hellman's
 time-memory tradeoff, Munro--Raman--Raman--Rao's representations,
 Hirahara--Ilango--Williams's inversion circuits, Eppstein's uniform iteration
-classification, and Goldreich's one-way function definitions. Accessible
+classification, Gagie--He--Navarro's path queries, and Goldreich's one-way
+function definitions. The formalization additionally credits Mathlib, CSLib,
+and the author's Circuit library in Complexitylib. Accessible
 primary texts were consulted except for Batcher, whose reference uses the
 original publication's bibliographic record. Section and theorem numbers
 for Hirahara--Ilango--Williams refer to the ECCC full version.

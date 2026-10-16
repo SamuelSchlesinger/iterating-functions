@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+"""Independent finite checks of the added graph statements, not gate-count proofs."""
+
+from collections import Counter
+from itertools import product
+from math import lcm
+from random import Random
+
+
+def orbit(f, x):
+    positions, path = {}, []
+    while x not in positions:
+        positions[x] = len(path)
+        path.append(x)
+        x = f[x]
+    mu = positions[x]
+    cycle = path[mu:]
+    c = min(cycle)
+    return path, mu, len(cycle), c, (-path.index(c)) % len(cycle)
+
+
+def iterate(info, t):
+    path, mu, period, _, _ = info
+    return path[t] if t < len(path) else path[mu + (t - mu) % period]
+
+
+def prefix(f, x, count):
+    result = []
+    for _ in range(count):
+        result.append(x)
+        x = f[x]
+    return result
+
+
+def packed_checkpoints(f, length):
+    remaining, marked = set(range(len(f))), set()
+    while True:
+        for x in sorted(remaining):
+            path = prefix(f, x, length)
+            if len(set(path)) == length and set(path) <= remaining:
+                marked.add(path[-1])
+                remaining.difference_update(path)
+                break
+        else:
+            return marked
+
+
+def active_checkpoints(f, infos, length):
+    deep = [v for v, info in enumerate(infos) if info[1] >= length]
+    residue = min(range(length), key=lambda r: sum(infos[v][1] % length == r for v in deep))
+    marked = {v for v in deep if infos[v][1] % length == residue}
+    long_cycle_vertices = set()
+    for c in {info[3] for info in infos}:
+        period = infos[c][2]
+        if period >= length:
+            cycle = prefix(f, c, period)
+            long_cycle_vertices.update(cycle)
+            marked.update(cycle[::length])
+    return marked, len(deep) + len(long_cycle_vertices)
+
+
+def labels_from_prefix(f, infos, marked, x, length):
+    path = prefix(f, x, 2 * length + 1)
+    for d, h in enumerate(path):
+        if h in marked:
+            _, _, period, c, phase = infos[h]
+            return period, c, (phase - d) % period
+    records = sorted((state, i) for i, state in enumerate(path))
+    pairs = [(j, i) for (a, i), (b, j) in zip(records, records[1:]) if a == b]
+    j, i = min(pairs)
+    p = min(range(i, j), key=path.__getitem__)
+    return j - i, path[p], (-p) % (j - i)
+
+
+def check_map(f, counts):
+    n = len(f)
+    infos = [orbit(f, x) for x in range(n)]
+    counts["maps"] += 1
+    for length in range(1, n + 1):
+        marked = packed_checkpoints(f, length)
+        assert len(marked) * length <= n
+        active, q = active_checkpoints(f, infos, length)
+        assert len(active) * length <= 2 * q
+        for x in range(n):
+            short = prefix(f, x, length)
+            assert len(set(short)) < length or set(prefix(f, x, 2 * length)) & marked
+            assert labels_from_prefix(f, infos, marked, x, length) == infos[x][2:]
+            long = prefix(f, x, 3 * length + 1)
+            assert set(long) & active or len(set(long)) < len(long)
+            counts["packing, labels, active coverage"] += 1
+    exponent = lcm(*range(1, n + 1))
+    for x in range(n):
+        lo, hi = 0, n - 1
+        while lo < hi:
+            mid = (lo + hi) // 2
+            z = iterate(infos[x], mid)
+            if iterate(infos[z], exponent) == z:
+                hi = mid
+            else:
+                lo = mid + 1
+        assert lo == infos[x][1]
+        for y in range(n):
+            _, mx, period, cx, px = infos[x]
+            _, my, _, cy, py = infos[y]
+            if my:
+                answer = mx - my if mx >= my and iterate(infos[x], mx - my) == y else None
+            else:
+                answer = mx + (py - px - mx) % period if cx == cy else None
+            path = infos[x][0]
+            expected = path.index(y) if y in path else None
+            assert answer == expected
+            counts["hitting-time pairs"] += 1
+        # Exhaust every recognizable target set for the small exhaustive maps.
+        if n <= 5:
+            for mask in range(1 << n):
+                g = tuple(v if mask >> v & 1 else f[v] for v in range(n))
+                output = iterate(orbit(g, x), n)
+                expected = next((v for v in infos[x][0] if mask >> v & 1), None)
+                assert bool(mask >> output & 1) == (expected is not None)
+                assert expected is None or output == expected
+                counts["absorbing-target outputs"] += 1
+
+
+def main():
+    counts = Counter()
+    for n in range(1, 6):
+        for f in product(range(n), repeat=n):
+            check_map(f, counts)
+    rng = Random(20261015)
+    for n in (8, 16, 32):
+        for _ in range(8):
+            check_map(tuple(rng.randrange(n) for _ in range(n)), counts)
+        check_map(tuple((i + 1) % n for i in range(n)), counts)
+        check_map(tuple(min(i + 1, n - 1) for i in range(n)), counts)
+        check_map(tuple(range(n)), counts)
+    print("PASS: extension semantic checks succeeded.")
+    print("Seed: 20261015")
+    for name, count in sorted(counts.items()):
+        print(f"{name}: {count:,}")
+    print("Finite checks do not establish circuit size or historical novelty.")
+
+
+if __name__ == "__main__":
+    main()

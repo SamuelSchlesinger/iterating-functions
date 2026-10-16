@@ -753,23 +753,42 @@ Optimizing $L$ proves the claim.  Discarded branches use safe positive
 dummy moduli, as in the fixed-power construction.
 \end{proof}
 
+\begin{theorem}[Transient depth]\label{thm:depth}
+The exact transient depth $\mu(x)$ is computable by a circuit of size $O(B)$.
+\end{theorem}
+\begin{proof}
+Put $D=N!$ and $R=F^D$.  Every trajectory is cyclic after $N$ steps,
+every cycle length divides $D$, and $D\geq N$.  Thus $R$ maps into the
+cyclic states, fixes each such state, and satisfies $R^2=R$.  It commutes
+with all iterates of $F$, so
+\begin{equation}\label{eq:projection-depth}
+ F^i(x)=F^i(R(x))\quad\Longleftrightarrow\quad i\geq\mu(x).
+\end{equation}
+Indeed, equality is equivalent to $F^i(x)=R(F^i(x))$, which is exactly
+cyclicity.  The projection costs $O(B)$ gates by \cref{thm:main}.
+
+Fix a checkpoint parameter $L$ and set $K=2L$.  Retain the first $K+1$
+states of both trajectories and compare corresponding states.  If the
+states at position $K$ agree, select the first equality; its index is
+$\mu(x)$.  Otherwise $\mu(x)>K$, so the original prefix has no repetition
+and must meet a checkpoint $h=F^d(x)$ with $d<K$.  Every such hit is
+transient and satisfies $\mu(x)=d+\mu(h)$.
+
+Hardwire $\mu(h)$ with each checkpoint and resolve all prefix queries
+using \cref{lem:lookup}.  Either branch uses $O(n)$-bit records; comparing,
+selecting, and adding indices cost $O(nL)$ gates.  The two prefixes and
+shared lookup cost $O(Ls+n^3(L+N/L))$.  Use the same $L$ for the projection
+and these operations, then optimize as in \cref{eq:L-choice}.
+\end{proof}
+
 \begin{theorem}[Reachability and first hitting times]\label{thm:reachability}
-A circuit of size $O(n^2B)$, on input $(x,y)$, decides whether
+A circuit of size $O(nB)$, on input $(x,y)$, decides whether
 $F^t(x)=y$ for some $t\geq0$ and returns the least such $t$ when it exists.
 The output may use a separate existence flag and $n$ time bits.
 \end{theorem}
 \begin{proof}
-Let $D=\lcm(1,\ldots,N)$.  A state $z$ is cyclic if and only if $F^D(z)=z$:
-a cyclic state has period dividing $D$, whereas any positive return makes
-$z$ cyclic.  Thus cyclicity has an $O(B)$-gate test by \cref{thm:main}.
-For each $x$, the predicate ``$F^j(x)$ is cyclic'' is monotone in $j$ and
-is true at $j=N-1$.  Binary search on the inclusive interval $[0,N-1]$
-therefore finds $\mu(x)$ in $O(n)$ adaptive stages.  Unroll these stages
-as a circuit.  Each uses the $n$-bit iterator of \cref{thm:variable}, of
-size $O(nB)$, followed by the cyclicity test.  Compute $\mu(y)$ similarly;
-the total is $O(n^2B)$.
-
-Compute both sets of cycle labels using \cref{thm:labels}.  If $y$ is
+Compute both depths using \cref{thm:depth} and both sets of cycle labels
+using \cref{thm:labels}, for a total of $O(B)$ gates.  If $y$ is
 transient, it is reachable exactly when
 \[
  \mu(x)\geq\mu(y)\quad\hbox{and}\quad
@@ -777,7 +796,8 @@ transient, it is reachable exactly when
 \]
 Indeed, transient depth decreases by exactly one per step until the cycle
 is reached.  In this case the displayed exponent is the first hitting
-time.  The variable-time iterator evaluates this final test.
+time.  The $n$-bit variable-time iterator evaluates this final test in
+$O(nB)$ gates.
 
 If $y$ is cyclic, it is reachable exactly when $c(x)=c(y)$.  On a positive
 instance its first hitting time is
@@ -799,7 +819,7 @@ Those results charge representation space and query time in a RAM model.
 Here the given object is a succinct transition circuit, and every gate
 accessing a nonuniform table is charged.  These differences specify the
 claim being compared; they do not establish historical novelty of the
-present bounds.  Both theorems are also checked as Boolean circuit
+present bounds.  These theorems are also checked as Boolean circuit
 constructions in Lean, with the implementation choices described in
 \cref{sec:lean}.
 
@@ -813,7 +833,8 @@ $A_P=s+a+n^3$.  Eventual target membership,
  \exists t\geq0:\ P(F^t(x))=1,
 \]
 has a circuit of size $O(A_P+\sqrt{n^3NA_P})$.  Within the same bound,
-a circuit returns the first visited target state on positive instances.
+a circuit returns the first visited target state and its exact first
+visit time on positive instances.
 \end{corollary}
 \begin{proof}
 Set $G(x)=x$ when $P(x)=1$ and $G(x)=F(x)$ otherwise.  This costs
@@ -821,6 +842,11 @@ $O(s+a+n)$ gates.  A first target, if one exists, is visited before
 step $N$, since an earlier repeated state would preclude a later first
 visit.  Hence $G^N(x)$ is the first target state on positive instances,
 and $H(x)=P(G^N(x))$.  Apply \cref{thm:main} to $G$.
+For the time, apply \cref{thm:depth} to $G$.  On a positive instance,
+the first target is an absorbing fixed point.  A cyclic state cannot
+precede it on the trajectory: iteration is injective on cyclic states,
+so any cyclic predecessor of that fixed point is the same point.
+Consequently $\mu_G(x)$ is exactly the first target time.
 \end{proof}
 
 \begin{corollary}[Complete-configuration simulation]\label[corollary]{cor:halting}
@@ -832,11 +858,14 @@ size
 \[
  O\!\left(s+b^3+\sqrt{b^3 2^b(s+b^3)}\right).
 \]
+The exact first halting time can also be returned within this bound.
 \end{corollary}
 \begin{proof}
 Before halting, no configuration can repeat.  The iterate at time $2^b$
 is therefore the final configuration.  Apply \cref{thm:main} with
-state width $b$.  Initialization and output decoding circuits are
+state width $b$.  The first halt is the transient depth, by the same
+absorbing-state argument as in \cref{cor:target}; use \cref{thm:depth}.
+Initialization and output decoding circuits are
 charged separately.
 \end{proof}
 The parameter $b$ includes all persistent input information, control,
@@ -845,16 +874,8 @@ PSPACE as a function of input length $n$.
 
 \subsection{Synchronous and recurring queries}\label{sec:eventual-queries}
 
-A fixed projection onto the cyclic states supplies several further queries.
-Put $D=N!$ and $R=F^D$.  Every trajectory is cyclic after $N$ steps, every
-cycle length divides $D$, and $D\geq N$.  Hence $R$ maps into the cyclic
-states, fixes each such state, and satisfies $R^2=R$.  It commutes with
-all iterates of $F$.  In particular,
-\begin{equation}\label{eq:projection-depth}
- F^i(x)=F^i(R(x))\quad\Longleftrightarrow\quad i\geq\mu(x).
-\end{equation}
-Indeed, the equality is equivalent to $F^i(x)=R(F^i(x))$, which is
-exactly cyclicity.  The projection costs $O(B)$ gates by \cref{thm:main}.
+The projection $R=F^{N!}$ from the proof of \cref{thm:depth} also supplies
+queries about the eventual dynamics.
 
 \begin{corollary}[Eventual synchronous coalescence]\label[corollary]{cor:coalescence}
 A circuit of size $O(B)$ decides, on input $(x,y)$, whether there exists
@@ -1464,13 +1485,15 @@ and its first visit to that least state.  Otherwise the shared dictionary
 supplies a checkpoint label and modular subtraction corrects its phase.
 This yields the checked bound $30120000\widehat B$.
 
-Cyclicity is tested by $F^{N!}(z)=z$.  A bit-by-bit threshold search,
-with the variable-time iterator charged at each stage, computes exact
-transient depth.  Two depth records and two cycle-label records feed the
+\texttt{CheckpointDepth.lean} implements \cref{thm:depth}: it retains
+both short orbits, selects their first equality when present, and otherwise
+adds the prefix index to a checkpoint's stored depth.  Its checked bound
+is $3000000\widehat B$.  The earlier binary-search implementation is
+retained as a separate, weaker theorem.  Two depth records and two cycle-label records feed the
 transient/cyclic case distinction from \cref{thm:reachability}.
 The checked navigation circuit has $2n$ input bits, an existence flag,
 and $n+1$ time bits, with size at most
-$300000000(n+1)^2\widehat B$.  On positive instances its decoded time
+$300000000(n+1)\widehat B$.  On positive instances its decoded time
 is proved to be the first hit and strictly less than $2^n$; its top time
 bit can therefore be discarded.  No time-field specification is imposed
 on negative instances.  Intermediate label and navigation words have
@@ -1482,6 +1505,15 @@ The inversion proof uses $P^{N!-1}=P^{-1}$, also for encoded finite
 permutations.  Absorbing target states give \cref{cor:target}; absorption
 and termination hypotheses give \cref{cor:halting}, with the complete
 configuration counted in the state width.
+\texttt{TargetTimes.lean} proves that absorption turns the first successful
+visit time into transient depth.  It supplies a target-existence flag
+and first time with bound
+$3120000\widehat B_P+a$, where
+$\widehat B_P=\operatorname{optimizedBudget}(n,s+a+4n,2^n)$.
+The checked first-halting-time circuit has bound $3000000\widehat B$
+under semantic absorption and termination hypotheses, without requiring
+a recognizer circuit.  Both time specifications are bounded by $N$;
+the target-time field is unspecified on negative instances.
 
 The cycle-projection layer proves idempotence,
 \cref{eq:projection-depth}, and the finite-state equivalence used in

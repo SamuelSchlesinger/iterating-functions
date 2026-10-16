@@ -7,6 +7,7 @@ module
 
 public import Proofs.NavigationSynthesis
 public import Proofs.DepthCircuit
+public import Proofs.CheckpointDepth
 public import Proofs.LabelCircuits
 
 /-! # Reachability and first-hitting-time circuits -/
@@ -52,7 +53,7 @@ def inputLeft (z : State (n + n)) : State n := fun i => z (Fin.castAdd n i)
 def inputRight (z : State (n + n)) : State n := fun i => z (Fin.natAdd n i)
 
 def navigationBudget (n s L : ℕ) : ℕ :=
-  1 + 2 * depthBudget n s L + 20080000 * powerBudget n s (2 ^ n) L +
+  1 + 22080000 * powerBudget n s (2 ^ n) L +
     (n + 3) * (40000 * powerBudget n s (2 ^ n) L + 4 * n) + 1000 * (n + 4) ^ 3
 
 /-- The full construction uses two depths, two label records, and word arithmetic. -/
@@ -65,7 +66,7 @@ theorem navigation_circuit (c : Circuit Boolean.signature n n) (L : ℕ)
   let f := c.eval Boolean.interpretation
   let x : State (n + n) → State n := inputLeft
   let y : State (n + n) → State n := inputRight
-  obtain ⟨depth, hd, hds⟩ := depth_circuit c L hL hLN
+  obtain ⟨depth, hd, hds⟩ := checkpoint_depth_circuit c L hL hLN
   obtain ⟨labels, hl, hls⟩ := cycle_label_circuit c L hL hLN
   have hle : labels.eval Boolean.interpretation = canonicalLabel f := funext hl
   let src := inputs (n + n) ∪ {fun _ => false}
@@ -116,10 +117,9 @@ theorem navigation_circuit (c : Circuit Boolean.signature n n) (L : ℕ)
   unfold navigationBudget
   lia
 
-/-- The extra work is at most quadratic in the state width. -/
-theorem navigationBudget_le (n s L : ℕ) (hL : 0 < L) :
-    navigationBudget n s L ≤ 100000000 * (n + 1) ^ 2 * powerBudget n s (2 ^ n) L := by
-  have hd := depthBudget_le n s L hL
+/-- One variable-time evaluation is the remaining linear factor in the state width. -/
+theorem navigationBudget_le (n s L : ℕ) :
+    navigationBudget n s L ≤ 100000000 * (n + 1) * powerBudget n s (2 ^ n) L := by
   have hb : (n + 1) ^ 3 ≤ powerBudget n s (2 ^ n) L := by
     unfold powerBudget
     have h := Nat.mul_le_mul_left ((n + 1) ^ 3)
@@ -131,10 +131,8 @@ theorem navigationBudget_le (n s L : ℕ) (hL : 0 < L) :
   have hpoly : 1 + (n + 3) * (4 * n) + 1000 * (n + 4) ^ 3 ≤
       65000 * powerBudget n s (2 ^ n) L := by
     nlinarith [Nat.zero_le (n ^ 3)]
-  have hq : 1 ≤ (n + 1) ^ 2 := by nlinarith
-  have hlinear : n + 3 ≤ 3 * (n + 1) ^ 2 := by nlinarith
-  have hB := Nat.mul_le_mul_right (powerBudget n s (2 ^ n) L) hq
-  have hlinearB := Nat.mul_le_mul_right (powerBudget n s (2 ^ n) L) hlinear
+  have hcost := Nat.mul_le_mul_right (powerBudget n s (2 ^ n) L)
+    (show 22080000 + (n + 3) * 40000 + 65000 ≤ 100000000 * (n + 1) by lia)
   unfold navigationBudget
   nlinarith
 
@@ -149,7 +147,7 @@ theorem reachability_hitting_time (c : Circuit Boolean.signature n n) :
         (c.eval Boolean.interpretation)^[t] (inputLeft z) = inputRight z ∧
           (∀ j < t, (c.eval Boolean.interpretation)^[j] (inputLeft z) ≠ inputRight z) ∧
           t < 2 ^ n) ∧
-      (out.size : ℝ) ≤ 300000000 * (n + 1 : ℝ) ^ 2 * optimizedBudget n c.size (2 ^ n) := by
+      (out.size : ℝ) ≤ 300000000 * (n + 1 : ℝ) * optimizedBudget n c.size (2 ^ n) := by
   obtain ⟨L, hL, hLN, ho⟩ := powerBudget_optimized n c.size (2 ^ n) le_rfl
   obtain ⟨out, hout, hs⟩ := navigation_circuit c L hL hLN
   refine ⟨out, ?_, ?_, ?_⟩
@@ -160,9 +158,9 @@ theorem reachability_hitting_time (c : Circuit Boolean.signature n n) :
     rw [hout z] at hz ⊢
     exact navigationBits_time _ _ _ ((navigationBits_flag _ _ _).mp hz)
   · have hs' : (out.size : ℝ) ≤
-        100000000 * (n + 1 : ℝ) ^ 2 * (powerBudget n c.size (2 ^ n) L : ℝ) := by
-      exact_mod_cast hs.trans (navigationBudget_le n c.size L hL)
-    have h := mul_le_mul_of_nonneg_left ho (show 0 ≤ 100000000 * (n + 1 : ℝ) ^ 2 by positivity)
+        100000000 * (n + 1 : ℝ) * (powerBudget n c.size (2 ^ n) L : ℝ) := by
+      exact_mod_cast hs.trans (navigationBudget_le n c.size L)
+    have h := mul_le_mul_of_nonneg_left ho (show 0 ≤ 100000000 * (n + 1 : ℝ) by positivity)
     nlinarith
 
 end IteratedFunctions

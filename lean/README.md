@@ -51,8 +51,10 @@ natural-number division in integer budgets means floor division.
 | `batched_fixed_power_optimized` | For `1 ≤ r ≤ N`, size at most `3000000*(r*A + sqrt((n+1)^3*N*r*A))`. The checkpoint dictionary is shared across the batch. |
 | `batched_variable_time_optimized` | Independent `m`-bit exponents for each member; `m` times the preceding batch budget plus `4*r*n` per binary position. |
 | `cycle_label_circuit`, `cycle_labels_optimized` | Canonical cycle state, exact cycle length, and phase, for every input; optimized size at most `30120000*B`. |
-| `depth_circuit_optimized` | Exact transient depth in at most `3000000*(n+1)^2*B` gates. |
-| `reachability_hitting_time` | A circuit on `2*n` input bits returning an existence flag and `n+1` time bits, in at most `300000000*(n+1)^2*B` gates. On positive instances the decoded time is the first hit and is strictly less than `N`. |
+| `checkpoint_depth_optimized` | Exact transient depth in at most `3000000*B` gates. The earlier binary-search theorem `depth_circuit_optimized` remains available with an extra `(n+1)^2` factor. |
+| `reachability_hitting_time` | A circuit on `2*n` input bits returning an existence flag and `n+1` time bits, in at most `300000000*(n+1)*B` gates. On positive instances the decoded time is the first hit and is strictly less than `N`. |
+| `first_target_time_optimized` | A target-existence flag and `n+2` first-time bits, with bound `3120000*optimizedBudget n (s+p.size+4*n) N + p.size`. Time is specified only on positive instances and is less than `N`. |
+| `halting_time` | Under semantic absorption and termination, exact first halting times on valid initial states, with bound `3000000*B`. No recognizer circuit is needed. |
 | `matching_lower_bound` | For `k ≥ 64`, a Boolean permutation circuit on `2*k` bits of size at most `50*(k+1)` has a power for which every implementing circuit has more than `2^k/(1024*(k+1))` gates. The division is integral. |
 | `sparse_counter_centralizer` | If an injective word map `H` commutes with `F`, and `F` differs from increment at `r` inputs, a circuit for `H` has at most `100*(n+1)*(r+1)` gates. `F` need not be a permutation. |
 | `sparse_counter_power` | The same bound for every integer power of a permutation, including negative powers. |
@@ -125,13 +127,17 @@ finite types in arbitrary universes. Sparse-counter circuit statements use
    hits use a shared label dictionary and a modular phase correction. This
    differs from the manuscript's direct first-repetition proof while giving
    the same asymptotic bound. The order is lexicographic from coordinate zero.
-6. **Search for depth, then navigate.** `BinarySearch.lean` constructs a
-   bit-by-bit threshold search. Each query combines variable-time iteration
-   with the cyclicity circuit. `NavigationSynthesis.lean` combines two depths,
+6. **Compare projected orbits, then navigate.** `CheckpointDepth.lean` compares
+   the original and projected short orbits. Their first agreement is cycle
+   entry; without agreement, a checkpoint's stored depth plus its prefix index
+   is exact. One dictionary suffices, giving `O(B)` gates. The earlier
+   `BinarySearch.lean` and `DepthCircuit.lean` provide a separate weaker route.
+   `NavigationSynthesis.lean` combines two depths,
    two cycle labels, the transient-depth difference test, and the cyclic phase
    formula. `NavigationCircuits.lean` proves the final flag, first-hit
    semantics, and size. Labels and arithmetic use `n+3` bits internally; the
-   public time output uses `n+1`. Its proved bound `< 2^n` permits dropping
+   public time output uses `n+1`. The remaining variable-time call gives the
+   `O(nB)` bound. Its proved time bound `< 2^n` permits dropping
    the high bit on positive instances. `Division.lean` proves a total
    shift-and-subtract remainder circuit costing `O(n^3)` gates.
 7. **Count actual circuit descriptions.** `ModulusCounter.lean` proves the
@@ -165,6 +171,13 @@ finite types in arbitrary universes. Sparse-counter circuit statements use
     it to cycle-label circuits and streaming remainders, then powers with only
     `n+3` internal time bits. All widths and gate costs are checked, giving
     additive dependence on the original time width.
+11. **Recover first target times.** `TargetTimes.lean` proves that, when a
+    target is reached, its first visit time is the transient depth of the
+    absorbing map. The proof cancels iteration on cyclic states. Composing
+    the absorbing transition, checkpoint depth, and target flag gives the
+    native first-time circuit. Semantic absorption and termination similarly
+    yield halting times without a recognizer cost. These dynamics lemmas use
+    `Finite` types in arbitrary universes.
 
 The construction uses classical choices of checkpoints, finite enumerations,
 and circuit witnesses. It establishes nonuniform existence, not an extracted

@@ -18,6 +18,7 @@ public import Proofs.SparseDisplacement
 public import Proofs.StreamingRemainder
 public import Proofs.EventualQueries
 public import Proofs.LongTime
+public import Proofs.TargetTimes
 
 /-!
 # Public results and axiom audit
@@ -168,5 +169,20 @@ namespace IteratedFunctions
 [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms variable_time_additive_optimized
+
+/-- info: 'IteratedFunctions.checkpoint_depth_optimized' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms checkpoint_depth_optimized
+
+/-- info: 'IteratedFunctions.first_target_time_optimized' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms first_target_time_optimized
+
+/-- info: 'IteratedFunctions.halting_time' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms halting_time
 
 end IteratedFunctions

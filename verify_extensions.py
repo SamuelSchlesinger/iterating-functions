@@ -75,6 +75,7 @@ def labels_from_prefix(f, infos, marked, x, length):
 def check_map(f, counts):
     n = len(f)
     infos = [orbit(f, x) for x in range(n)]
+    projection = [iterate(info, factorial(n)) for info in infos]
     counts["maps"] += 1
     for length in range(1, n + 1):
         marked = packed_checkpoints(f, length)
@@ -88,8 +89,17 @@ def check_map(f, counts):
             long = prefix(f, x, 3 * length + 1)
             assert set(long) & active or len(set(long)) < len(long)
             counts["packing, labels, active coverage"] += 1
+            path = prefix(f, x, 2 * length + 1)
+            projected_path = prefix(f, projection[x], 2 * length + 1)
+            if path[-1] == projected_path[-1]:
+                depth = next(j for j, (a, b) in enumerate(zip(path, projected_path)) if a == b)
+            else:
+                candidates = [j + infos[h][1] for j, h in enumerate(path) if h in marked]
+                assert candidates and all(d == infos[x][1] for d in candidates)
+                depth = candidates[-1]
+            assert depth == infos[x][1]
+            counts["checkpoint-depth reconstructions"] += 1
     exponent = lcm(*range(1, n + 1))
-    projection = [iterate(info, factorial(n)) for info in infos]
     for x in range(n):
         projected = projection[x]
         assert projection[projected] == projected and infos[projected][1] == 0
@@ -130,10 +140,14 @@ def check_map(f, counts):
         if n <= 5:
             for mask in range(1 << n):
                 g = tuple(v if mask >> v & 1 else f[v] for v in range(n))
-                output = iterate(orbit(g, x), n)
+                absorbing_info = orbit(g, x)
+                output = iterate(absorbing_info, n)
                 expected = next((v for v in infos[x][0] if mask >> v & 1), None)
                 assert bool(mask >> output & 1) == (expected is not None)
                 assert expected is None or output == expected
+                if expected is not None:
+                    assert absorbing_info[1] == infos[x][0].index(expected)
+                    counts["first-target times"] += 1
                 counts["absorbing-target outputs"] += 1
                 cycle = infos[x][0][infos[x][1]:]
                 recurring = bool(mask >> iterate(orbit(g, projected), n) & 1)

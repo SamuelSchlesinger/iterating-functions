@@ -104,7 +104,7 @@ in `lean/README.md` for precise statements and explicit constants.
 The paper and Lean also include O(B)-gate eventual synchronous coalescence
 and recurring/permanent recognizable-target queries.
 
-The paper now includes cycle labels and an O(n^2 B)-gate pair-input
+The paper now includes O(B)-gate transient depth and an O(n B)-gate pair-input
 reachability/first-hitting-time theorem. The review records the other proposals
 and their qualifications. The checkpoint proof uses disjoint path packing,
 giving at most floor(|S|/L) checkpoints on an invariant set S, including

@@ -131,20 +131,22 @@ sufficient. The stated time
 `mu(x) + ((phi(y)-phi(x)-mu(x)) mod ell(x))` is correct. Its value is at most
 `mu(x)+ell(x)-1 ≤ N-1`. Return an explicit false flag on negative instances,
 with an unspecified time field; an optional linear-size mask can return zero.
-Both cases include `x=y`, whose answer is time zero. Lean checks the threshold
-search, both cases, the decoded first-hitting-time specification, and the
-`O(n^2 B)` gate bound. It uses `n+3` bits internally and `n+1` output time bits,
+Both cases include `x=y`, whose answer is time zero. Lean checks both cases,
+the decoded first-hitting-time specification, and now the improved `O(nB)`
+gate bound. It uses `n+3` bits internally and `n+1` output time bits,
 and proves the time is less than `N` on positive instances.
 
-A further mathematical improvement is possible for the depth subproblem:
+The depth improvement is now integrated and mechanized:
 let `R=F^D`, and compare `F^i(x)` with `F^i(R(x))` through `2L` steps. Equality
 holds exactly when the former state is cyclic, because `R` fixes cyclic states
 and commutes with `F`. An equality gives the first cycle-entry position. If
 there is no equality, a prefix repetition is impossible, so a checkpoint is
 hit while still transient. Storing `mu(h)` then gives `mu(x)=d+mu(h)`.
 This yields depth in `O(B)` and, with the existing variable-time iterator,
-reachability in `O(nB)`. This sharper route is recorded for further development;
-the integrated theorem retains the directly reviewed `O(n^2B)` proof.
+reachability in `O(nB)`. `CheckpointDepth.lean` proves the full circuit,
+including the two retained prefixes, shared lookup, first-equality selection,
+and charged arithmetic. The original binary-search result remains available
+as a separate theorem.
 
 ## 3. Image sensitivity: valid, integrated, and mechanized
 
@@ -372,8 +374,12 @@ normalization to cycle labels, streaming division, and binary powering,
 proving O(nB+mn) for arbitrary input-time width. Combining the two checked
 variable-time constructions gives O(min(mB,nB+mn)).
 
-The accepted work still includes transient depth in O(B), exact visit
-schedules, and a compressed-checkpoint-forest route
+Transient depth in O(B), pair navigation in O(nB), and first target/halting
+times at the square-root bound are now integrated and mechanized. The target
+time is the depth of the absorbing map, with an explicit success flag; a
+semantic halting theorem needs no recognizer circuit.
+
+The accepted work still includes exact visit schedules and a compressed-checkpoint-forest route
 to O(B) pair navigation. The forest theorem still needs a complete Lean
 construction and cardinality/ancestor-query proof. Earlier candidate additions
 listed above also remain distinct from checked coverage. Continue with these

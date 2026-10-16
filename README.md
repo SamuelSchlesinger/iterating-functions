@@ -13,6 +13,8 @@ Preliminary research draft, October 16, 2026.
 - [Lean formalization](lean/README.md): checked circuit constructions, navigation, and the lower bound.
 - [Detailed review](REVIEW.md): all ten proposals, proof requirements, and attribution.
 - [Extension checks](verify_extensions.py): graph labels, hitting times, and checkpoint refinements.
+- [Sparse-counter compiler](sparse_counter.py): arc coordinates and signed-power interval tables.
+- [Sparse-counter checks](verify_sparse_counter.py): exhaustive and sampled independent cycle oracles.
 - [Makefile](Makefile): compilation and checking commands.
 
 ## Build
@@ -57,6 +59,19 @@ with unrestricted fan-out. All dictionary access, sorting, selection, and
 arithmetic gates are charged. The circuit theorem does not charge the
 preprocessing needed to determine the hardwired tables. In the fixed-power
 theorem, the circuit can depend on F and T but works for every starting state.
+
+For a permutation differing from the ordinary counter at r states, the paper
+proves O(n(r+1)) gates for every signed fixed power and O(n(r+m+1)) for an
+m-bit input time. Its arc chart is compiled from the edit list without
+state-space enumeration. Both coordinate directions are charged when this is
+transported to other cycles. A binary-field application uses Kleinjung and
+Wesolowski's fixed-characteristic discrete-logarithm theorem. The classical
+commutation/block geometry is credited to Moreno and Rivera.
+
+Lean checks the sparse fixed-power and centralizer bounds, charged coordinate
+transport, and O(m(k+1)) bounded-modulus division. The complete arc-chart
+live-time theorem and the finite-field application still have prose proofs,
+not end-to-end Lean proofs.
 
 The counting result does not identify an explicit hard exponent. Every
 exponent witnessing the stated lower bound necessarily has binary length

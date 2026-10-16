@@ -325,3 +325,49 @@ dependencies and exact checked boundary.
 These checks support distinct conclusions. Finite enumeration catches small
 semantic mistakes; Lean checks the stated circuit theorem; neither settles
 attribution, novelty, or claims outside its explicit scope.
+
+## Sparse-counter addition: validated and partly mechanized
+
+The fixed-power and additive live-time claims in the new proposal are valid.
+The centralizer statement is stronger than its original formulation: F can be
+any map; H must be injective and commute with F. The defect inclusion is valid
+on arbitrary universes. Finite cardinality then gives at most 2r defects, and
+Boolean synthesis of the sparse displacement derivative gives a native
+100*(n+1)*(r+1) gate bound. Signed powers and charged fixed-power coordinate
+transport are now Lean theorems.
+
+The arc compiler handles zero edits, circular wraparound, unchanged entries
+in an edit list, and a cycle of length 2^n. The latter requires n+1 length bits.
+It validates permutation preservation by comparing the edited images with the
+freed images. A fixed-power compiler must additionally charge the bit length
+of its exponent; building the chart itself needs only the edit list and n.
+The new bounded-modulus remainder theorem proves the O(nm) arithmetic cost,
+but the full chart-to-circuit existence theorem remains to be formalized.
+
+The counting argument is existential, using at most r edits; it does not give
+an explicit family of exponentially hard transitions. The finite-field result
+is valid in a polynomial basis with a fixed primitive element. Its use of
+Kleinjung--Wesolowski is unconditional in fixed characteristic. Truncating at
+twice the expected-time bound, repeating n+1 times, verifying answers, and
+fixing tapes via a union bound over inputs produces exact nonuniform circuits.
+This is a prose reduction to an external theorem, not a checked Lean result.
+Moreno--Rivera's block characterization is credited; no circuit-priority claim
+is asserted. The unrestricted additive-s conjecture remains open.
+
+Independent checks from the new compiler reproduce all 46,232 permutations
+and 334,381 distinct powers on sizes 2--8, with an additional one-state case.
+They also cover 1,000 random sparse permutations with signed times of up to
+1,024 bits, 700 binary-field examples, and 100 huge-universe metamorphic cases.
+The last group is not an independent enumerative oracle. None proves a gate
+bound. The supplied sandbox attachments were not accessible in this workspace;
+the committed compiler and validator are new implementations.
+
+## Active continuation after this addition
+
+The accepted work still includes long input times in O(nB+mn), transient depth
+in O(B), synchronous coalescence in O(B), exact visit schedules, recurring and
+eventually-always target predicates, and a compressed-checkpoint-forest route
+to O(B) pair navigation. The forest theorem still needs a complete Lean
+construction and cardinality/ancestor-query proof. Earlier candidate additions
+listed above also remain distinct from checked coverage. Continue with these
+rather than treating the sparse-counter milestone as completion of the goal.

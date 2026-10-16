@@ -60,4 +60,30 @@ theorem synthesis_add_linear (s : Set (State n → Bool))
     have he := funext fun x => BitVec.getLsbD_add i.isLt (a x) (b x)
     simpa only [← he] using h
 
+/-- Two's-complement subtraction with shared carry chains throughout. -/
+theorem synthesis_sub_linear (s : Set (State n → Bool))
+    (a b : State n → BitVec w)
+    (ha : ∀ i : Fin w, (fun x => (a x).getLsbD i.val) ∈ s)
+    (hb : ∀ i : Fin w, (fun x => (b x).getLsbD i.val) ∈ s) :
+    Synthesis Boolean.interpretation s
+      (Set.range fun i : Fin w => fun x => (a x - b x).getLsbD i.val) (42 * w + 2) := by
+  have hn := synthesis_word_not s b hb
+  have hsum := synthesis_add_linear (s ∪ Set.range
+    (fun i : Fin w => fun x => (~~~b x).getLsbD i.val)) a (fun x => ~~~b x)
+    (fun i => Or.inl (ha i)) (fun i => Or.inr ⟨i, rfl⟩)
+  have hone := synthesis_word_const
+    (s ∪ Set.range (fun i : Fin w => fun x => (a x + ~~~b x).getLsbD i.val))
+    (1 : BitVec w)
+  have hout := synthesis_add_linear
+    ((s ∪ Set.range (fun i : Fin w => fun x => (a x + ~~~b x).getLsbD i.val)) ∪
+      Set.range (fun i : Fin w => fun _ : State n => (1 : BitVec w).getLsbD i.val))
+    (fun x => a x + ~~~b x) (fun _ => 1)
+    (fun i => Or.inl (Or.inr ⟨i, rfl⟩)) (fun i => Or.inr ⟨i, rfl⟩)
+  have he (x : State n) : a x + ~~~b x + 1 = a x - b x := by
+    simp only [BitVec.sub_eq_add_neg, BitVec.neg_eq_not_add, BitVec.add_assoc]
+    congr 2
+  have h := (hn.trans hsum).trans (hone.trans hout)
+  simp only [he] at h
+  exact h.mono Set.Subset.rfl Set.Subset.rfl (by lia)
+
 end IteratedFunctions

@@ -10,6 +10,7 @@ iterated_function_circuits.pdf: iterated_function_circuits.tex
 check:
 	python3 verify_small_instances.py
 	python3 verify_extensions.py
+	python3 verify_sparse_counter.py
 
 lean-check:
 	cd lean && lake build --wfail

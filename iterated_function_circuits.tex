@@ -80,9 +80,12 @@ $\Omega(2^{n/2}/n)$ gates.  Such hard powers necessarily have binary
 exponents of length $\Omega(2^{n/2}/n^2)$.  The counting argument neither
 identifies an explicit hard power nor establishes one-way functions.
 We also compute canonical cycle labels, reachability, and first hitting
-times.  A Lean formalization checks the fixed-power, variable-time,
+times.  For permutations differing from a counter at $r$ states, all
+signed fixed powers have size $O(n(r+1))$, and an $m$-bit input time costs
+$O(n(r+m+1))$.  A Lean formalization checks the fixed-power, variable-time,
 batched, inversion, and navigation circuits and the matching-exponent
-lower bound.  It also treats finite invariant sets with explicit bit
+lower bound, together with the sparse-counter fixed-power bound.  It also
+treats finite invariant sets with explicit bit
 encodings in arbitrary universes.
 \end{abstract}
 
@@ -807,6 +810,212 @@ The parameter $b$ includes all persistent input information, control,
 and workspace.  This is not a $2^{n/2}\poly(n)$ circuit bound for all of
 PSPACE as a function of input length $n$.
 
+\section{Sparse modifications of a counter}\label{sec:sparse-counter}
+
+The state-space parameter is not the only source of compression.  Identify
+$\bits^n$ with $\mathbb Z/N\mathbb Z$, where $N=2^n$, and write
+$R(x)=x+1\pmod N$.  A permutation obtained by changing a small number of
+counter successors admits a bound linear in its sparse description, even
+when it is a single cycle through all $N$ states.
+
+\begin{theorem}[Sparse-counter powers]\label{thm:sparse-counter}
+Let $n\geq1$, let $F$ be a permutation of $\mathbb Z/N\mathbb Z$, and let
+$r=|\{x:F(x)\ne R(x)\}|$.  For every fixed $T\in\mathbb Z$,
+\[
+ \CC(F^T)=O\bigl(n(r+1)\bigr).
+\]
+For an unsigned $m$-bit time supplied as input,
+\[
+ \CC\bigl((x,t)\mapsto F^t(x)\bigr)=O\bigl(n(r+m+1)\bigr).
+\]
+Both constants are absolute.  The dependence on time-input length is additive.
+\end{theorem}
+
+\subsection{Commutation defects and displacement}
+
+The fixed-power assertion follows from a more general statement.
+
+\begin{proposition}[Sparse-counter centralizers]\label[proposition]{prop:centralizer}
+Let $F$ be any map on $\mathbb Z/N\mathbb Z$ differing from $R$ at $r$
+inputs.  Every permutation $H$ commuting with $F$ has a displacement
+function $\delta_H(x)=H(x)-x\pmod N$ that changes on at most $2r$ counter
+edges.  Consequently, $\CC(H)=O(n(r+1))$.
+\end{proposition}
+
+\begin{proof}
+Put $E=\{x:F(x)\ne R(x)\}$.  If $x\notin E$ and $H(x)\notin E$, then
+\[
+ H(R(x))=H(F(x))=F(H(x))=R(H(x)).
+\]
+Thus the set of commutation failures for $H$ and $R$ lies in
+$E\cup H^{-1}(E)$ and has size at most $2r$.  Commutation at $x$ is
+exactly $\delta_H(x+1)=\delta_H(x)$.  Cutting the ordinary linear order
+$0,\ldots,N-1$ at these changes gives at most $2r+1$ constant intervals.
+Compare the input with their endpoints, select a hardwired displacement,
+and add it modulo $N$, at cost $O(n(r+1))$.
+
+An alternative implementation, used in Lean, avoids ordering the changes.
+Let $D=\{i:\delta_H(i+1)\ne\delta_H(i)\}$, with cyclic addition in the
+arguments and ordinary integer comparisons below.  Telescoping gives
+\[
+ H(x)=x+\delta_H(0)+
+       \sum_{\substack{i\in D\\i<x}}
+         \bigl(\delta_H(i+1)-\delta_H(i)\bigr)\pmod N.
+\]
+Each summand uses one comparison, a conditional constant word, and a
+linear-size adder.  The wraparound edge is never selected.  All gates,
+including the shared carry chains, are charged.
+\end{proof}
+
+Every signed power of a permutation commutes with it, proving the first
+part of \cref{thm:sparse-counter}.  The proposition only requires
+injectivity of $H$ in its cardinality argument; it does not require $F$
+to be a permutation.  Its set-containment argument works on arbitrary
+universes, before finiteness or coordinates are imposed.
+
+The geometry relating commutation failures to blocks in cycles is
+established permutation theory.  Moreno and Rivera characterize these
+blocks in their Theorem~3.8 and Corollary~3.10~\cite{MR14}.  Here we use
+the elementary defect containment and account for the Boolean cost of the
+resulting representation.  Historical priority of these precise circuit
+bounds has not been determined.
+
+\subsection{A chart constructed from the edited successors}
+
+For the live-time bound, assume first $r>0$ and cut the counter cycle
+immediately after each point of $E$.  There are $r$ nonempty circular
+arcs.  Inside an arc $F$ increments; its only possible change is at the
+last state.  Since $F$ and $R$ are permutations agreeing off $E$,
+\[
+ F(E)=R(E).
+\]
+Indeed, the images of the unedited inputs coincide, so their complements
+coincide.  Therefore each edited edge leads to an arc start, and these
+edges induce a permutation of the $r$ arcs.
+
+Decompose that permutation into cycles and concatenate the arcs in each
+cycle, retaining their individual lengths.  Assign to a state the triple
+$(c,p,\ell)$ consisting of its cycle identifier, its position within that
+cycle, and its total cycle length.  The coordinate map and its inverse
+are piecewise translations on the original arcs and their concatenated
+images.  At most one original arc crosses zero; splitting it there adds
+one linear interval.  Comparisons, shared record selection, and addition
+therefore implement each direction in $O(n(r+1))$ gates.  Identifiers and
+positions use $n$ bits, while lengths use $n+1$ bits to allow $\ell=N$.
+All intermediate arithmetic uses $O(n)$ bits.
+
+In these coordinates one step preserves $c,\ell$ and increments $p$
+modulo $\ell$.  For an $m$-bit input $t$, compute its remainder by scanning
+bits from most significant to least significant.  With current remainder
+$u<\ell$, the next remainder is $2u+b$ or $2u+b-\ell$, according as
+$2u+b<\ell$ or not.  A comparison and subtraction cost $O(n)$ per bit;
+one extra bit prevents overflow.  Add $p$, reduce once more, and decode.
+The cost is $O(nr+nm+n)$.  If $r=0$, ordinary addition modulo $N$ gives
+the same bound.  This proves the second part of \cref{thm:sparse-counter}.
+For fixed signed $T$, hardwire $T\bmod\ell$ for each cycle instead.
+
+Given an explicit valid list of edited successors, the chart is
+constructible in time polynomial in $r+1$ and $n$.  Sort the cuts,
+compute arc lengths, follow the induced arc permutation, and form prefix
+sums.  Permutation preservation itself is checked by comparing edited
+outputs with the freed counter outputs.  This procedure never enumerates
+the $N$ states.  Compiling a particular signed power additionally costs
+polynomial time in the bit length of $T$.  A displacement table can be
+constructed by testing only the candidate change edges
+$E\cup F^{-T}(E)$, using the chart for these $O(r)$ queries.
+
+The executable \texttt{sparse\_counter.py} implements this chart and
+interval compiler for arbitrary positive universe sizes.  An independent
+cycle-traversal oracle checks all $46{,}232$ permutations on sizes $2$
+through $8$ and all $334{,}381$ distinct powers, as well as the one-state
+case, $1{,}000$ sampled sparse permutations with signed exponents of up to
+$1{,}024$ bits, and $700$ binary-field examples.  Additional checks on
+$64$--$256$-bit universes exercise composition and inverse-coordinate
+identities without enumeration.  These finite checks establish neither
+the gate bounds nor a formal compiler-correctness theorem.
+
+\subsection{Large transitions and charged coordinate changes}
+
+The improvement can apply to transitions with genuinely exponential
+minimum circuit size.  Fix $r$ nonempty counter arcs and reconnect them
+in any single cyclic order.  This gives $(r-1)!$ distinct permutations,
+each differing from the counter at at most $r$ states and having one
+orbit of length $N$.  For $r=2^{\lfloor\alpha n\rfloor}$ with fixed
+$0<\alpha<1$, the logarithm of this family size is $\Theta(r\log r)$.
+The circuit-description bound used in \cref{sec:lower} implies that some
+members need $\Omega(r)$ gates, while all have $O(n(r+1))$-gate circuits.
+Consequently there exist families with
+\[
+ \CC(F_n)=2^{\alpha n+O(\log n)},\qquad
+ \sup_{T\in\mathbb Z}\CC(F_n^T)=2^{\alpha n+O(\log n)}.
+\]
+The lower bound is existential counting, not an explicit hard transition.
+Using only their transition sizes in \cref{thm:main} would instead give
+an upper bound with exponential scale $2^{(1+\alpha)n/2}$.
+
+\begin{corollary}[Charged orbit coordinates]\label[corollary]{cor:coordinates}
+Suppose a bijection $\phi:\bits^n\to\mathbb Z/N\mathbb Z$ satisfies
+$\phi(G(x))=\phi(x)+1\pmod N$.  If a permutation $F$ differs from $G$
+at $r$ states, then
+\[
+ \CC(F^T)\leq \CC(\phi)+\CC(\phi^{-1})+O(n(r+1))
+ \quad(T\in\mathbb Z).
+\]
+For an $m$-bit input time, the last term is $O(n(r+m+1))$.
+\end{corollary}
+\begin{proof}
+Conjugate $F$ by $\phi$.  The exceptional-set cardinality is unchanged,
+and the reference permutation becomes the counter.  Apply
+\cref{thm:sparse-counter} and compose with the two coordinate circuits.
+\end{proof}
+
+Both coordinate costs are essential.  A long orbit does not itself
+supply cheaply computable coordinates.  Conversely, these examples can
+visit the entire state space: the compressed object is the arrangement
+of arcs, without a reduction in the number of reachable states.
+
+\subsection{Sparse edits of a primitive binary-field cycle}
+
+\begin{corollary}\label[corollary]{cor:binary-field}
+Represent $K=\mathbb F_{2^n}$ in a fixed polynomial basis and fix a
+primitive element $\omega$.  If a permutation $F$ differs from
+$L(x)=\omega x$ at $r$ states, then
+\[
+ \CC(F^T)\leq n^{O(\log n)}+O(n(r+1))
+ \quad(T\in\mathbb Z).
+\]
+With an $m$-bit input time the bound is
+$n^{O(\log n)}+O(n(r+m+1))$.
+\end{corollary}
+\begin{proof}
+Insert zero into the nonzero multiplicative cycle by setting
+$G(0)=1$, $G(\omega^{-1})=0$, and $G(x)=\omega x$ elsewhere.
+Then $G$ is one cycle, and $F$ differs from it at at most $r+2$ states.
+Coordinates are
+$\phi(0)=0$ and $\phi(\omega^j)=j+1$ for $0\leq j<2^n-1$.
+Decoding uses finite-field exponentiation and costs $\poly(n)$ gates.
+Encoding uses discrete logarithms.
+
+Kleinjung and Wesolowski's Theorem~1.1~\cite{KW22} gives expected time
+$n^{O(\log n)}$ for discrete logarithms in characteristic two.
+To obtain exact nonuniform circuits, let $\tau(n)$ bound this expectation
+for every input.  Truncate each trial at $2\tau(n)$ steps and verify
+candidate logarithms by exponentiation.  A trial succeeds with probability
+at least $1/2$.  Among $n+1$ independent random tapes, the probability that
+some one of the fewer than $2^n$ nonzero inputs has no successful trial is
+less than one.  Fix tapes that work for every input and select the first
+verified answer.  Circuit simulation and verification have polynomial
+overhead in $\tau(n)$ and $n$, preserving quasipolynomial size.
+Apply \cref{cor:coordinates}.  The case of bounded $n$ is absorbed by
+the constants.
+\end{proof}
+
+This corollary relies on the cited discrete-logarithm theorem and the
+nonuniform simulation argument; those ingredients are not formalized in
+our Lean development.  It concerns sparse permutation-preserving edits
+to a primitive multiplicative cycle.  It does not imply the unrestricted
+conjectural bound $s+\widetilde O(2^{n/2})$.
+
 \section{A matching exponent for arbitrary fixed powers}\label{sec:lower}
 
 This section gives an explicit linear-size permutation whose collection
@@ -1082,6 +1291,8 @@ tradeoffs; real square-root optimization; permutation inversion;
 variable-time and batched iteration; cycle labels; transient depth;
 pair-input reachability and first hitting times; recognizable targets;
 complete-configuration simulation; and the matching-exponent lower bound.
+Sparse-counter centralizers and signed fixed powers are also checked,
+including linear Boolean gate accounting.
 The proofs use CSLib's circuits and simultaneous synthesis relation,
 Mathlib's finite dynamics and arithmetic, and the verified sorting and
 circuit-counting results in the author's Circuit library, distributed
@@ -1187,6 +1398,26 @@ $\floor{2^k/(1024(k+1))}$ gates.  Thus both the small update circuit and
 the hard-power conclusion of \cref{thm:lower} are checked.  The exponent
 is existential; this is not a lower bound for a specified short exponent.
 
+\paragraph{Sparse-counter implementation.}
+The universe-polymorphic commutation lemma proves that the defect set
+lies in $E\cup H^{-1}(E)$; on a finite type, injectivity of $H$ gives the
+factor-two cardinality bound.  For binary words, a sparse telescoping sum
+reconstructs displacement.  Each threshold correction uses an unsigned
+comparison, a word selector, and a shared-carry adder.  The resulting
+native circuit has at most $100(n+1)(r+1)$ gates.  The theorem
+\texttt{sparse\_counter\_centralizer} requires injectivity of $H$ and
+commutation with $F$, while \texttt{sparse\_counter\_power} specializes
+to a permutation and any integer exponent, including negative powers.
+The theorem \texttt{sparse\_coordinate\_power} checks the charged fixed-power
+transport through supplied coordinate circuits.  The streaming-remainder
+circuit has bound $2+m(51(k+1)+4)$ for an $m$-bit numerator and a nonzero
+$k$-bit modulus, with a spare internal bit.  Its semantics and cost are
+both checked.
+The arc-chart compiler, its additive live-time bound, the counting
+application for large transitions, and the finite-field application have
+prose proofs and separate finite regression tests; they are not yet
+end-to-end Lean theorems.
+
 \paragraph{Universes and representations.}
 The packing and reconstruction lemmas quantify over
 $\alpha:\mathrm{Type}\ u$ for arbitrary $u$; only the relevant invariant
@@ -1234,11 +1465,13 @@ used for counting cannot witness such a strengthening, by
 \cref{eq:easy-iterator,cor:exponent-length}.  The inversion consequence
 in \cref{cor:inverse} likewise leaves polynomial-size one-wayness open.
 
-Two further questions remain distinct.  First, can one improve the
-upper bound for short exponent descriptions, or exploit structure beyond
-the invariant-set reduction above?  Second, under what conditions can the
-required preprocessing be performed substantially faster than exploring
-the full state space?  These questions remain open here.  The central
+The sparse-counter construction gives one answer to two structural
+questions: it improves the dependence on transition complexity, and its
+chart can be compiled from edited successors without exploring the full
+state space.  More general classes admitting these improvements remain
+to be identified.  In particular, an additive bound
+$s+\widetilde O(2^{n/2})$ for unrestricted updates is not established.
+The central
 conclusion is the unconditional total-gate tradeoff:
 a short transition circuit can be combined with a sparse table, whose
 access cost is explicitly accounted for, to compute every fixed iterate
@@ -1305,6 +1538,22 @@ Travis Gagie, Meng He, and Gonzalo Navarro.
 \newblock \emph{Theoretical Computer Science}, 770:34--50, 2019.
 \newblock \href{https://doi.org/10.1016/j.tcs.2018.10.021}{doi:10.1016/j.tcs.2018.10.021}.
 \newblock \href{https://users.dcc.uchile.cl/~gnavarro/ps/tcs18.2.pdf}{Author-hosted full text}.
+
+\bibitem{MR14}
+Rutilo Moreno and Luis Manuel Rivera.
+\newblock Blocks in cycles and $k$-commuting permutations.
+\newblock \emph{SpringerPlus}, 5, article 1949, 2016.
+\newblock Theorem numbers refer to arXiv:1306.5708v3 (2014),
+\url{https://arxiv.org/abs/1306.5708v3}.
+
+\bibitem{KW22}
+Thorsten Kleinjung and Benjamin Wesolowski.
+\newblock Discrete logarithms in quasi-polynomial time in finite fields of
+fixed characteristic.
+\newblock \emph{Journal of the American Mathematical Society},
+35(2):581--624, 2022.
+\newblock Full text: Cryptology ePrint Archive, Paper 2019/751,
+\url{https://eprint.iacr.org/2019/751}.
 
 \bibitem{CSLib}
 The CSLib contributors.

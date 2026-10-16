@@ -45,6 +45,17 @@ def word (bits : Fin w → Bool) : BitVec w :=
 def wordWires (a : (Fin n → Bool) → BitVec w) : Set ((Fin n → Bool) → Bool) :=
   Set.range fun i : Fin w => fun x => (a x).getLsbD i.val
 
+/-- Zero extension and truncation only rewire available bits. -/
+theorem resize_wires {v : ℕ} (s : Set ((Fin n → Bool) → Bool))
+    (value : (Fin n → Bool) → BitVec w)
+    (hv : wordWires value ⊆ s) (hz : (fun _ => false) ∈ s) :
+    wordWires (fun x => (value x).setWidth v) ⊆ s := by
+  rintro _ ⟨bit, rfl⟩
+  simp only [BitVec.getLsbD_setWidth, bit.isLt, decide_true, Bool.true_and]
+  by_cases hi : bit.val < w
+  · exact hv ⟨⟨bit.val, hi⟩, rfl⟩
+  · simpa only [BitVec.getLsbD_of_ge _ _ (by lia : w ≤ bit.val)] using hz
+
 /-- Testing a word against a constant needs only literal tests and a conjunction. -/
 theorem synthesis_word_eq_const (s : Set ((Fin n → Bool) → Bool))
     (a : (Fin n → Bool) → BitVec k)

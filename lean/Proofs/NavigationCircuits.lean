@@ -19,16 +19,6 @@ open Cslib.Circuits
 variable {n a w v : ℕ}
 noncomputable local instance navigationCircuitsStateOrder : LinearOrder (State n) := stateOrder n
 
-/-- Zero extension and truncation only rewire available bits. -/
-theorem resize_wires (s : Set (State a → Bool)) (value : State a → BitVec w)
-    (hv : wordWires value ⊆ s) (hz : (fun _ => false) ∈ s) :
-    wordWires (fun x => (value x).setWidth v) ⊆ s := by
-  rintro _ ⟨bit, rfl⟩
-  simp only [BitVec.getLsbD_setWidth, bit.isLt, decide_true, Bool.true_and]
-  by_cases hi : bit.val < w
-  · exact hv ⟨⟨bit.val, hi⟩, rfl⟩
-  · simpa only [BitVec.getLsbD_of_ge _ _ (by lia : w ≤ bit.val)] using hz
-
 theorem synthesis_depthWord (depth : Circuit Boolean.signature n (n + 2))
     (f : State n → State n)
     (hd : ∀ x, word (depth.eval Boolean.interpretation x) =

@@ -32,9 +32,12 @@ $\Omega(2^{n/2}/n)$ gates.  Such hard powers necessarily have binary
 exponents of length $\Omega(2^{n/2}/n^2)$.  The counting argument neither
 identifies an explicit hard power nor establishes one-way functions.
 We also compute canonical cycle labels, reachability, and first hitting
-times.  A Lean formalization checks the fixed-power, variable-time,
+times.  For permutations differing from a counter at $r$ states, all
+signed fixed powers have size $O(n(r+1))$, and an $m$-bit input time costs
+$O(n(r+m+1))$.  A Lean formalization checks the fixed-power, variable-time,
 batched, inversion, and navigation circuits and the matching-exponent
-lower bound.  It also treats finite invariant sets with explicit bit
+lower bound, together with the sparse-counter fixed-power bound.  It also
+treats finite invariant sets with explicit bit
 encodings in arbitrary universes.
 
 STATUS

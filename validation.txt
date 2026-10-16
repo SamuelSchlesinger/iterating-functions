@@ -23,13 +23,27 @@ hitting-time pairs: 97,265
 maps: 3,446
 packing, labels, active coverage: 97,265
 Finite checks do not establish circuit size or historical novelty.
+python3 verify_sparse_counter.py
+{
+  "binary_field_examples": 700,
+  "distinct_powers": 334382,
+  "exhaustive_permutations": 46233,
+  "huge_universe_metamorphic_examples": 100,
+  "random_sparse_permutations": 1000,
+  "rejected_invalid_lists": 5,
+  "seed": 20261016
+}
+
+The sparse counts include the one-state identity. Restricting to sizes 2--8
+gives 46,232 permutations and 334,381 distinct powers. The 100 huge-universe
+cases check algebraic identities, not an independent enumerative oracle.
 
 Lean command: make lean-check
 cd lean && lake build --wfail
-Build completed successfully (3193 jobs).
+Build completed successfully (3197 jobs).
 
-Main.lean runs 18 guarded axiom checks. Every audited result depends exactly
-on propext, Classical.choice, and Quot.sound. All 48 Proofs modules are in
+Main.lean runs 22 guarded axiom checks. Every audited result depends exactly
+on propext, Classical.choice, and Quot.sound. All 51 Proofs modules are in
 Main's transitive import closure. No sorry, admit, added axiom, native_decide,
 or unsafe declaration appears in the project Lean sources.
 
@@ -39,25 +53,38 @@ half-exponent polynomial bounds, permutation inversion, variable-time and
 shared batched evaluation, recognizable targets, halting complete configurations,
 cycle labels, transient depth, pair-input reachability and exact first hitting
 times, and the matching-exponent lower bound including the linear-size update.
+The sparse-counter additions check the factor-two commutation defect estimate,
+centralizer circuits, all signed fixed powers, and coordinate transport with
+both circuit costs. They also check a bounded-modulus remainder circuit with
+size 2 + m*(51*(k+1)+4), including semantics for every nonzero k-bit modulus.
+
+The sparse fixed-power circuit has size at most 100*(n+1)*(r+1).
+Its Boolean implementation sums the displacement changes selected by input
+threshold comparisons, using shared carry chains. No arithmetic or table
+lookup is a free primitive. The centralizer theorem needs injectivity of H
+and commutation with F; F itself need not be a permutation.
 
 The navigation output has one existence flag and n+1 time bits. A positive
 flag implies the decoded time is the first hit and is strictly less than 2^n.
 Negative instances have no time-field specification. Generic finite-dynamics
-lemmas are universe polymorphic; circuit bounds charge actual encoded bits.
+and commutation lemmas are universe polymorphic; circuit bounds charge bits.
 
 Paper command: make (three pdflatex passes).
-Output: 18 pages. Final log has no warnings, overfull boxes, or underfull boxes.
-All pages were rendered and inspected in contact sheets; the new target and
-formalization pages were additionally inspected at readable resolution.
-The final cross-reference correction was rendered and inspected again.
+Output: 21 pages. Final log has no warnings, overfull boxes, or underfull boxes.
+All pages were rendered and inspected in contact sheets; new sparse-counter
+and formalization pages were additionally inspected at readable resolution.
 The manuscript abstract matches submission_metadata.txt after expanding bits.
 
 The implementation uses the existing pinned Lean, Mathlib, CSLib, and
-Complexitylib revisions. It proves nonuniform existence, not an extracted
-compiler or a preprocessing-time guarantee. The active-trajectory refinement,
-affine-controller proposal, AKS improvement, almost-every-power statement,
-remainder equivalence, and exponent-description-length corollary are not
-separately mechanized. The public theorem map is in lean/README.md.
+Complexitylib revisions. Lean proves nonuniform circuit existence, not an
+extracted compiler. The Python sparse-counter compiler has independent finite
+checks, but its general correctness is not a Lean theorem. The full sparse
+arc-chart live-time theorem, sparse-transition counting application, and
+finite-field corollary remain prose results; the latter uses the external
+Kleinjung--Wesolowski theorem. The active-trajectory refinement, affine-controller
+proposal, AKS improvement, almost-every-power statement, remainder equivalence,
+and exponent-description-length corollary are also not separately mechanized.
+The public theorem map is in lean/README.md; REVIEW.md tracks the continuation.
 
 These checks do not establish historical novelty or replace independent
-publication review. No submission or remote publication was performed.
+publication review. No submission to a publication venue has been made.

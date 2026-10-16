@@ -14,6 +14,8 @@ public import Proofs.OrbitStructure
 public import Proofs.BatchVariableTime
 public import Proofs.LowerBound
 public import Proofs.NavigationCircuits
+public import Proofs.SparseDisplacement
+public import Proofs.StreamingRemainder
 
 /-!
 # Public results and axiom audit
@@ -114,5 +116,25 @@ namespace IteratedFunctions
 [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms matching_lower_bound
+
+/-- info: 'IteratedFunctions.sparse_counter_centralizer' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sparse_counter_centralizer
+
+/-- info: 'IteratedFunctions.sparse_counter_power' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sparse_counter_power
+
+/-- info: 'IteratedFunctions.sparse_coordinate_power' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms sparse_coordinate_power
+
+/-- info: 'IteratedFunctions.bounded_modulus_remainder' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms bounded_modulus_remainder
 
 end IteratedFunctions

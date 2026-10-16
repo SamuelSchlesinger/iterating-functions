@@ -7,6 +7,11 @@ labels, reachability and first hitting times, batched evaluation, and the
 matching-exponent lower bound. The upper bounds construct actual CSLib
 circuits and prove their semantics and native gate counts.
 
+The sparse-counter development also checks a different bound: every signed
+fixed power of an `r`-edited counter has at most `100*(n+1)*(r+1)` gates.
+This includes the stronger centralizer result and charged coordinate changes.
+Streaming division has a checked cost linear in the product of the bit widths.
+
 ```sh
 cd lean
 lake exe cache get
@@ -48,6 +53,10 @@ natural-number division in integer budgets means floor division.
 | `depth_circuit_optimized` | Exact transient depth in at most `3000000*(n+1)^2*B` gates. |
 | `reachability_hitting_time` | A circuit on `2*n` input bits returning an existence flag and `n+1` time bits, in at most `300000000*(n+1)^2*B` gates. On positive instances the decoded time is the first hit and is strictly less than `N`. |
 | `matching_lower_bound` | For `k ≥ 64`, a Boolean permutation circuit on `2*k` bits of size at most `50*(k+1)` has a power for which every implementing circuit has more than `2^k/(1024*(k+1))` gates. The division is integral. |
+| `sparse_counter_centralizer` | If an injective word map `H` commutes with `F`, and `F` differs from increment at `r` inputs, a circuit for `H` has at most `100*(n+1)*(r+1)` gates. `F` need not be a permutation. |
+| `sparse_counter_power` | The same bound for every integer power of a permutation, including negative powers. |
+| `sparse_coordinate_power` | If a permutation `G` becomes increment under a bijection `e`, every fixed signed power of an `r`-edited `G` costs at most `encode.size + decode.size + 100*(n+1)*(r+1)`. Both coordinate circuits and their semantics are supplied and charged. |
+| `bounded_modulus_remainder` | An `m`-bit numerator modulo a nonzero `k`-bit input modulus has a circuit of size at most `2 + m*(51*(k+1)+4)`. The circuit is total; the specification requires a positive modulus. |
 
 The explicit constants are loose accounting bounds, not practical circuit-size
 estimates. The `+1`s cover zero-width encodings and empty invariant sets.
@@ -77,7 +86,10 @@ universe polymorphic. They assume a finite type; cardinality bounds use
 navigation circuit statements specialize to bit states. They do not count
 arbitrary operations on a finite type as unit-cost gates. Unrolling and
 retained-orbit lemmas are additionally polymorphic in circuit signatures
-and interpretation carriers.
+and interpretation carriers. The commutation-defect containment is valid on
+arbitrary types without finiteness; its cardinality and relabeling lemmas use
+finite types in arbitrary universes. Sparse-counter circuit statements use
+`BitVec n` coordinates with the same native Boolean gate model.
 
 ## Proof choices
 
@@ -126,6 +138,19 @@ and interpretation carriers.
    least-common-multiple lower bound and the Circuit library's finite-family
    counting theorem. The final result quantifies over actual native circuits.
 
+8. **Exploit sparse displacement.** `CommutationDefect.lean` proves the
+   factor-two defect estimate and invariance of edit counts under conjugation.
+   `SparseDisplacement.lean` telescopes the displacement derivative over its
+   finite support. Each selected correction is charged once, with shared carry
+   chains in `LinearArithmetic.lean`. No lookup or arithmetic primitive is free.
+   Permutation group integer powers give the signed-power theorem. Supplied
+   encoder and decoder circuits transfer it to other orbit coordinates.
+9. **Stream long numerators.** `StreamingRemainder.lean` recursively processes
+   time bits from most significant to least significant. One spare bit keeps
+   twice the current remainder from overflowing. Linear subtraction, comparison,
+   and selection give `51*w+4` gates per bit at working width `w`. The public
+   remainder circuit returns `k` bits and uses `k+1` working bits.
+
 The construction uses classical choices of checkpoints, finite enumerations,
 and circuit witnesses. It establishes nonuniform existence, not an extracted
 compiler or a preprocessing-time guarantee. For halting computations, the
@@ -137,6 +162,13 @@ state width includes all persistent input, control, and workspace bits.
 contains exactly `propext`, `Classical.choice`, and `Quot.sound`. There are no
 `sorry` placeholders, added axioms, or `native_decide` steps in the project.
 Kernel checking does not establish statement fidelity or historical novelty.
+
+The sparse arc-chart construction and its full additive live-time bound are
+proved in the manuscript and implemented in `../sparse_counter.py`, but the
+chart's existence and gate-count bridge are not yet checked in Lean. Its
+streaming-arithmetic ingredient is checked. The sparse-transition counting
+application and the finite-field corollary, including the use of the external
+discrete-logarithm theorem, are also outside the current Lean boundary.
 
 The active-long-trajectory refinement, affine-controller theorem, AKS
 polynomial improvement, effective compiler, almost-every-power strengthening,

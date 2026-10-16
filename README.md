@@ -99,6 +99,9 @@ and halting complete configurations. It also checks the matching-exponent
 lower bound, including the linear-size update circuit. See the theorem map
 in `lean/README.md` for precise statements and explicit constants.
 
+The paper and Lean also include O(B)-gate eventual synchronous coalescence
+and recurring/permanent recognizable-target queries.
+
 The paper now includes cycle labels and an O(n^2 B)-gate pair-input
 reachability/first-hitting-time theorem. The review records the other proposals
 and their qualifications. The checkpoint proof uses disjoint path packing,

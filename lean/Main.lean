@@ -16,6 +16,7 @@ public import Proofs.LowerBound
 public import Proofs.NavigationCircuits
 public import Proofs.SparseDisplacement
 public import Proofs.StreamingRemainder
+public import Proofs.EventualQueries
 
 /-!
 # Public results and axiom audit
@@ -136,5 +137,30 @@ namespace IteratedFunctions
 [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms bounded_modulus_remainder
+
+/-- info: 'IteratedFunctions.synchronous_coalescence_optimized' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms synchronous_coalescence_optimized
+
+/-- info: 'IteratedFunctions.recurring_target_optimized' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms recurring_target_optimized
+
+/-- info: 'IteratedFunctions.eventually_always_target_optimized' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms eventually_always_target_optimized
+
+/-- info: 'IteratedFunctions.iterate_eq_projection_iff' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms iterate_eq_projection_iff
+
+/-- info: 'IteratedFunctions.iterate_normalizedTime' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms iterate_normalizedTime
 
 end IteratedFunctions

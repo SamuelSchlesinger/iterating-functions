@@ -3,7 +3,7 @@
 
 from collections import Counter
 from itertools import product
-from math import lcm
+from math import factorial, lcm
 from random import Random
 
 
@@ -89,7 +89,16 @@ def check_map(f, counts):
             assert set(long) & active or len(set(long)) < len(long)
             counts["packing, labels, active coverage"] += 1
     exponent = lcm(*range(1, n + 1))
+    projection = [iterate(info, factorial(n)) for info in infos]
     for x in range(n):
+        projected = projection[x]
+        assert projection[projected] == projected and infos[projected][1] == 0
+        for t in (*range(2 * n + 1), (1 << 258) + 9, (1 << 521) + 31):
+            normalized = t if t < n else n + (t - n) % infos[x][2]
+            assert normalized < 2 * n
+            assert iterate(infos[x], normalized) == iterate(infos[x], t)
+            assert (iterate(infos[x], t) == iterate(infos[projected], t)) == (infos[x][1] <= t)
+            counts["projection and time normalization"] += 1
         lo, hi = 0, n - 1
         while lo < hi:
             mid = (lo + hi) // 2
@@ -110,6 +119,13 @@ def check_map(f, counts):
             expected = path.index(y) if y in path else None
             assert answer == expected
             counts["hitting-time pairs"] += 1
+            pair, seen = (x, y), set()
+            while pair not in seen and pair[0] != pair[1]:
+                seen.add(pair)
+                pair = f[pair[0]], f[pair[1]]
+            coalesces = pair[0] == pair[1]
+            assert coalesces == (iterate(infos[x], n) == iterate(infos[y], n))
+            counts["synchronous coalescence pairs"] += 1
         # Exhaust every recognizable target set for the small exhaustive maps.
         if n <= 5:
             for mask in range(1 << n):
@@ -119,6 +135,13 @@ def check_map(f, counts):
                 assert bool(mask >> output & 1) == (expected is not None)
                 assert expected is None or output == expected
                 counts["absorbing-target outputs"] += 1
+                cycle = infos[x][0][infos[x][1]:]
+                recurring = bool(mask >> iterate(orbit(g, projected), n) & 1)
+                reject = tuple(f[v] if mask >> v & 1 else v for v in range(n))
+                eventually_always = bool(mask >> iterate(orbit(reject, projected), n) & 1)
+                assert recurring == any(mask >> v & 1 for v in cycle)
+                assert eventually_always == all(mask >> v & 1 for v in cycle)
+                counts["recurring and permanent target predicates"] += 1
 
 
 def main():

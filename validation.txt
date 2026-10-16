@@ -22,6 +22,9 @@ absorbing-target outputs: 517,066
 hitting-time pairs: 97,265
 maps: 3,446
 packing, labels, active coverage: 97,265
+projection and time normalization: 246,595
+recurring and permanent target predicates: 517,066
+synchronous coalescence pairs: 97,265
 Finite checks do not establish circuit size or historical novelty.
 python3 verify_sparse_counter.py
 {
@@ -40,10 +43,10 @@ cases check algebraic identities, not an independent enumerative oracle.
 
 Lean command: make lean-check
 cd lean && lake build --wfail
-Build completed successfully (3197 jobs).
+Build completed successfully (3199 jobs).
 
-Main.lean runs 22 guarded axiom checks. Every audited result depends exactly
-on propext, Classical.choice, and Quot.sound. All 51 Proofs modules are in
+Main.lean runs 27 guarded axiom checks. Every audited result depends exactly
+on propext, Classical.choice, and Quot.sound. All 53 Proofs modules are in
 Main's transitive import closure. No sorry, admit, added axiom, native_decide,
 or unsafe declaration appears in the project Lean sources.
 
@@ -52,7 +55,12 @@ in arbitrary universes, image sensitivity, real square-root optimization,
 half-exponent polynomial bounds, permutation inversion, variable-time and
 shared batched evaluation, recognizable targets, halting complete configurations,
 cycle labels, transient depth, pair-input reachability and exact first hitting
-times, and the matching-exponent lower bound including the linear-size update.
+times, synchronous coalescence, infinitely recurring and eventually permanent
+target predicates, and the matching-exponent lower bound including the linear-size update.
+The cycle projection, its exact-depth identity, and bounded-time normalization
+are checked over arbitrary finite types in arbitrary universes. The latter two
+identities are foundations; the faster depth and long-input-time circuit
+constructions are not yet connected to them.
 The sparse-counter additions check the factor-two commutation defect estimate,
 centralizer circuits, all signed fixed powers, and coordinate transport with
 both circuit costs. They also check a bounded-modulus remainder circuit with
@@ -70,8 +78,8 @@ Negative instances have no time-field specification. Generic finite-dynamics
 and commutation lemmas are universe polymorphic; circuit bounds charge bits.
 
 Paper command: make (three pdflatex passes).
-Output: 21 pages. Final log has no warnings, overfull boxes, or underfull boxes.
-All pages were rendered and inspected in contact sheets; new sparse-counter
+Output: 22 pages. Final log has no warnings, overfull boxes, or underfull boxes.
+All pages were rendered and inspected in contact sheets; new synchronous/recurring-query, sparse-counter,
 and formalization pages were additionally inspected at readable resolution.
 The manuscript abstract matches submission_metadata.txt after expanding bits.
 

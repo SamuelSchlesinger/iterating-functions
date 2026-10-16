@@ -56,6 +56,9 @@ natural-number division in integer budgets means floor division.
 | `sparse_counter_centralizer` | If an injective word map `H` commutes with `F`, and `F` differs from increment at `r` inputs, a circuit for `H` has at most `100*(n+1)*(r+1)` gates. `F` need not be a permutation. |
 | `sparse_counter_power` | The same bound for every integer power of a permutation, including negative powers. |
 | `sparse_coordinate_power` | If a permutation `G` becomes increment under a bijection `e`, every fixed signed power of an `r`-edited `G` costs at most `encode.size + decode.size + 100*(n+1)*(r+1)`. Both coordinate circuits and their semantics are supplied and charged. |
+| `synchronous_coalescence_optimized` | On a pair `(x,y)`, decides whether equal-time iterates ever meet, with bound `240000*B + 6*n + 1`. |
+| `recurring_target_optimized` | Decides acceptance at arbitrarily large times; the bound is `240000*optimizedBudget n (s+p.size+4*n) N + p.size`. |
+| `eventually_always_target_optimized` | Decides permanent eventual acceptance; replace `p.size` by `p.size+1` in the preceding budget and add `p.size+2` outside it. |
 | `bounded_modulus_remainder` | An `m`-bit numerator modulo a nonzero `k`-bit input modulus has a circuit of size at most `2 + m*(51*(k+1)+4)`. The circuit is total; the specification requires a positive modulus. |
 
 The explicit constants are loose accounting bounds, not practical circuit-size
@@ -150,6 +153,15 @@ finite types in arbitrary universes. Sparse-counter circuit statements use
    twice the current remainder from overflowing. Linear subtraction, comparison,
    and selection give `51*w+4` gates per bit at working width `w`. The public
    remainder circuit returns `k` bits and uses `k+1` working bits.
+
+10. **Query the eventual dynamics.** `CycleProjection.lean` proves that
+    `F^(N!)` is an idempotent retraction fixing exactly the cyclic states, and
+    the two orbits agree exactly from transient depth onward. Its coalescence
+    lemma uses injectivity of iteration on periodic points. `EventualQueries.lean`
+    supplies actual pair-input coalescence circuits, recurring-target circuits,
+    and permanent-acceptance circuits with optimized gate bounds. The projection
+    layer also checks time normalization below `2*N`; the faster general live-time
+    circuit using this normalization remains to be connected and accounted for.
 
 The construction uses classical choices of checkpoints, finite enumerations,
 and circuit witnesses. It establishes nonuniform existence, not an extracted

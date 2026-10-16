@@ -810,6 +810,61 @@ The parameter $b$ includes all persistent input information, control,
 and workspace.  This is not a $2^{n/2}\poly(n)$ circuit bound for all of
 PSPACE as a function of input length $n$.
 
+\subsection{Synchronous and recurring queries}\label{sec:eventual-queries}
+
+A fixed projection onto the cyclic states supplies several further queries.
+Put $D=N!$ and $R=F^D$.  Every trajectory is cyclic after $N$ steps, every
+cycle length divides $D$, and $D\geq N$.  Hence $R$ maps into the cyclic
+states, fixes each such state, and satisfies $R^2=R$.  It commutes with
+all iterates of $F$.  In particular,
+\begin{equation}\label{eq:projection-depth}
+ F^i(x)=F^i(R(x))\quad\Longleftrightarrow\quad i\geq\mu(x).
+\end{equation}
+Indeed, the equality is equivalent to $F^i(x)=R(F^i(x))$, which is
+exactly cyclicity.  The projection costs $O(B)$ gates by \cref{thm:main}.
+
+\begin{corollary}[Eventual synchronous coalescence]\label[corollary]{cor:coalescence}
+A circuit of size $O(B)$ decides, on input $(x,y)$, whether there exists
+$t\geq0$ such that $F^t(x)=F^t(y)$.
+\end{corollary}
+\begin{proof}
+The required equivalence is
+\[
+ \exists t\geq0:\ F^t(x)=F^t(y)
+ \quad\Longleftrightarrow\quad F^N(x)=F^N(y).
+\]
+Equality before time $N$ persists to time $N$.  Both states are cyclic
+by that time, and $F$ restricts to a bijection on the cyclic states.
+Therefore later equality can be canceled back to time $N$.  Compute
+two copies of $F^N$ and compare their outputs.
+\end{proof}
+
+This query requires the same elapsed time on both trajectories.  Orbit
+intersection permits different elapsed times and is a different predicate;
+for example, distinct points of one cycle never coalesce synchronously.
+
+\begin{corollary}[Recurring and permanent targets]\label[corollary]{cor:recurring}
+For a fixed predicate $P:\bits^n\to\bits$ of circuit size $a$, each of
+\[
+ \forall u\ \exists t\geq u:\ P(F^t(x))=1,
+ \qquad
+ \exists u\ \forall t\geq u:\ P(F^t(x))=1
+\]
+is decidable by a circuit of size
+$O(A_P+\sqrt{n^3NA_P})$, where $A_P=s+a+n^3$.
+\end{corollary}
+\begin{proof}
+A target recurs arbitrarily late exactly when the eventual cycle contains
+an accepting state.  Start at $R(x)$ and use the absorbing-target
+construction in \cref{cor:target}.  If $G$ makes accepting states
+absorbing, the circuit outputs $P(G^N(R(x)))$.  A successful visit is
+periodic and hence recurs arbitrarily late; every sufficiently late visit
+from $x$ is a future visit from $R(x)$.  The projection and the target
+circuit each obey the stated bound.  Permanent eventual acceptance is
+the complement of recurrence of the predicate $1-P$, which changes the
+bound only by a constant number of gates.
+\end{proof}
+
 \section{Sparse modifications of a counter}\label{sec:sparse-counter}
 
 The state-space parameter is not the only source of compression.  Identify
@@ -1290,7 +1345,8 @@ coverage includes the fixed-power, invariant-set, and image-sensitive
 tradeoffs; real square-root optimization; permutation inversion;
 variable-time and batched iteration; cycle labels; transient depth;
 pair-input reachability and first hitting times; recognizable targets;
-complete-configuration simulation; and the matching-exponent lower bound.
+complete-configuration simulation; eventual synchronous coalescence; recurring
+and permanent target predicates; and the matching-exponent lower bound.
 Sparse-counter centralizers and signed fixed powers are also checked,
 including linear Boolean gate accounting.
 The proofs use CSLib's circuits and simultaneous synthesis relation,
@@ -1386,6 +1442,14 @@ The inversion proof uses $P^{N!-1}=P^{-1}$, also for encoded finite
 permutations.  Absorbing target states give \cref{cor:target}; absorption
 and termination hypotheses give \cref{cor:halting}, with the complete
 configuration counted in the state width.
+
+The cycle-projection layer proves idempotence,
+\cref{eq:projection-depth}, and the finite-state equivalence used in
+\cref{cor:coalescence}.  The checked coalescence circuit costs at most
+$240000\widehat B+6n+1$ gates.  The recurring-target circuit composes the
+factorial projection with absorbing-target reachability; Boolean
+complements give permanent eventual acceptance.  Their optimized bounds
+are checked with the predicate and its complement charged explicitly.
 
 The lower-bound development constructs the modulus-counter permutation
 as a native Boolean circuit of size at most $50(k+1)$ on $2k$ bits.

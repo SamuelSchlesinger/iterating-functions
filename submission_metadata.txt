@@ -18,8 +18,9 @@ with every lookup and arithmetic gate charged.  We also give variable-time
 and shared batched versions.
 
 Second, the same construction supports functional-graph queries.  Cycle
-labels and transient depth cost $O(B)$; reachability, exact first hitting
-times, and complete visit descriptors cost $O(nB)$.  Polynomial-size
+labels, transient depth, reachability, exact first hitting times, and
+complete visit descriptors each cost $O(B)$.  A compressed checkpoint
+forest supports the pair-input queries.  Polynomial-size
 transitions and target predicates therefore give
 $2^{n/2}\operatorname{poly}(n)$-size circuits for navigation and eventual behavior,
 including reachability with two $n$-bit inputs.

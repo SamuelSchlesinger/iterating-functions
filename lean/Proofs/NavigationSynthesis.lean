@@ -18,6 +18,64 @@ open Cslib.Circuits
 variable {n a : ℕ}
 noncomputable local instance navigationSynthesisStateOrder : LinearOrder (State n) := stateOrder n
 
+/-- Once reachability is available, the first hitting time uses only bounded-word arithmetic. -/
+theorem synthesis_navigation_given_flag (f : State n → State n)
+    (s : Set (State a → Bool)) (x y : State a → State n)
+    (hflag : (fun z => navigationFlag f (x z) (y z)) ∈ s)
+    (hdx : wordWires (fun z => depthWord f (x z)) ⊆ s)
+    (hdy : wordWires (fun z => depthWord f (y z)) ⊆ s)
+    (hlx : wordWires (fun z => lengthWord f (x z)) ⊆ s)
+    (hpx : wordWires (fun z => phaseWord f (x z)) ⊆ s)
+    (hpy : wordWires (fun z => phaseWord f (y z)) ⊆ s) :
+    Synthesis Boolean.interpretation s (wires fun z => navigationBits f (x z) (y z))
+      (1000 * (n + 4) ^ 3) := by
+  let dx := fun z => depthWord f (x z)
+  let dy := fun z => depthWord f (y z)
+  let gap := fun z => navigationGap f (x z) (y z)
+  let total := fun z => phaseWord f (x z) + dx z
+  let zero := fun z => decide (dy z = 0)
+  have hg := synthesis_sub s dx dy (fun i => hdx ⟨i, rfl⟩) (fun i => hdy ⟨i, rfl⟩)
+  have ht := synthesis_add s (fun z => phaseWord f (x z)) dx
+    (fun i => hpx ⟨i, rfl⟩) (fun i => hdx ⟨i, rfl⟩)
+  have hz := synthesis_word_eq_const s dy (fun i => hdy ⟨i, rfl⟩) 0
+  let s1 := s ∪ (wordWires gap ∪ wordWires total ∪ {zero})
+  have old1 : s ⊆ s1 := fun _ h => Or.inl h
+  have avGap : wordWires gap ⊆ s1 := fun _ h => Or.inr (Or.inl (Or.inl h))
+  have avTotal : wordWires total ⊆ s1 := fun _ h => Or.inr (Or.inl (Or.inr h))
+  have avZero : zero ∈ s1 := Or.inr (Or.inr rfl)
+  let dist := fun z => navigationDistance f (x z) (y z)
+  have hd := synthesis_subtractMod s1 (fun z => phaseWord f (y z)) total
+    (fun z => lengthWord f (x z)) (fun i => old1 (hpy ⟨i, rfl⟩))
+    (fun i => avTotal ⟨i, rfl⟩) (fun i => old1 (hlx ⟨i, rfl⟩))
+  let s2 := s1 ∪ wordWires dist
+  have old2 : s1 ⊆ s2 := fun _ h => Or.inl h
+  let cyclicTime := fun z => dx z + dist z
+  have ha := synthesis_add s2 dx dist (fun i => old2 (old1 (hdx ⟨i, rfl⟩)))
+    (fun i => Or.inr ⟨i, rfl⟩)
+  let s3 := s2 ∪ wordWires cyclicTime
+  have old3 : s2 ⊆ s3 := fun _ h => Or.inl h
+  have hm := synthesis_word_mux s3 cyclicTime gap zero (old3 (old2 avZero))
+    (fun i => Or.inr ⟨i, rfl⟩) (fun i => old3 (old2 (avGap ⟨i, rfl⟩)))
+  have hm' : Synthesis Boolean.interpretation s3
+      (wordWires fun z => navigationTime f (x z) (y z)) (4 * (n + 3)) := by
+    simpa only [wordWires, zero, cyclicTime, dx, dy, dist, gap, navigationTime,
+      decide_eq_true_eq] using hm
+  have hout := Synthesis.of_subset (I := Boolean.interpretation)
+    (s := s3 ∪ (wordWires fun z => navigationTime f (x z) (y z)))
+    (t := wires fun z => navigationBits f (x z) (y z)) (by
+      rintro _ ⟨bit, rfl⟩
+      induction bit using Fin.addCases with
+      | left bit =>
+        exact Or.inl (old3 (old2 (old1 (by
+          simpa only [navigationBits, Fin.append_left] using hflag))))
+      | right bit =>
+        apply Or.inr
+        refine ⟨⟨bit.val, by have := bit.isLt; lia⟩, ?_⟩
+        simp only [navigationBits, Fin.append_right])
+  apply (((hg.union ht).union hz).trans (hd.trans (ha.trans (hm'.trans hout)))).mono
+    Set.Subset.rfl Set.Subset.rfl
+  nlinarith [Nat.zero_le (n ^ 3)]
+
 theorem synthesis_navigation (c : Circuit Boolean.signature n n)
     (s : Set (State a → Bool)) (x y : State a → State n)
     (hx : wires x ⊆ s) (hy : wires y ⊆ s)

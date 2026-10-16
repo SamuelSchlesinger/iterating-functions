@@ -115,7 +115,7 @@ theorem visit_schedule_circuit (c : Circuit Boolean.signature n n) (L : ℕ)
     ∃ out : Circuit Boolean.signature (n + n) (visitScheduleWidth n),
       (∀ z t, (c.eval Boolean.interpretation)^[t] (inputLeft z) = inputRight z ↔
         visitScheduleContains (out.eval Boolean.interpretation z) t) ∧
-      out.size ≤ 120000000 * (n + 1) * powerBudget n c.size (2 ^ n) L := by
+      out.size ≤ 120000000 * powerBudget n c.size (2 ^ n) L := by
   let f := c.eval Boolean.interpretation
   obtain ⟨nav, hn, hns⟩ := navigation_circuit c L hL hLN
   obtain ⟨period, hp, hps⟩ := minimal_period_circuit c L hL hLN
@@ -147,14 +147,7 @@ theorem visit_schedule_circuit (c : Circuit Boolean.signature n n) (L : ℕ)
       have hd := navigationBits_time f (inputLeft z) (inputRight z) (hflag.mp hr)
       exact (visit_schedule_of_first f _ _ _ hd.1 hd.2.1 t).mpr ht
   · have hnB := hns.trans (navigationBudget_le n c.size L)
-    have hcoef : 100000000 * (n + 1) + 11000000 ≤ 120000000 * (n + 1) := by
-      nlinarith
-    calc
-      nav.size + period.size ≤ 100000000 * (n + 1) * powerBudget n c.size (2 ^ n) L +
-          11000000 * powerBudget n c.size (2 ^ n) L := Nat.add_le_add hnB hps
-      _ = (100000000 * (n + 1) + 11000000) * powerBudget n c.size (2 ^ n) L :=
-        (Nat.add_mul _ _ _).symm
-      _ ≤ _ := Nat.mul_le_mul_right _ hcoef
+    lia
 
 theorem visit_schedule_optimized (c : Circuit Boolean.signature n n) :
     ∃ out : Circuit Boolean.signature (n + n) (visitScheduleWidth n),
@@ -163,7 +156,7 @@ theorem visit_schedule_optimized (c : Circuit Boolean.signature n n) :
       (∀ z T, Set.ncard {t : ℕ | t ≤ T ∧
         (c.eval Boolean.interpretation)^[t] (inputLeft z) = inputRight z} =
           visitScheduleCount (out.eval Boolean.interpretation z) T) ∧
-      (out.size : ℝ) ≤ 360000000 * (n + 1) * optimizedBudget n c.size (2 ^ n) := by
+      (out.size : ℝ) ≤ 360000000 * optimizedBudget n c.size (2 ^ n) := by
   obtain ⟨L, hL, hLN, hopt⟩ := powerBudget_optimized n c.size (2 ^ n) le_rfl
   obtain ⟨out, ho, hs⟩ := visit_schedule_circuit c L hL hLN
   refine ⟨out, ho, fun z T => ?_, ?_⟩
@@ -172,8 +165,7 @@ theorem visit_schedule_optimized (c : Circuit Boolean.signature n n) :
     ext t
     exact and_congr_right (fun _ => ho z t)
   · have hs' : (out.size : ℝ) ≤
-      120000000 * (n + 1) * (powerBudget n c.size (2 ^ n) L : ℝ) := by exact_mod_cast hs
-    have h := mul_le_mul_of_nonneg_left hopt (show 0 ≤ 120000000 * (n + 1 : ℝ) by positivity)
-    nlinarith
+      120000000 * (powerBudget n c.size (2 ^ n) L : ℝ) := by exact_mod_cast hs
+    linarith
 
 end IteratedFunctions

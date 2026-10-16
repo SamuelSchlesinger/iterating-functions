@@ -37,6 +37,21 @@ guards fail if the theorem dependencies acquire an additional axiom.
 
 namespace IteratedFunctions
 
+/-- info: 'IteratedFunctions.forestMarks_card' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms forestMarks_card
+
+/-- info: 'IteratedFunctions.exists_forest_intervals' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms exists_forest_intervals
+
+/-- info: 'IteratedFunctions.forest_reachability_circuit' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms forest_reachability_circuit
+
 /-- info: 'IteratedFunctions.sparse_counter_hitting_time' depends on axioms:
 [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in

@@ -57,6 +57,11 @@ The fixed-power tradeoff also replaces N by Q_L, the number of deep transient
 states and long-cycle vertices at scale L. This refinement is checked in Lean.
 Writing B = A + sqrt(n^3 N A), arbitrarily wide m-bit input times cost
 O(min(m B, n B + n m)); this improved bound is also checked in Lean.
+Cycle labels, transient depth, pair-input reachability, exact first hitting
+times, and complete visit descriptors each cost O(B). The pair queries use
+a compressed checkpoint forest, bounded ancestry intervals, and a short
+verification prefix. Thus polynomial-size transitions give
+2^(n/2) poly(n)-size navigation circuits even with two n-bit input states.
 For the explicit lower-bound permutation, almost every power is hard when
 the exponent is uniform modulo the full period. Lean also checks the
 equivalence with fixed-integer remainder circuits and an exponential lower

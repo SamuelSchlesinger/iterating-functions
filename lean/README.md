@@ -60,10 +60,12 @@ natural-number division in integer budgets means floor division.
 | `batched_variable_time_optimized` | Independent `m`-bit exponents for each member; `m` times the preceding batch budget plus `4*r*n` per binary position. |
 | `cycle_label_circuit`, `cycle_labels_optimized` | Canonical cycle state, exact cycle length, and phase, for every input; optimized size at most `30120000*B`. |
 | `checkpoint_depth_optimized` | Exact transient depth in at most `3000000*B` gates. The earlier binary-search theorem `depth_circuit_optimized` remains available with an extra `(n+1)^2` factor. |
-| `reachability_hitting_time` | A circuit on `2*n` input bits returning an existence flag and `n+1` time bits, in at most `300000000*(n+1)*B` gates. On positive instances the decoded time is the first hit and is strictly less than `N`. |
+| `forestMarks_card`, `exists_forest_intervals` | At most twice as many marks after adding roots and branches; ancestry intervals with labels below the universe cardinality, on arbitrary finite types. |
+| `forest_reachability_circuit` | Pair-input reachability in at most `50000000*powerBudget n s N L` gates, using two shared dictionaries and short prefixes. |
+| `reachability_hitting_time` | A circuit on `2*n` input bits returning an existence flag and `n+1` time bits, in at most `300000000*B` gates. On positive instances the decoded time is the first hit and is strictly less than `N`. |
 | `first_target_time_optimized` | A target-existence flag and `n+2` first-time bits, with bound `3120000*optimizedBudget n (s+p.size+4*n) N + p.size`. Time is specified only on positive instances and is less than `N`. |
 | `halting_time` | Under semantic absorption and termination, exact first halting times on valid initial states, with bound `3000000*B`. No recognizer circuit is needed. |
-| `visit_schedule_optimized` | A complete visit descriptor on pair inputs: one success flag, `n+1` first-time bits, and `n+1` period bits, with bound `360000000*(n+1)*B`. Period zero encodes a singleton. The theorem specifies all visit times and the number through every deadline. The deadline arithmetic is a semantic interpretation, not an additional circuit-size claim. |
+| `visit_schedule_optimized` | A complete visit descriptor on pair inputs: one success flag, `n+1` first-time bits, and `n+1` period bits, with bound `360000000*B`. Period zero encodes a singleton. The theorem specifies all visit times and the number through every deadline. The deadline arithmetic is a semantic interpretation, not an additional circuit-size claim. |
 | `matching_lower_bound` | For `k ≥ 64`, a Boolean permutation circuit on `2*k` bits of size at most `50*(k+1)` has a power for which every implementing circuit has more than `2^k/(1024*(k+1))` gates. The division is integral. |
 | `almost_every_counter_power` | For `k ≥ 64`, the number of exponent residues with circuits of size at most `lowerBudget k`, times `2^(2^(k-1))`, is at most the period. Thus the easy fraction is at most `2^(-2^(k-1))`. |
 | `ModulusCounter.remainder_of_power` / `power_of_remainder` | Convert a power circuit to `a ↦ T mod a` (zero at modulus zero) with one extra gate, or convert a remainder circuit to a power with at most `100*(k+1)` extra gates. |
@@ -161,13 +163,20 @@ the Boolean ring, keeping payload vectors and Boolean wires in the same type.
    entry; without agreement, a checkpoint's stored depth plus its prefix index
    is exact. One dictionary suffices, giving `O(B)` gates. The earlier
    `BinarySearch.lean` and `DepthCircuit.lean` provide a separate weaker route.
-   `NavigationSynthesis.lean` combines two depths,
-   two cycle labels, the transient-depth difference test, and the cyclic phase
-   formula. `NavigationCircuits.lean` proves the final flag, first-hit
-   semantics, and size. Labels and arithmetic use `n+3` bits internally; the
-   public time output uses `n+1`. The remaining variable-time call gives the
-   `O(nB)` bound. Its proved time bound `< 2^n` permits dropping
-   the high bit on positive instances. `Division.lean` proves a total
+   `CheckpointForest.lean` adds roots and branching vertices with at most
+   twice the original checkpoint count. `ForestSegments.lean` checks short,
+   disjoint segments and depth-filtered predecessor keys;
+   `ForestIntervals.lean` supplies bounded ancestry labels over arbitrary
+   finite universes. `ForestNavigation.lean` checks the query and its final
+   verification prefix, which excludes side branches outside the checkpoint
+   hull. The record, lookup, and synthesis modules implement it in
+   `ForestCircuits.lean`, at the original fixed-power tradeoff.
+   `NavigationSynthesis.lean` combines this reachability flag with two depths,
+   two cycle labels, and the first-time arithmetic. `NavigationCircuits.lean`
+   proves the resulting `O(B)` bound. Labels and arithmetic use `n+3` bits
+   internally; the public time output uses `n+1`. Its proved time bound
+   `< 2^n` permits dropping the high bit on positive instances.
+   `Division.lean` proves a total
    shift-and-subtract remainder circuit costing `O(n^3)` gates.
 7. **Count actual circuit descriptions.** `ModulusCounter.lean` proves the
    exact powers and their distinctness below the least common multiple.

@@ -14,9 +14,12 @@ sensitivity, recognizable targets, complete-configuration simulation, and the
 formalization account. Lean now checks the fixed-power tradeoff and real
 optimization, invariant sets and encodings, permutation inversion, variable-time
 and shared batched evaluation, targets and halting computations, exact cycle
-labels and navigation, and the matching-exponent lower bound. The other
-proposals remain distinct from this checked boundary; `lean/README.md` maps
-public statements to their precise contracts.
+labels and navigation, and the matching-exponent lower bound. It also checks
+active-mass refinement, affine controllers, typical hard powers and exponent
+lengths, and sparse-counter powering and navigation. General pair navigation
+now attains O(B) through a compressed checkpoint forest. The proposed AKS
+improvement and effective general compiler remain outside the manuscript's
+checked bounds; `lean/README.md` maps public statements to precise contracts.
 
 ## Findings that affect the statements
 
@@ -114,7 +117,7 @@ uses divisibility by the cycle length; the other only needs `D>0`, since any
 positive return makes `z` periodic. There is no need to compare a huge `D`
 inside the online circuit.
 
-Search the inclusive interval `[0,N-1]`. The predicate is monotone, and its
+The original proposal searches the inclusive interval `[0,N-1]`. The predicate is monotone, and its
 right endpoint is true even for a chain of maximal transient length `N-1`.
 Unroll at most `n` binary-search rounds. Each round has an `n`-bit variable-time
 iteration circuit of size `O(nB)` followed by an `O(B)` cyclicity test. Thus
@@ -132,7 +135,7 @@ sufficient. The stated time
 `mu(x)+ell(x)-1 ≤ N-1`. Return an explicit false flag on negative instances,
 with an unspecified time field; an optional linear-size mask can return zero.
 Both cases include `x=y`, whose answer is time zero. Lean checks both cases,
-the decoded first-hitting-time specification, and now the improved `O(nB)`
+the decoded first-hitting-time specification, and now the improved `O(B)`
 gate bound. It uses `n+3` bits internally and `n+1` output time bits,
 and proves the time is less than `N` on positive instances.
 
@@ -147,6 +150,20 @@ reachability in `O(nB)`. `CheckpointDepth.lean` proves the full circuit,
 including the two retained prefixes, shared lookup, first-equality selection,
 and charged arithmetic. The original binary-search result remains available
 as a separate theorem.
+
+The final compressed-forest construction removes the variable-time call.
+Closing checkpoints along their paths to cycle entry and marking roots and
+branches yields at most `2|H|` marks. Consecutive marks are at distance at
+most `2L`, and their intervening segments are disjoint. Last-predecessor
+keys identify these segments. A target-prefix match is retained only when
+the recorded lower endpoint has depth at least the target's depth; on the
+hull every retained match identifies the containing segment. Bounded
+ancestry intervals test whether the selected source checkpoint reaches that
+endpoint. A final short prefix from the endpoint verifies the target and
+excludes side branches outside the hull. All shared lookup, filtering,
+selection, verification, and interval comparisons are charged in Lean.
+This gives `O(B)` reachability, first hitting times, and complete visit
+descriptors, with unchanged input and success-flag contracts.
 
 ## 3. Image sensitivity: valid, integrated, and mechanized
 
@@ -400,7 +417,7 @@ The last group is not an independent enumerative oracle. None proves a gate
 bound. The supplied sandbox attachments were not accessible in this workspace;
 the committed compiler and validator are new implementations.
 
-## Active continuation after this addition
+## Continuation milestones after the initial additions
 
 Synchronous coalescence in O(B) and recurring/permanent target predicates
 are now integrated and mechanized, including optimized native circuit bounds.
@@ -410,23 +427,22 @@ normalization to cycle labels, streaming division, and binary powering,
 proving O(nB+mn) for arbitrary input-time width. Combining the two checked
 variable-time constructions gives O(min(mB,nB+mn)).
 
-Transient depth in O(B), pair navigation in O(nB), and first target/halting
-times at the square-root bound are now integrated and mechanized. The target
+Transient depth in O(B), pair navigation initially in O(nB), and first target/halting
+times at the square-root bound were integrated and mechanized. The target
 time is the depth of the absorbing map, with an explicit success flag; a
 semantic halting theorem needs no recognizer circuit.
 
-Complete visit schedules are now integrated and mechanized at O(nB),
+Complete visit schedules were first integrated and mechanized at O(nB),
 including their exact bounded counting interpretation. The underlying
 progression identity needs no finite-state assumption once the first visit
 is supplied. Its period-zero case encodes a singleton. The circuit bound
 charges the descriptor; no bound for a separate arbitrary-width deadline
 input circuit is being silently included.
 
-The accepted work still includes a compressed-checkpoint-forest route
-to O(B) pair navigation. The forest theorem still needs a complete Lean
-construction and cardinality/ancestor-query proof. Earlier candidate additions
-listed above also remain distinct from checked coverage. Continue with these
-rather than treating the sparse-counter milestone as completion of the goal.
+The compressed-checkpoint-forest route was the remaining improvement after
+these milestones. It is now complete, including the cardinality proof,
+bounded ancestry labels, and native Boolean circuits. Earlier proposed AKS
+and compiler-runtime additions retain their separate scope.
 
 
 ## Manuscript organization, October 16 revision
@@ -484,7 +500,33 @@ on positive instances and is strictly less than 2^n.
 The coordinate version adds 2*encode.size and has no decoder hypothesis.
 This suffices because conjugacy preserves visit times and the output contains
 only a flag and integers. The paper's sparse-label corollary now includes
-these queries, and the introductory table compares their bound to O(nB)
-for general maps. These are deductions from the checked chart, without a
-historical-priority claim. The compressed-forest route to O(B) pair navigation
-for general maps remains separate accepted work.
+these queries. These are deductions from the checked chart, without a
+historical-priority claim. The subsequent compressed-forest result improves
+the general-map comparison in the introductory table to O(B).
+
+## Compressed-forest completion
+
+The new forest semantics apply to finite types in arbitrary universes.
+The refinement uses at most twice the original checkpoint count, improving
+the earlier threefold estimate. Lexicographic root paths supply ancestry
+intervals with ranks strictly below the state count. The formalization proves
+the existence of these labels; it does not claim to implement a DFS compiler.
+
+Two dictionaries and three short prefixes give transient reachability at
+`20000000*powerBudget`; adding cyclic targets costs at most
+`50000000*powerBudget`. First hitting times and visit descriptors now have
+optimized bounds `300000000*B` and `360000000*B`, respectively, without the
+previous state-width factor. The table, abstract, proof, and quantitative
+appendix have been updated together.
+
+The full Lean build passes 3,778 jobs, with all 84 proof modules imported by
+`Main.lean` and 53 guarded axiom checks. No additional axioms or proof
+placeholders occur in the project. The manuscript builds as a 30-page PDF;
+the final pass checks references, metadata, and page layout as well as the
+formal theorem boundaries.
+
+The remaining larger formalization directions are AKS networks, a verified
+preprocessing compiler and its runtime, sparse-transition counting, and the
+external finite-field discrete-logarithm application. They are documented
+boundaries and future projects, not missing dependencies of the checked
+claims in the results table.

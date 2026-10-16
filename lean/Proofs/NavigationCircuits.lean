@@ -6,9 +6,8 @@ Authors: Samuel Schlesinger
 module
 
 public import Proofs.NavigationSynthesis
-public import Proofs.DepthCircuit
-public import Proofs.CheckpointDepth
-public import Proofs.LabelCircuits
+public import Proofs.NavigationFeatures
+public import Proofs.ForestCircuits
 
 /-! # Reachability and first-hitting-time circuits -/
 
@@ -17,46 +16,13 @@ public import Proofs.LabelCircuits
 namespace IteratedFunctions
 
 open Cslib.Circuits
-variable {n a w v : ℕ}
+variable {n : ℕ}
 noncomputable local instance navigationCircuitsStateOrder : LinearOrder (State n) := stateOrder n
 
-theorem synthesis_depthWord (depth : Circuit Boolean.signature n (n + 2))
-    (f : State n → State n)
-    (hd : ∀ x, word (depth.eval Boolean.interpretation x) =
-      BitVec.ofNat (n + 2) (transientDepth f x))
-    (s : Set (State a → Bool)) (init : State a → State n)
-    (hi : wires init ⊆ s) (hz : (fun _ => false) ∈ s) :
-    Synthesis Boolean.interpretation s (wordWires (fun z => depthWord f (init z))) depth.size := by
-  have h := Synthesis.circuit (I := Boolean.interpretation) (s := s) depth init
-    (fun bit => hi ⟨bit, rfl⟩)
-  let src := s ∪ wires (fun z => depth.eval Boolean.interpretation (init z))
-  have hv : wordWires (fun z => word (depth.eval Boolean.interpretation (init z))) ⊆ src := by
-    rintro _ ⟨bit, rfl⟩
-    have he : (fun z => (word (depth.eval Boolean.interpretation (init z))).getLsbD bit.val) =
-        (fun z => depth.eval Boolean.interpretation (init z) bit) := by
-      funext z
-      exact word_bit _ bit
-    change (fun z => (word (depth.eval Boolean.interpretation (init z))).getLsbD bit.val) ∈ src
-    rw [he]
-    exact Or.inr ⟨bit, rfl⟩
-  have hr := resize_wires (v := n + 3) src _ hv (Or.inl hz)
-  have he : (fun z => (word (depth.eval Boolean.interpretation (init z))).setWidth (n + 3)) =
-      (fun z => depthWord f (init z)) := by
-    funext z
-    rw [hd]
-    exact BitVec.setWidth_ofNat_of_le_of_lt (by lia)
-      ((depth_lt_states f (init z)).trans_le (Nat.pow_le_pow_right (by decide) (by lia)))
-  rw [he] at hr
-  exact h.trans (Synthesis.of_subset hr)
-
-def inputLeft (z : State (n + n)) : State n := fun i => z (Fin.castAdd n i)
-def inputRight (z : State (n + n)) : State n := fun i => z (Fin.natAdd n i)
-
 def navigationBudget (n s L : ℕ) : ℕ :=
-  1 + 22080000 * powerBudget n s (2 ^ n) L +
-    (n + 3) * (40000 * powerBudget n s (2 ^ n) L + 4 * n) + 1000 * (n + 4) ^ 3
+  1 + 72080000 * powerBudget n s (2 ^ n) L + 1000 * (n + 4) ^ 3
 
-/-- The full construction uses two depths, two label records, and word arithmetic. -/
+/-- Forest reachability plus depths, cycle labels, and word arithmetic. -/
 theorem navigation_circuit (c : Circuit Boolean.signature n n) (L : ℕ)
     (hL : 0 < L) (hLN : L ≤ 2 ^ n) :
     ∃ out : Circuit Boolean.signature (n + n) (1 + (n + 1)),
@@ -68,6 +34,7 @@ theorem navigation_circuit (c : Circuit Boolean.signature n n) (L : ℕ)
   let y : State (n + n) → State n := inputRight
   obtain ⟨depth, hd, hds⟩ := checkpoint_depth_circuit c L hL hLN
   obtain ⟨labels, hl, hls⟩ := cycle_label_circuit c L hL hLN
+  obtain ⟨reach, hr, hrs⟩ := forest_reachability_circuit c L hL hLN
   have hle : labels.eval Boolean.interpretation = canonicalLabel f := funext hl
   let src := inputs (n + n) ∪ {fun _ => false}
   have hx : wires x ⊆ src := by rintro _ ⟨bit, rfl⟩; exact Or.inl ⟨_, rfl⟩
@@ -82,34 +49,40 @@ theorem navigation_circuit (c : Circuit Boolean.signature n n) (L : ℕ)
       labels.size := by
     simpa only [hle, wires] using Synthesis.circuit (I := Boolean.interpretation) (s := src)
       labels y (fun bit => hy ⟨bit, rfl⟩)
-  have hfeatures := ((hdx.union hdy).union hlx).union hly
-  let all := src ∪ (wordWires (fun z => depthWord f (x z)) ∪
+  have hreach := Synthesis.circuit (I := Boolean.interpretation) (s := src) reach id
+    (fun bit => Or.inl ⟨bit, rfl⟩)
+  have hfeatures := (((hdx.union hdy).union hlx).union hly).union hreach
+  let all := src ∪ ((wordWires (fun z => depthWord f (x z)) ∪
     wordWires (fun z => depthWord f (y z)) ∪ wires (fun z => canonicalLabel f (x z)) ∪
-    wires (fun z => canonicalLabel f (y z)))
+    wires (fun z => canonicalLabel f (y z))) ∪ wires (reach.eval Boolean.interpretation))
   have avx : wires (fun z => canonicalLabel f (x z)) ⊆ all :=
+    fun _ h => Or.inr (Or.inl (Or.inl (Or.inr h)))
+  have avy : wires (fun z => canonicalLabel f (y z)) ⊆ all :=
     fun _ h => Or.inr (Or.inl (Or.inr h))
-  have avy : wires (fun z => canonicalLabel f (y z)) ⊆ all := fun _ h => Or.inr (Or.inr h)
   have decode (init : State (n + n) → State n)
       (hav : wires (fun z => canonicalLabel f (init z)) ⊆ all) :
-      wires (fun z => canonicalCycle f (init z)) ⊆ all ∧
       wordWires (fun z => lengthWord f (init z)) ⊆ all ∧
       wordWires (fun z => phaseWord f (init z)) ⊆ all := by
-    refine ⟨?_, ?_, ?_⟩
-    · rintro _ ⟨bit, rfl⟩
-      simpa only [canonicalLabel, labelBits, Fin.append_left] using
-        hav ⟨Fin.castAdd ((n + 3) + (n + 3)) bit, rfl⟩
+    refine ⟨?_, ?_⟩
     · rintro _ ⟨bit, rfl⟩
       simpa only [canonicalLabel, labelBits, lengthWord, Fin.append_right, Fin.append_left] using
         hav ⟨Fin.natAdd n (Fin.castAdd (n + 3) bit), rfl⟩
     · rintro _ ⟨bit, rfl⟩
       simpa only [canonicalLabel, labelBits, phaseWord, Fin.append_right] using
         hav ⟨Fin.natAdd n (Fin.natAdd (n + 3) bit), rfl⟩
-  have hnav := synthesis_navigation c all x y (fun _ h => Or.inl (hx h))
-    (fun _ h => Or.inl (hy h))
-    (fun _ h => Or.inr (Or.inl (Or.inl (Or.inl h))))
-    (fun _ h => Or.inr (Or.inl (Or.inl (Or.inr h))))
-    (decode x avx).2.1 (decode x avx).2.2 (decode y avy).2.2
-    (decode x avx).1 (decode y avy).1 L hL hLN
+  have hre : (fun z => reach.eval Boolean.interpretation z 0) =
+      (fun z => navigationFlag f (x z) (y z)) := by
+    funext z
+    apply Bool.eq_iff_iff.mpr
+    rw [navigationFlag_spec, reaches_iff]
+    exact hr z
+  have avFlag : (fun z => navigationFlag f (x z) (y z)) ∈ all := by
+    rw [← hre]
+    exact Or.inr (Or.inr ⟨0, rfl⟩)
+  have hnav := synthesis_navigation_given_flag f all x y avFlag
+    (fun _ h => Or.inr (Or.inl (Or.inl (Or.inl (Or.inl h)))))
+    (fun _ h => Or.inr (Or.inl (Or.inl (Or.inl (Or.inr h)))))
+    (decode x avx).1 (decode x avx).2 (decode y avy).2
   have h := (Synthesis.const (s := inputs (n + n)) false).trans
     (hfeatures.trans hnav)
   obtain ⟨out, hout, hs⟩ := h.exists_circuit_outputs
@@ -117,9 +90,9 @@ theorem navigation_circuit (c : Circuit Boolean.signature n n) (L : ℕ)
   unfold navigationBudget
   lia
 
-/-- One variable-time evaluation is the remaining linear factor in the state width. -/
+/-- Every component fits the original fixed-power tradeoff. -/
 theorem navigationBudget_le (n s L : ℕ) :
-    navigationBudget n s L ≤ 100000000 * (n + 1) * powerBudget n s (2 ^ n) L := by
+    navigationBudget n s L ≤ 100000000 * powerBudget n s (2 ^ n) L := by
   have hb : (n + 1) ^ 3 ≤ powerBudget n s (2 ^ n) L := by
     unfold powerBudget
     have h := Nat.mul_le_mul_left ((n + 1) ^ 3)
@@ -128,13 +101,11 @@ theorem navigationBudget_le (n s L : ℕ) :
   have hfour : (n + 4) ^ 3 ≤ 64 * (n + 1) ^ 3 := by
     have h := Nat.pow_le_pow_left (show n + 4 ≤ 4 * (n + 1) by lia) 3
     nlinarith
-  have hpoly : 1 + (n + 3) * (4 * n) + 1000 * (n + 4) ^ 3 ≤
+  have hpoly : 1 + 1000 * (n + 4) ^ 3 ≤
       65000 * powerBudget n s (2 ^ n) L := by
     nlinarith [Nat.zero_le (n ^ 3)]
-  have hcost := Nat.mul_le_mul_right (powerBudget n s (2 ^ n) L)
-    (show 22080000 + (n + 3) * 40000 + 65000 ≤ 100000000 * (n + 1) by lia)
   unfold navigationBudget
-  nlinarith
+  lia
 
 /-- Reachability and first hitting time, with an explicit optimized gate bound. -/
 theorem reachability_hitting_time (c : Circuit Boolean.signature n n) :
@@ -147,7 +118,7 @@ theorem reachability_hitting_time (c : Circuit Boolean.signature n n) :
         (c.eval Boolean.interpretation)^[t] (inputLeft z) = inputRight z ∧
           (∀ j < t, (c.eval Boolean.interpretation)^[j] (inputLeft z) ≠ inputRight z) ∧
           t < 2 ^ n) ∧
-      (out.size : ℝ) ≤ 300000000 * (n + 1 : ℝ) * optimizedBudget n c.size (2 ^ n) := by
+      (out.size : ℝ) ≤ 300000000 * optimizedBudget n c.size (2 ^ n) := by
   obtain ⟨L, hL, hLN, ho⟩ := powerBudget_optimized n c.size (2 ^ n) le_rfl
   obtain ⟨out, hout, hs⟩ := navigation_circuit c L hL hLN
   refine ⟨out, ?_, ?_, ?_⟩
@@ -158,9 +129,8 @@ theorem reachability_hitting_time (c : Circuit Boolean.signature n n) :
     rw [hout z] at hz ⊢
     exact navigationBits_time _ _ _ ((navigationBits_flag _ _ _).mp hz)
   · have hs' : (out.size : ℝ) ≤
-        100000000 * (n + 1 : ℝ) * (powerBudget n c.size (2 ^ n) L : ℝ) := by
+        100000000 * (powerBudget n c.size (2 ^ n) L : ℝ) := by
       exact_mod_cast hs.trans (navigationBudget_le n c.size L)
-    have h := mul_le_mul_of_nonneg_left ho (show 0 ≤ 100000000 * (n + 1 : ℝ) by positivity)
-    nlinarith
+    linarith
 
 end IteratedFunctions

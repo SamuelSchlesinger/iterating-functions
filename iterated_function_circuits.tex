@@ -67,8 +67,9 @@ with every lookup and arithmetic gate charged.  We also give variable-time
 and shared batched versions.
 
 Second, the same construction supports functional-graph queries.  Cycle
-labels and transient depth cost $O(B)$; reachability, exact first hitting
-times, and complete visit descriptors cost $O(nB)$.  Polynomial-size
+labels, transient depth, reachability, exact first hitting times, and
+complete visit descriptors each cost $O(B)$.  A compressed checkpoint
+forest supports the pair-input queries.  Polynomial-size
 transitions and target predicates therefore give
 $2^{n/2}\poly(n)$-size circuits for navigation and eventual behavior,
 including reachability with two $n$-bit inputs.
@@ -214,7 +215,7 @@ Query & Input parameters & Circuit size & Lean \\
 Fixed iterate & $x$; fixed $T\geq0$ & $O(B)$ & Checked \\
 Input-time iterate & $x,t$; $t\in\bits^m$ & $O(\min\{mB,nB+nm\})$ & Checked \\
 Cycle labels and depth & $x$ & $O(B)$ & Checked \\
-Reachability, first hit,\newline visit descriptor & $x,y\in\bits^n$ & $O(nB)$ & Checked \\
+Reachability, first hit,\newline visit descriptor & $x,y\in\bits^n$ & $O(B)$ & Checked \\
 Synchronous coalescence & $x,y\in\bits^n$ & $O(B)$ & Checked \\
 First target; recurring\newline or permanent target & $x$; fixed $P$ of size $a$ & $O(B_P)$ & Checked \\
 Shared fixed powers & $k$ states; fixed exponents & $O(kA+\sqrt{kn^3NA})$ & Checked \\
@@ -891,23 +892,93 @@ shared lookup cost $O(Ls+n^3(L+N/L))$.  Use the same $L$ for the projection
 and these operations, then optimize as in \cref{eq:L-choice}.
 \end{proof}
 
+\begin{lemma}[Compressed checkpoint forest]\label[lemma]{lem:checkpoint-forest}
+Let $H$ be the checkpoint set from \cref{lem:checkpoints}.  Cut the outgoing
+edge of every cyclic vertex, and let $S$ be the union of the paths from
+$H$ to their first cyclic vertices, including both endpoints.  There is
+a set $J$ with $H\subseteq J\subseteq S$ and $|J|\leq2|H|$ such that:
+\begin{enumerate}
+\item Every root and every branching vertex of the forest on $S$ lies in $J$.
+\item From each nonroot $a\in J$, the next vertex of $J$ is reached after
+some $1\leq d_a\leq2L$ steps.  The segments
+$a,F(a),\ldots,F^{d_a-1}(a)$ are pairwise disjoint.
+\item Each $a\in J$ has labels $p(a),q(a)<N$ such that, for $a,h\in J$,
+\[
+ p(a)\leq p(h)\leq q(a)
+ \quad\Longleftrightarrow\quad
+ F^t(h)=a\text{ for some }0\leq t\leq\mu(h).
+\]
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+Take $J$ to be $H$ together with the roots and branching vertices of $S$.
+Every leaf belongs to $H$: any other vertex on a checkpoint path has a
+predecessor on that path.  In a rooted forest, the number of roots plus
+the number of vertices with at least two children is at most the number
+of leaves.  Indeed, summing the numbers of children gives the number of
+nonroot vertices; a branching vertex contributes at least two.  Therefore
+$|J|\leq |H|+|\text{leaves}|\leq2|H|$.
+
+Apply checkpoint coverage to $F(a)$.  A checkpoint hit gives a positive
+hit from $a$ within $2L$ steps; a repetition gives cycle entry within $L$
+steps, where a root is marked.  Hence the next marked vertex is at
+distance at most $2L$.  Between marks, each vertex of $S$ has a unique
+predecessor in $S$, so two such segments cannot merge.  Finally order
+vertices by a preorder traversal of the cut forest.  Descendants of a
+vertex occupy a contiguous interval; its first and last ranks give
+$p,q$.  Only the labels of $J$ need to be stored.  The Lean proof obtains
+the same interval property by lexicographically ordering root-to-vertex
+paths, without formalizing a traversal algorithm.
+\end{proof}
+
 \begin{theorem}[Reachability and first hitting times]\label{thm:reachability}
-A circuit of size $O(nB)$, on input $(x,y)$, decides whether
+A circuit of size $O(B)$, on input $(x,y)$, decides whether
 $F^t(x)=y$ for some $t\geq0$ and returns the least such $t$ when it exists.
 The output may use a separate existence flag and $n$ time bits.
 \end{theorem}
 \begin{proof}
-Compute both depths using \cref{thm:depth} and both sets of cycle labels
-using \cref{thm:labels}, for a total of $O(B)$ gates.  If $y$ is
-transient, it is reachable exactly when
+Use a common parameter $L$ in the depth and cycle-label constructions.
+Write $K=2L$ and construct the forest of \cref{lem:checkpoint-forest}.
+Store a dictionary of the marked vertices $a\in J$, with their states,
+depths, and interval labels.  A second dictionary has one key
+$F^{d_a-1}(a)$ for each nonroot mark $a$, with the same payload for $a$.
+These last-predecessor keys are distinct by disjointness of the segments.
+Both dictionaries have $O(N/L)$ records of $O(n)$ bits.
+
+Suppose first that $y$ is transient.  Generate the prefixes of $x$ and
+$y$ through time $K$.  If $y$ occurs in the prefix of $x$, accept.
+Otherwise select any marked vertex $h$ in that prefix; if none exists,
+reject.  To select a candidate ancestor $a$, use $a=y$ if $y\in J$.
+Otherwise query the second dictionary on the prefix of $y$, retain only
+matches with $\mu(a)\geq\mu(y)$, and select any retained record.  Reject
+if there is no such record.  Finally accept exactly when
 \[
- \mu(x)\geq\mu(y)\quad\hbox{and}\quad
- F^{\mu(x)-\mu(y)}(x)=y.
+ y\in\{a,F(a),\ldots,F^K(a)\}
+ \quad\hbox{and}\quad p(a)\leq p(h)\leq q(a).
 \]
-Indeed, transient depth decreases by exactly one per step until the cycle
-is reached.  In this case the displayed exponent is the first hitting
-time.  The $n$-bit variable-time iterator evaluates this final test in
-$O(nB)$ gates.
+The first test uses a third short prefix.  It is essential for rejecting
+side branches outside $S$.
+
+Every acceptance is sound: $x$ reaches $h$, the interval test says that
+$h$ reaches $a$, and the verification prefix reaches $y$.  Conversely,
+suppose $x$ reaches a transient $y$ beyond its inspected prefix.
+That prefix cannot repeat and must contain a checkpoint.  Every selected
+mark $h$ precedes $y$, so $y\in S$.  If $y$ is unmarked, it lies in a
+unique compressed segment, whose last-predecessor key appears within
+$K$ steps of $y$.  Its lower endpoint passes the depth filter.
+Moreover, every retained key has the same property: if
+$F^j(y)=F^{d_a-1}(a)$ and $\mu(a)\geq\mu(y)$, decreasing depth gives
+$j\leq d_a-1$.  Unique predecessors inside the segment then give
+$y=F^{d_a-1-j}(a)$.  A marked $h$ can reach this segment only through
+$a$.  Thus the selected record passes both final tests.  The marked-target
+case takes $a=y$ directly.
+
+Three prefixes cost $O(Ls)$ gates.  Shared lookup costs
+$O(n^3(L+N/L))$, and depth filtering, record selection, prefix equality,
+and interval comparisons add $O(nL+n^3)$ gates.  Depths and cycle labels
+fit the same tradeoff.  Optimization therefore gives $O(B)$ gates.
+For a positive transient query, the first hitting time is simply
+$\mu(x)-\mu(y)$, since depth decreases by one on each transient step.
 
 If $y$ is cyclic, it is reachable exactly when $c(x)=c(y)$.  On a positive
 instance its first hitting time is
@@ -922,7 +993,7 @@ $O(n)$-gate mask can set it to zero if desired.
 \end{proof}
 
 \begin{corollary}[Complete visit schedules]\label[corollary]{cor:schedules}
-A circuit of size $O(nB)$, on input $(x,y)$, returns a success flag and
+A circuit of size $O(B)$, on input $(x,y)$, returns a success flag and
 two integers $d,p$ describing every visit time.  A zero flag denotes no
 visits.  For a positive flag, $d<N$ is the first visit, $0\leq p\leq N$,
 and
@@ -1743,6 +1814,9 @@ the formalization synthesizes sorting, lookup, selection, and arithmetic
 from Boolean gates.  Checkpoints are obtained by packing disjoint simple
 paths.  The dynamics identities are separated from the bit-level circuit
 construction, allowing them to be reused across representations.
+For pair navigation, a compressed forest adds roots and branching vertices
+to those checkpoints.  Interval labels and depth-filtered edge records
+replace the variable-time evaluation that would otherwise cost $O(nB)$.
 
 The semantic lemmas quantify over types in arbitrary universes.  For the
 encoded fixed-power theorem, only the relevant invariant subset
@@ -1776,7 +1850,8 @@ For arbitrary transitions, sparse checkpoints and charged batched lookup
 compute every fixed iterate at square-root state-space cost.  The same
 construction recovers functional-graph information: cycle labels, transient
 depth, pair-input reachability, exact hitting times, complete visit schedules,
-and eventual target behavior.  For polynomial-size transitions and
+and eventual target behavior.  The graph labels and pair queries share the
+same $O(B)$ bound as a fixed iterate.  For polynomial-size transitions and
 predicates these queries all have size $2^{n/2}\poly(n)$.  Compact orbit
 coordinates can improve the bound further: $r$ permutation-preserving
 counter edits give $O(n(r+1))$ fixed powers and $O(n(r+m+1))$ live-time
@@ -1907,11 +1982,22 @@ This yields the checked bound $30120000\widehat B$.
 both short orbits, selects their first equality when present, and otherwise
 adds the prefix index to a checkpoint's stored depth.  Its checked bound
 is $3000000\widehat B$.  The earlier binary-search implementation is
-retained as a separate, weaker theorem.  Two depth records and two cycle-label records feed the
-transient/cyclic case distinction from \cref{thm:reachability}.
+retained as a separate, weaker theorem.
+\texttt{CheckpointForest.lean} proves $|J|\leq2|H|$;
+\texttt{ForestSegments.lean} proves shortness, disjointness, and the
+depth-filtered predecessor test.  \texttt{ForestIntervals.lean} constructs
+bounded ancestry labels on every finite universe.
+\texttt{ForestNavigation.lean} checks the abstract query, including the
+final prefix verification.  The record and synthesis modules encode it
+using two shared dictionaries and three short transition chains.
+\texttt{ForestCircuits.lean} gives transient reachability with bound
+$20000000\operatorname{powerBudget}(n,s,2^n,L)$ and full reachability
+with bound $50000000\operatorname{powerBudget}(n,s,2^n,L)$.
+Two depth records, two cycle-label records, and bounded-word arithmetic
+then give the first hitting time.
 The checked navigation circuit has $2n$ input bits, an existence flag,
 and $n+1$ time bits, with size at most
-$300000000(n+1)\widehat B$.  On positive instances its decoded time
+$300000000\widehat B$.  On positive instances its decoded time
 is proved to be the first hit and strictly less than $2^n$; its top time
 bit can therefore be discarded.  No time-field specification is imposed
 on negative instances.  Intermediate label and navigation words have
@@ -1921,7 +2007,7 @@ variable remainders in $O(n^3)$ gates; all arithmetic branches are total.
 \texttt{VisitScheduleCircuits.lean} appends the target's minimal return
 period, using zero for a transient target.  Its descriptor has one success
 bit and two $(n+1)$-bit fields, with checked size
-$360000000(n+1)\widehat B$.  The specification describes every visit time
+$360000000\widehat B$.  The specification describes every visit time
 and proves the displayed counting formula in \cref{cor:schedules}.
 \texttt{VisitSchedules.lean} proves the progression identity and deadline
 test from a first visit on any state type, even an infinite one;

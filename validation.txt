@@ -47,10 +47,10 @@ cases check algebraic identities, not an independent enumerative oracle.
 
 Lean command: make lean-check
 cd lean && lake build --wfail
-Build completed successfully (3769 jobs).
+Build completed successfully (3778 jobs).
 
-Main.lean runs 50 guarded axiom checks. Every audited result depends exactly
-on propext, Classical.choice, and Quot.sound. All 75 Proofs modules are in
+Main.lean runs 53 guarded axiom checks. Every audited result depends exactly
+on propext, Classical.choice, and Quot.sound. All 84 Proofs modules are in
 Main's transitive import closure. No sorry, admit, added axiom, native_decide,
 or unsafe declaration appears in the project Lean sources.
 
@@ -136,19 +136,30 @@ Negative instances have no time-field specification. Generic finite-dynamics
 and commutation lemmas are universe polymorphic; circuit bounds charge bits.
 
 Paper command: make (three pdflatex passes).
-Output: 29 pages. Final log has no warnings, overfull boxes, or underfull boxes.
+Output: 30 pages. Final log has no warnings, overfull boxes, or underfull boxes.
 All final pages were rendered and inspected in contact sheets. The revised
 abstract, introductory comparison table, simulation specialization, named
 edit-list compiler proposition, concise Lean section, conclusion, and appendix
 were additionally inspected at readable resolution. The table now records the
 checked sparse input-time and cycle-label bounds alongside the general-map
 and affine-controller bounds. It also compares pair-input sparse navigation
-at O(n(r+1)) to the general O(nB) bound. The expanded sparse-query corollary,
+at O(n(r+1)) to the general O(B) bound. The expanded sparse-query corollary,
 forward-only coordinate transport, and appendix's query implementation were
 also inspected at readable resolution. The general
 nonuniformity and historical-priority qualifications remain explicit.
 The abstract matches submission_metadata.txt after expanding its LaTeX macros.
 All source labels are unique and all cross-references resolve.
+
+The compressed-forest improvement is checked end to end. Roots and branching
+vertices expand the checkpoint set by at most a factor of two. Compressed
+edges have length at most 2L and distinct last-predecessor keys; bounded
+ancestry intervals exist on arbitrary finite universes. The depth filter and
+verification prefix establish the encoded query's exact semantics. The
+native transient and full reachability circuits cost at most 20000000 and
+50000000 times powerBudget, respectively. Exact hitting times and complete
+visit descriptors now cost 300000000*B and 360000000*B, without a factor n+1.
+The new lemma and query proof, updated table, formalization choices, and
+appendix gate bounds were additionally reviewed at readable resolution.
 
 The implementation uses the existing pinned Lean, Mathlib, CSLib, and
 Complexitylib revisions. Lean proves nonuniform circuit existence, not an

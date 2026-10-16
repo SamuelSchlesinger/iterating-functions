@@ -1,7 +1,7 @@
 # Detailed review and formalization record
 
 Reviewed against local baseline `2a0bb654c27fc7650c901b946c7a2bba36212536` and
-the ten proposed additions. Revision date: October 15, 2026.
+the ten proposed additions. Revision date: October 16, 2026.
 
 The fixed-power argument survives the review. The new Lean development proves
 its parameterized gate bound end to end, so the main correctness conclusion
@@ -10,11 +10,13 @@ mathematical routes, with the qualifications below. This is not a claim that
 all ten are novel or mechanized.
 
 The revision incorporates cycle labels, reachability and hitting times, image
-sensitivity, a stronger checkpoint lemma, and the formalization account. The
-remaining proposals are reviewed here without silently extending the checked
-boundary. The paper's new navigation results are mathematical proofs; the
-fixed-power, invariant-set, encoded-state, and image-sensitive results have
-checked circuit constructions in Lean.
+sensitivity, recognizable targets, complete-configuration simulation, and the
+formalization account. Lean now checks the fixed-power tradeoff and real
+optimization, invariant sets and encodings, permutation inversion, variable-time
+and shared batched evaluation, targets and halting computations, exact cycle
+labels and navigation, and the matching-exponent lower bound. The other
+proposals remain distinct from this checked boundary; `lean/README.md` maps
+public statements to their precise contracts.
 
 ## Findings that affect the statements
 
@@ -77,10 +79,11 @@ compatible with security against polynomial-size circuits. For a general
 noninjective map an inverse need not be a forward iterate; persisting a target
 while searching for a preimage enlarges the full state. The original manuscript
 explicitly records both limitations. No fatal correctness defect was found in
-these arguments, but only the fixed-power core and the listed extensions are
-covered by the new kernel-checked proof.
+these arguments. The circuit constructions and matching-exponent lower bound
+now have kernel-checked proofs; the short-exponent corollary and cryptographic
+interpretations remain prose arguments.
 
-## 1. Cycle labels: valid with an explicit earliest-repeat algorithm
+## 1. Cycle labels: integrated and mechanized
 
 Checkpoint metadata `(ell,c,phi)` occupies `O(n)` bits per record, provided the
 cycle-length field has `n+1` bits. If `F^d(x)=h`, the proposed relation
@@ -99,7 +102,12 @@ explicit description of every vertex and edge of the whole graph at once.
 The paper uses “Computing the Structure of Functional Graphs” with that
 per-input output contract stated explicitly.
 
-## 2. Reachability and hitting times: valid at the proposed bound
+The checked circuit uses a different route: apply `F^(N!)`, which preserves
+cycle labels and phase, and then use a short cyclic scan or checkpoint lookup.
+It proves the same `O(B)` bound, including modular arithmetic costs. The
+semantic phase identities also hold for arbitrary finite types with an order.
+
+## 2. Reachability and hitting times: integrated and mechanized
 
 For `D=lcm(1,...,N)`, the test `F^D(z)=z` is exactly cyclicity. One direction
 uses divisibility by the cycle length; the other only needs `D>0`, since any
@@ -122,8 +130,11 @@ For cyclic `y`, equal canonical cycle representatives are necessary and
 sufficient. The stated time
 `mu(x) + ((phi(y)-phi(x)-mu(x)) mod ell(x))` is correct. Its value is at most
 `mu(x)+ell(x)-1 ≤ N-1`. Return an explicit false flag on negative instances,
-with a conventional zero time field. Both cases include `x=y`, whose answer
-is time zero.
+with an unspecified time field; an optional linear-size mask can return zero.
+Both cases include `x=y`, whose answer is time zero. Lean checks the threshold
+search, both cases, the decoded first-hitting-time specification, and the
+`O(n^2 B)` gate bound. It uses `n+3` bits internally and `n+1` output time bits,
+and proves the time is less than `N` on positive instances.
 
 A further mathematical improvement is possible for the depth subproblem:
 let `R=F^D`, and compare `F^i(x)` with `F^i(R(x))` through `2L` steps. Equality
@@ -146,7 +157,7 @@ the image, and the outer burn-in guarantees that its outputs enter that set.
 The optimized claim assumes a nonempty state space, so `M_d≥1`. It includes
 `T=d`, where the tail can be the identity. Lean proves the slightly stronger
 tradeoff for all `1≤L≤2^n`, with natural-number division and harmless `+1`s.
-The real optimization is still a paper argument. The exponential improvement
+The general real square-root optimization and invariant-set optimum are now checked. The exponential improvement
 requires the stated cheap burn-in; a small image alone does not bound the cost
 of computing the state that enters it.
 
@@ -168,14 +179,15 @@ treating `Q_L` as a constant: it changes with `L`.
 The mechanized path-packing lemma instead improves the universal count to
 `|H|L≤|S|` with a `2L` prefix. It does not by itself prove the `Q_L` theorem.
 
-## 5. Recognizable target sets: valid, not mechanized
+## 5. Recognizable target sets: integrated and mechanized
 
 The absorbing transition `G(x)=x` on accepting states and `F(x)` otherwise
 has size `O(s+a+n)`. If any target is reached, the first one occurs among
 the first `N` distinct trajectory states, at time at most `N-1`. Hence
 `G^N(x)` is exactly that first target state on positive inputs, and
 `P(G^N(x))` is the desired existence flag. The final `P` test costs `a`,
-already absorbed in `A_P`.
+already absorbed in `A_P`. `Targets.lean` checks the absorbing transition,
+eventual-target flag, first-target state, and explicit circuit-size tradeoff.
 
 Here `P` is fixed with the circuit. This theorem does not directly solve
 pair-input reachability at the same bound by declaring `P(z)=[z=y]` while
@@ -234,13 +246,15 @@ equivalence has not been formalized. It exposes fixed-integer remainder
 functions as the arithmetic objects counted in the lower bound, without
 identifying a specific hard integer.
 
-## 9. Deterministic complete configurations: valid, not mechanized
+## 9. Deterministic complete configurations: integrated and mechanized
 
 A terminating deterministic trajectory cannot repeat a nonhalting complete
 configuration. With `b` bits there are at most `2^b` configurations. Making
 halting states absorbing means the `2^b`-th iterate is the final configuration
 for every valid initial state, even if the next-state circuit has arbitrary
 behavior on invalid encodings. Initialization and output decoding costs add.
+`halting_computation` checks this final-configuration contract under semantic
+absorption and termination hypotheses, including the bound on the first halt.
 
 Count all persistent information in `b`: input information retained during
 the computation, work tapes, control state, and head positions. One cannot
@@ -292,8 +306,10 @@ not by itself evidence of novelty.
 
 The formalization credits Mathlib and CSLib, and the author's Circuit library
 in Complexitylib for circuit semantics, iteration, wiring, and verified Batcher
-sorting. Its path packing, collision reconstruction, and final Boolean cost
-proofs are new files in this repository. See `lean/README.md` for the pinned
+sorting and circuit-family counting. Mathlib supplies finite-periodicity
+results and the least-common-multiple estimate. This repository adds path
+packing, reconstruction, Boolean synthesis and accounting, optimization,
+navigation, and the resulting upper and lower bounds. See `lean/README.md` for the pinned
 dependencies and exact checked boundary.
 
 ## Validation

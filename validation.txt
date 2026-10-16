@@ -1,5 +1,6 @@
-Validation, October 15, 2026
+Validation, October 16, 2026
 
+Finite semantic checks: make check
 python3 verify_small_instances.py
 PASS: all finite semantic checks succeeded.
 Seed: 20260929
@@ -25,31 +26,38 @@ Finite checks do not establish circuit size or historical novelty.
 
 Lean command: make lean-check
 cd lean && lake build --wfail
-✔ [1105/1115] Built Statement (2.1s)
-✔ [1114/1115] Built Main (1.2s)
-Build completed successfully (1115 jobs).
+Build completed successfully (3193 jobs).
 
-Main.lean guards the axiom dependencies of fixedPowerBound, fixedPowerOnBound,
-fixed_power_encoded, and image_sensitive. Each guard permits exactly
-propext, Classical.choice, and Quot.sound.
-No sorry, admit, added axiom, native_decide, or unsafe declaration appears
-in the project Lean sources.
+Main.lean runs 18 guarded axiom checks. Every audited result depends exactly
+on propext, Classical.choice, and Quot.sound. All 48 Proofs modules are in
+Main's transitive import closure. No sorry, admit, added axiom, native_decide,
+or unsafe declaration appears in the project Lean sources.
+
+Checked scope: fixed-power and invariant-set Boolean circuits, encoded states
+in arbitrary universes, image sensitivity, real square-root optimization,
+half-exponent polynomial bounds, permutation inversion, variable-time and
+shared batched evaluation, recognizable targets, halting complete configurations,
+cycle labels, transient depth, pair-input reachability and exact first hitting
+times, and the matching-exponent lower bound including the linear-size update.
+
+The navigation output has one existence flag and n+1 time bits. A positive
+flag implies the decoded time is the first hit and is strictly less than 2^n.
+Negative instances have no time-field specification. Generic finite-dynamics
+lemmas are universe polymorphic; circuit bounds charge actual encoded bits.
 
 Paper command: make (three pdflatex passes).
-Output: 17 pages. Final log has no warnings, overfull boxes, or underfull boxes.
-Rendered pages inspected for layout; the new navigation and formalization
-pages additionally inspected at readable resolution.
+Output: 18 pages. Final log has no warnings, overfull boxes, or underfull boxes.
+All pages were rendered and inspected in contact sheets; the new target and
+formalization pages were additionally inspected at readable resolution.
+The final cross-reference correction was rendered and inspected again.
+The manuscript abstract matches submission_metadata.txt after expanding bits.
 
-Scope: Lean checks the parameterized Boolean gate tradeoff, its invariant-set
-form, transport to encoded states in arbitrary universes, and image sensitivity.
-The real square-root optimization and the other manuscript results are not
-claimed to be mechanized. Finite checks do not establish historical novelty.
+The implementation uses the existing pinned Lean, Mathlib, CSLib, and
+Complexitylib revisions. It proves nonuniform existence, not an extracted
+compiler or a preprocessing-time guarantee. The active-trajectory refinement,
+affine-controller proposal, AKS improvement, almost-every-power statement,
+remainder equivalence, and exponent-description-length corollary are not
+separately mechanized. The public theorem map is in lean/README.md.
 
-Publication packaging check
-The pinned Mathlib, CSLib, and Complexitylib commits were verified through
-the public GitHub API. Complexitylib is pinned to the published revision
-add0aca8ee0d71e68969f2cb45cf91554a50f787; the previously selected local revision
-was unpublished. The circuit modules used here are unchanged at the public pin.
-cd lean && lake build --wfail
-Build completed successfully (1115 jobs).
-The manuscript abstract matches submission_metadata.txt; the PDF is current.
+These checks do not establish historical novelty or replace independent
+publication review. No submission or remote publication was performed.

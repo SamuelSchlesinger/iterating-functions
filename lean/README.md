@@ -1,9 +1,11 @@
-# Fixed-power circuits in Lean
+# Iterated-function circuits in Lean
 
-This project proves the fixed-power Boolean circuit tradeoff end to end,
-including circuit existence, evaluation correctness, and gate count. It also
-proves the invariant-set and image-sensitive extensions and transport to encoded
-state spaces in arbitrary Lean universes.
+This project checks the fixed-power Boolean circuit theorem and eight groups
+of extensions end to end: square-root optimization, permutation inversion,
+variable-time iteration, recognizable targets and halting computations, cycle
+labels, reachability and first hitting times, batched evaluation, and the
+matching-exponent lower bound. The upper bounds construct actual CSLib
+circuits and prove their semantics and native gate counts.
 
 ```sh
 cd lean
@@ -11,87 +13,137 @@ lake exe cache get
 lake build --wfail
 ```
 
-`lake build --wfail` builds `Main`, all proof modules in its dependency chain,
-and the guarded axiom checks. The first command downloads the Mathlib cache on
-a fresh checkout. Normal Lake dependency acquisition requires network access.
-No local path dependency or preinstalled copy of the author's projects is needed.
+The build checks `Main`, all proof modules in its dependency chain, and the
+axiom guards. The cache command is useful on a fresh checkout. Dependency
+acquisition requires network access; no local path dependency or preinstalled
+copy of the author's projects is needed.
 
 ## Public statements
 
-`Statement.lean` imports only CSLib and Mathlib. With
+`Statement.lean` imports only CSLib and Mathlib. The foundational budget is
 
 ```
-powerBudget n s M L = L*s + (n+1)^3 * (L + M/L + 1),
+powerBudget n s M L = L*s + (n+1)^3 * (L + M/L + 1).
 ```
 
-the exported results in `Main.lean` are:
+For the optimized bounds, write `N = 2^n`, `A = s + (n+1)^3`, and
+`B = A + sqrt((n+1)^3 * N * A)`. These square roots are real numbers;
+natural-number division in integer budgets means floor division.
 
 | Result | Checked claim |
 | --- | --- |
-| `fixedPowerBound`, `fixed_power` | Every fixed power has a Boolean circuit of size at most `40000 * powerBudget n c.size (2^n) L`, for `1 ≤ L ≤ 2^n`. |
-| `fixedPowerOnBound`, `fixed_power_on` | The same result on a finite invariant set `S`, replacing `2^n` in the budget by `S.card`. |
-| `fixed_power_encoded` | For `α : Type u`, finite invariant `S : Finset α`, and an encoding into `n` bits injective on `S`, the circuit computes the encoded iterate. The given transition circuit must respect that encoding on `S`. |
-| `image_sensitive` | Given a circuit `burn` computing `F^d`, a circuit for `F^T`, `d ≤ T`, has size at most `burn.size + 40000 * powerBudget n c.size |image(F^d)| L`. |
+| `fixedPowerBound`, `fixed_power` | Every fixed power has a circuit of size at most `40000 * powerBudget n s N L`, for `1 ≤ L ≤ N`. |
+| `fixedPowerOnBound`, `fixed_power_on` | The invariant-set bound replaces `N` in the storage term by `S.card`. |
+| `fixed_power_encoded` | For `α : Type u`, an invariant `S : Finset α`, and an encoding into `n` bits injective on `S`, a transition circuit respecting the encoding has circuits for all encoded iterates. |
+| `image_sensitive` | Given a circuit `burn` for `F^d`, a circuit for `F^T`, `d ≤ T`, costs at most `burn.size + 40000 * powerBudget n s (image F^d).card L`. |
+| `fixed_power_optimized`, `fixed_power_on_optimized` | Real square-root optimization, with constant `120000`, including the invariant-set version. |
+| `fixed_power_polynomial` | If `s ≤ K*(n+1)^d`, the circuit size is at most `120000*(K+1)*(n+1)^(max d 3)*2^((n+1)/2)`. |
+| `permutation_inverse`, `permutation_inverse_encoded` | Exact inverse circuits with the fixed-power tradeoff, also for injectively encoded finite permutation domains in arbitrary universes. |
+| `variable_time`, `variable_time_optimized` | An `m`-bit input exponent, with optimized bound `m*(120000*B + 4*n)`. |
+| `first_target_state`, `target_reachability` | Eventual recognition of a target predicate and the first visited target state; the absorbing transition costs at most `s + predicate.size + 4*n`. |
+| `halting_computation` | Final configurations on valid initial states, under semantic absorption and termination hypotheses, with the original tradeoff and a first halt before `N` steps. |
+| `batched_fixed_power_optimized` | For `1 ≤ r ≤ N`, size at most `3000000*(r*A + sqrt((n+1)^3*N*r*A))`. The checkpoint dictionary is shared across the batch. |
+| `batched_variable_time_optimized` | Independent `m`-bit exponents for each member; `m` times the preceding batch budget plus `4*r*n` per binary position. |
+| `cycle_label_circuit`, `cycle_labels_optimized` | Canonical cycle state, exact cycle length, and phase, for every input; optimized size at most `30120000*B`. |
+| `depth_circuit_optimized` | Exact transient depth in at most `3000000*(n+1)^2*B` gates. |
+| `reachability_hitting_time` | A circuit on `2*n` input bits returning an existence flag and `n+1` time bits, in at most `300000000*(n+1)^2*B` gates. On positive instances the decoded time is the first hit and is strictly less than `N`. |
+| `matching_lower_bound` | For `k ≥ 64`, a Boolean permutation circuit on `2*k` bits of size at most `50*(k+1)` has a power for which every implementing circuit has more than `2^k/(1024*(k+1))` gates. The division is integral. |
 
-The division in the budget is natural-number division. The `+1`s cover empty
-sets and zero-width encodings. The constant is intentionally loose. The real
-square-root optimization is proved in the paper; it is not a separate Lean
-theorem. The navigation, variable-time, batched, and lower-bound results are also
-outside this formalization.
+The explicit constants are loose accounting bounds, not practical circuit-size
+estimates. The `+1`s cover zero-width encodings and empty invariant sets.
+The lower-bound exponent is existential and lies below
+`lcm(1,...,2^k-1)`; the theorem does not identify a short hard exponent.
+The navigation time field is unspecified on unreachable pairs.
 
 ## Circuit model and universes
 
-The circuit type is `Cslib.Circuits.Circuit Boolean.signature n n`.
-The basis has Boolean constants, NOT, AND, and OR. Native `size` counts every
-gate, including constants. Input and output wiring, copying wires, and fanout
-are free. Constants are shared by generating false and true once. A fixed
-change from the paper's complete fan-in-two basis changes bounds by an absolute
-factor. Encoding and decoding work is not silently included or free: the
-encoded theorem starts with encoded inputs and returns encoded outputs.
+The native circuit type is `Cslib.Circuits.Circuit Boolean.signature n m`.
+The basis has Boolean constants, NOT, AND, and OR. `size` counts every gate,
+including constants. Input and output wiring, copying wires, and fanout are
+free. A fixed change of complete fan-in-two basis changes the bounds by an
+absolute factor. Arithmetic, lookup, and multiplexing are synthesized into
+Boolean gates and are charged.
 
-The graph lemmas quantify over any `α : Type u`, with no finiteness requirement
-on the ambient type. `fixed_power_encoded` assumes injectivity only on `S`;
-states outside `S` can share encodings. It continues to count Boolean gates
-and uses the specified bit width. It does not treat an arbitrary state operation
-as a unit-cost gate. The unrolling and retained-orbit lemmas are additionally
-polymorphic in circuit signatures and interpretation carriers.
+The packing and reconstruction lemmas quantify over any `α : Type u`, with
+no finiteness requirement on the ambient type. The encoded theorem assumes
+injectivity only on the finite invariant set `S`; states outside `S` can
+share encodings. It starts with encoded inputs and returns encoded outputs.
+Initialization and decoding circuits must be charged separately.
+
+The orbit, phase, and hitting-time identities in `OrbitStructure.lean`,
+`CycleLabels.lean`, `HittingTimes.lean`, and `Navigation.lean` are also
+universe polymorphic. They assume a finite type; cardinality bounds use
+`Fintype`, and canonical representatives use a linear order. The native
+navigation circuit statements specialize to bit states. They do not count
+arbitrary operations on a finite type as unit-cost gates. Unrolling and
+retained-orbit lemmas are additionally polymorphic in circuit signatures
+and interpretation carriers.
 
 ## Proof choices
 
-1. **Pack paths.** `Checkpoints.lean` removes disjoint simple paths of `L`
-   vertices and marks their endpoints. The resulting set satisfies
-   `H.card * L ≤ S.card`. Any simple prefix meets a packed path and reaches its
-   endpoint before `2*L` steps. This avoids developing cycle decompositions.
-2. **Share wires.** CSLib `Synthesis` composes gate bounds while retaining
-   intermediate wires. `Iteration.lean` charges one transition circuit per
-   prefix step. `Sorting.lean` builds shared Boolean comparators and uses the
-   Circuit library's Batcher sorting correctness and record-permutation proofs.
-3. **Sort once.** `Records.lean`, `Collisions.lean`, and `Detector.lean` show that
-   one adjacent equal-state collision between distinct nonpadding records
-   supplies either a checkpoint hit or a genuine repeated pair. This avoids
-   formalizing the full batched dictionary API when one witness is enough.
-4. **Use bounded words.** `Words.lean`, `Arithmetic.lean`, and `Residues.lean`
-   prove gate bounds and word semantics. Given a repeated interval `[i,j)`, add
-   `j-i` to the hardwired residue `T % (j-i)` until reaching the interval.
-   At most `2*L` corrections suffice. Width `n+2` prevents overflow on valid
-   witnesses; all branches are total on arbitrary inputs. The circuit pays
-   `O(L*n^2)` for these corrections, within the main `O(L*n^3)` allowance.
-5. **Assemble and account.** `DecoderCircuits.lean` and `Construction.lean`
-   synthesize the total output function. `FixedPower.lean` proves its agreement
-   with the iterate on `S` and the explicit final bound. `Extensions.lean`
-   transports the result to encodings and images.
+1. **Pack paths and retain wires.** `Checkpoints.lean` removes disjoint simple
+   paths of `L` vertices and marks their endpoints, proving
+   `H.card * L ≤ S.card`. A short prefix either repeats or reaches a checkpoint.
+   CSLib `Synthesis` shares intermediate wires and adds construction costs.
+2. **Find one witness for fixed powers.** `Records.lean`, `Collisions.lean`,
+   and `Detector.lean` sort checkpoints, prefix states, and tagged padding.
+   An adjacent equal-key pair with distinct nonpadding records supplies a
+   checkpoint hit or a genuine repeated pair. Batcher sorting semantics and
+   routing come from the Circuit library; Boolean comparator costs are proved
+   here. The repeated-interval decoder adds a hardwired residue's period at
+   most `2*L` times, within the cubic polynomial allowance.
+3. **Optimize and compose.** `Optimization.lean` proves an integer choice of
+   `L` and the real square-root inequality. `Applications.lean` uses factorial
+   exponents for inversion and cyclicity. `VariableTime.lean` conditionally
+   applies binary powers. `FiniteOrbit.lean` and `Targets.lean` prove the
+   first-target and absorbing-halting reductions.
+4. **Share an entire dictionary for batches.** `BatchLookup.lean` verifies
+   multiquery lookup, including absent keys and repeated queries, with a
+   Batcher-based routing cost. `BatchPowers.lean` shares the checkpoint table
+   and retains a repetition fallback for each member. `BatchVariableTime.lean`
+   repeats this construction once per exponent bit.
+5. **Compute labels on cycles.** The label circuit first applies `F^(N!)`.
+   This reaches the cycle and preserves the representative, period, and phase.
+   A short cyclic prefix with no checkpoint contains a whole cycle, so a scan
+   suffices to find its minimum state and first positive return. Checkpoint
+   hits use a shared label dictionary and a modular phase correction. This
+   differs from the manuscript's direct first-repetition proof while giving
+   the same asymptotic bound. The order is lexicographic from coordinate zero.
+6. **Search for depth, then navigate.** `BinarySearch.lean` constructs a
+   bit-by-bit threshold search. Each query combines variable-time iteration
+   with the cyclicity circuit. `NavigationSynthesis.lean` combines two depths,
+   two cycle labels, the transient-depth difference test, and the cyclic phase
+   formula. `NavigationCircuits.lean` proves the final flag, first-hit
+   semantics, and size. Labels and arithmetic use `n+3` bits internally; the
+   public time output uses `n+1`. Its proved bound `< 2^n` permits dropping
+   the high bit on positive instances. `Division.lean` proves a total
+   shift-and-subtract remainder circuit costing `O(n^3)` gates.
+7. **Count actual circuit descriptions.** `ModulusCounter.lean` proves the
+   exact powers and their distinctness below the least common multiple.
+   `CounterCircuit.lean` synthesizes the linear-size update, using a shared
+   carry chain. `CircuitCounting.lean` bounds Boolean circuit descriptions,
+   including output wires. `LowerBound.lean` combines this with Mathlib's
+   least-common-multiple lower bound and the Circuit library's finite-family
+   counting theorem. The final result quantifies over actual native circuits.
 
-The proof uses classical choices of checkpoints, finite enumerations, and
-circuit witnesses. It establishes nonuniform existence, not an extracted
-compiler or a preprocessing-time guarantee.
+The construction uses classical choices of checkpoints, finite enumerations,
+and circuit witnesses. It establishes nonuniform existence, not an extracted
+compiler or a preprocessing-time guarantee. For halting computations, the
+state width includes all persistent input, control, and workspace bits.
 
-## Trusted boundary and dependencies
+## Trusted boundary and remaining scope
 
-`Main.lean` guards the axiom lists of all four public claims. Each list contains
-exactly `propext`, `Classical.choice`, and `Quot.sound`. There are no `sorry`
-placeholders, added axioms, or `native_decide` steps. The kernel checks the
-proofs; statement fidelity and historical novelty remain mathematical review
-questions.
+`Main.lean` guards the axiom lists of the principal public results. Each list
+contains exactly `propext`, `Classical.choice`, and `Quot.sound`. There are no
+`sorry` placeholders, added axioms, or `native_decide` steps in the project.
+Kernel checking does not establish statement fidelity or historical novelty.
+
+The active-long-trajectory refinement, affine-controller theorem, AKS
+polynomial improvement, effective compiler, almost-every-power strengthening,
+remainder-function equivalence, and exponent-description-length corollary are
+not separately formalized. Several are only proposals in `REVIEW.md`, rather
+than theorems asserted in the manuscript. The paper's cryptographic discussion
+and literature comparisons remain prose arguments.
 
 Pinned dependencies, also recorded in the Lake manifest:
 
@@ -102,7 +154,9 @@ Pinned dependencies, also recorded in the Lake manifest:
 
 The project follows the statement/proof/Main separation and guarded axiom
 checks of the author's `circuit-lbs/circuit-lb-4.56-lean` development. Circuit
-semantics, iteration, routing, and Batcher network proofs are credited to the
-CSLib and Complexitylib contributors; this project adds the checkpoint,
-reconstruction, shared Boolean synthesis, and final tradeoff proofs. See the
+semantics, iteration, routing, Batcher network proofs, and finite-family
+counting are credited to the CSLib and Complexitylib contributors. Finite
+periodicity and the least-common-multiple estimate use Mathlib. This project
+adds the checkpoint constructions, Boolean synthesis and accounting,
+reconstruction, navigation, optimization, and their applications. See the
 paper for Batcher and the checkpoint/inversion literature.

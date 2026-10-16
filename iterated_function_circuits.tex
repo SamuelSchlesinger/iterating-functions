@@ -50,7 +50,7 @@
 \title{Square-Root Circuit Bounds\\for Iterated Functions}
 % Author field is provisional and editable; no affiliation is assumed.
 \author{Samuel Schlesinger}
-\date{October 15, 2026\\[3pt]\small Preliminary draft}
+\date{October 16, 2026\\[3pt]\small Preliminary draft}
 
 \begin{document}
 \maketitle
@@ -79,10 +79,11 @@ permutation on $n$ bits for which some fixed power requires
 $\Omega(2^{n/2}/n)$ gates.  Such hard powers necessarily have binary
 exponents of length $\Omega(2^{n/2}/n^2)$.  The counting argument neither
 identifies an explicit hard power nor establishes one-way functions.
-A Lean formalization checks the fixed-power tradeoff, its invariant-set
-and image-sensitive extensions, and transport to encoded state types in
-arbitrary universes.  We also derive cycle labels, reachability, and
-first hitting times; these navigation results are not yet mechanized.
+We also compute canonical cycle labels, reachability, and first hitting
+times.  A Lean formalization checks the fixed-power, variable-time,
+batched, inversion, and navigation circuits and the matching-exponent
+lower bound.  It also treats finite invariant sets with explicit bit
+encodings in arbitrary universes.
 \end{abstract}
 
 \noindent\textbf{Keywords.} Boolean circuit complexity; function iteration;
@@ -521,7 +522,7 @@ apply the fixed-power construction unchanged.  A state still occupies
 $n$ bits, but the dictionary contains only $O(M/L)$ records.
 \end{proof}
 
-\begin{corollary}[Image sensitivity]\label{cor:image}
+\begin{corollary}[Image sensitivity]\label[corollary]{cor:image}
 Put $M_d=|\operatorname{im}(F^d)|$.  For $T\geq d$ and $1\leq L\leq M_d$,
 \[
  \CC(F^T)\leq \CC(F^d)+
@@ -750,8 +751,8 @@ instance its first hitting time is
 where the parenthesized residue lies in $[0,\ell(x)-1]$.  This is the
 first time on or after entry into the cycle with the required phase.
 Finally $\mu(x)+\ell(x)\leq N$, so every first hitting time is at most
-$N-1$.  Arithmetic may use $n+1$ intermediate bits.  Return zero in the
-time field on negative instances.
+$N-1$.  Arithmetic may use $n+1$ intermediate bits.  The time field is unspecified on negative instances; an additional
+$O(n)$-gate mask can set it to zero if desired.
 \end{proof}
 
 \paragraph{Relation to navigation data structures.}
@@ -762,8 +763,49 @@ Those results charge representation space and query time in a RAM model.
 Here the given object is a succinct transition circuit, and every gate
 accessing a nonuniform table is charged.  These differences specify the
 claim being compared; they do not establish historical novelty of the
-present bounds.  The two theorems in this section have mathematical
-proofs here but are outside the current Lean formalization.
+present bounds.  Both theorems are also checked as Boolean circuit
+constructions in Lean, with the implementation choices described in
+\cref{sec:lean}.
+
+\subsection{Recognizable targets and terminating computations}
+
+\begin{corollary}[First recognizable target]\label[corollary]{cor:target}
+Let $P:\bits^n\to\bits$ have circuit size $a$, and put
+$A_P=s+a+n^3$.  Eventual target membership,
+\[
+ H(x)=1\quad\Longleftrightarrow\quad
+ \exists t\geq0:\ P(F^t(x))=1,
+\]
+has a circuit of size $O(A_P+\sqrt{n^3NA_P})$.  Within the same bound,
+a circuit returns the first visited target state on positive instances.
+\end{corollary}
+\begin{proof}
+Set $G(x)=x$ when $P(x)=1$ and $G(x)=F(x)$ otherwise.  This costs
+$O(s+a+n)$ gates.  A first target, if one exists, is visited before
+step $N$, since an earlier repeated state would preclude a later first
+visit.  Hence $G^N(x)$ is the first target state on positive instances,
+and $H(x)=P(G^N(x))$.  Apply \cref{thm:main} to $G$.
+\end{proof}
+
+\begin{corollary}[Complete-configuration simulation]\label[corollary]{cor:halting}
+Suppose a deterministic computation has its entire configuration encoded
+in $b$ bits and a next-configuration circuit of size $s$.  If halting
+configurations are absorbing and every valid initial configuration
+halts, its final-configuration map on valid initial states has circuit
+size
+\[
+ O\!\left(s+b^3+\sqrt{b^3 2^b(s+b^3)}\right).
+\]
+\end{corollary}
+\begin{proof}
+Before halting, no configuration can repeat.  The iterate at time $2^b$
+is therefore the final configuration.  Apply \cref{thm:main} with
+state width $b$.  Initialization and output decoding circuits are
+charged separately.
+\end{proof}
+The parameter $b$ includes all persistent input information, control,
+and workspace.  This is not a $2^{n/2}\poly(n)$ circuit bound for all of
+PSPACE as a function of input length $n$.
 
 \section{A matching exponent for arbitrary fixed powers}\label{sec:lower}
 
@@ -1033,15 +1075,19 @@ prove nor refute the existence of one-way functions or one-way permutations.
 
 \section{Lean formalization}\label{sec:lean}
 
-The accompanying \texttt{lean/} project checks the fixed-power tradeoff
-and its invariant-set and image-sensitive extensions in Lean~4.  Its
-public statement file imports only CSLib and Mathlib.  The proofs use
-CSLib's circuits and simultaneous synthesis relation, together with the
-composition, iteration, and verified sorting-network semantics in the
-author's Circuit library as distributed through
-\texttt{complexitylib}~\cite{CSLib,Mathlib,Complexitylib}.
+The accompanying \texttt{lean/} project checks actual Boolean circuits,
+their evaluation semantics, and their gate bounds in Lean~4.  Its
+coverage includes the fixed-power, invariant-set, and image-sensitive
+tradeoffs; real square-root optimization; permutation inversion;
+variable-time and batched iteration; cycle labels; transient depth;
+pair-input reachability and first hitting times; recognizable targets;
+complete-configuration simulation; and the matching-exponent lower bound.
+The proofs use CSLib's circuits and simultaneous synthesis relation,
+Mathlib's finite dynamics and arithmetic, and the verified sorting and
+circuit-counting results in the author's Circuit library, distributed
+through \texttt{complexitylib}~\cite{CSLib,Mathlib,Complexitylib}.
 The project pins Lean and all three libraries; \texttt{lean/README.md}
-gives exact revisions and commands.
+gives exact revisions, theorem names, and build commands.
 
 \begin{theorem}[Mechanized tradeoff]\label{thm:lean}
 Let $c$ be a circuit over the Boolean constant, NOT, AND, and OR basis,
@@ -1056,45 +1102,90 @@ with $F^T$ on $S$ such that
 Here circuit size counts every gate, including constant gates.
 \end{theorem}
 
-The harmless $+1$s cover zero-width and empty-set cases.  For $n,L\geq1$
-the displayed expression implies the paper's asymptotic tradeoff; the
-real square-root optimization is the argument already given above, not a
-separate checked Lean theorem.  The constant $40000$ is a deliberately
-loose explicit accounting bound.  The formal result counts actual
-Boolean gates and is not conditional on an assumed lookup compiler.
-Free wires and arbitrary fan-out permit sharing; the two Boolean
-constants are generated once.  Translating the paper's fixed fan-in-two
-basis to this basis changes size by an absolute constant factor.
+The harmless $+1$s cover zero-width and empty-set cases.  Define
+\[
+ \widehat A=s+(n+1)^3,\qquad
+ \widehat B=\widehat A+\sqrt{(n+1)^3 2^n\widehat A}.
+\]
+The checked real optimization gives the fixed-power bound
+$120000\widehat B$, and a separate theorem derives the
+$2^{\lceil n/2\rceil}\poly(n)$ consequence for polynomial-size updates.
+The constants are deliberately loose accounting bounds.  Free wiring
+and arbitrary fan-out permit sharing; constants are charged.
+Translating the paper's fixed fan-in-two basis to this basis changes
+size by an absolute factor.
 
-\paragraph{Proof organization.}
-\texttt{Statement.lean} states the claims,
-\texttt{Proofs/} contains their proofs, and \texttt{Main.lean} imports the
-public results and guards their axiom dependencies.  The proof uses the
-path-packing version of \cref{lem:checkpoints}.  It retains the complete
-short orbit, with one copy of $c$ per transition.
+\paragraph{Proof organization and shared tables.}
+\texttt{Statement.lean} gives the foundational statement boundary using
+only CSLib and Mathlib.  The modules in \texttt{Proofs/} build the circuits,
+and \texttt{Main.lean} exports the results and guards their axiom lists.
+The checkpoint proof packs disjoint simple paths, as in
+\cref{lem:checkpoints}, and charges one copy of the transition circuit
+per retained orbit step.
 
-For the fixed-power circuit it suffices to find one useful collision.
-The mechanized implementation sorts a single array containing checkpoint
-records, prefix records, and explicitly tagged padding.  Its detector
-selects adjacent records with equal state keys, unequal complete records,
-and no padding.  Such a pair supplies either a checkpoint hit or two
-distinct prefix positions with the same state.  A sorted equal-key run
-containing two distinct records has an adjacent unequal pair, which is
-proved explicitly; identical records cannot create a spurious witness.
-This avoids needing the full multiquery dictionary interface in the
-formal proof.  The shared comparator computes its comparison once and
-uses it for every payload bit.  Its Batcher sorting bound is
-$O(rR\log^2R)$ for $R$ records of $r$ bits.
+For a single fixed power, one useful collision suffices.  The checked
+implementation sorts checkpoint records, prefix records, and tagged
+padding.  An adjacent equal-key pair with distinct nonpadding records
+gives either a checkpoint hit or a repeated prefix pair.  Comparators
+share their control bit across all payload bits.  Batcher networks cost
+$O(rR\log^2R)$ gates for $R$ records of $r$ bits.
+The batched construction additionally checks a full shared dictionary
+lookup, including repeated queries and absent-key flags.  It charges
+the checkpoint table once for the entire batch, yielding
+\cref{eq:batch-tradeoff,eq:batch-opt}.  Conditional binary powers give
+both single-input and independently timed batched iterators.
 
-For a repeated pair $i<j$, put $p=j-i$.  Starting at the hardwired residue
-$T\bmod p$, the checked arithmetic adds $p$ while the current value is
-below $i$.  At most $K$ steps suffice, since $i\leq K$; the resulting
-index lies in $[i,j)$ and is congruent to $T$ modulo $p$.
-Words have width $n+2$ when $K=2L$, and absence of overflow on valid
-witnesses is proved.  This uses $O(Kn^2)$ gates instead of formalizing
-variable division, which fits within the asserted $O(n^3L)$ budget.
-Every branch is total, even when its output is discarded.  No operation
-on the full binary expansion of $T$ is performed by the resulting circuit.
+For a repeated pair $i<j$, the fixed-power decoder starts from the
+hardwired residue $T\bmod(j-i)$ and adds $j-i$ until the index enters
+$[i,j)$.  At most $K$ corrections suffice.  Width $n+2$ prevents overflow
+on valid witnesses, and the checked $O(Kn^2)$ cost fits the main budget.
+No gate processes the full binary expansion of the fixed exponent $T$.
+
+\paragraph{Navigation implementation.}
+The finite-dynamics layer defines transient depth, minimal cycle length,
+the least cycle state, and phase, and proves the reachability and
+first-hitting-time identities in \cref{sec:structure}.  These semantic
+lemmas apply to finite types in arbitrary universes; canonical
+representatives additionally use a linear order.
+
+The circuit for cycle labels uses a slight variation on the proof above.
+First apply $F^{N!}$.  This reaches the cycle and preserves its labels,
+including phase, since every possible cycle length divides $N!$.
+On these cyclic inputs, a short prefix with no checkpoint contains the
+whole cycle.  A scan finds its least state, its first positive return,
+and its first visit to that least state.  Otherwise the shared dictionary
+supplies a checkpoint label and modular subtraction corrects its phase.
+This yields the checked bound $30120000\widehat B$.
+
+Cyclicity is tested by $F^{N!}(z)=z$.  A bit-by-bit threshold search,
+with the variable-time iterator charged at each stage, computes exact
+transient depth.  Two depth records and two cycle-label records feed the
+transient/cyclic case distinction from \cref{thm:reachability}.
+The checked navigation circuit has $2n$ input bits, an existence flag,
+and $n+1$ time bits, with size at most
+$300000000(n+1)^2\widehat B$.  On positive instances its decoded time
+is proved to be the first hit and strictly less than $2^n$; its top time
+bit can therefore be discarded.  No time-field specification is imposed
+on negative instances.  Intermediate label and navigation words have
+width $n+3$.  A proved shift-and-subtract division circuit supplies
+variable remainders in $O(n^3)$ gates; all arithmetic branches are total.
+
+\paragraph{Applications and lower bound.}
+The inversion proof uses $P^{N!-1}=P^{-1}$, also for encoded finite
+permutations.  Absorbing target states give \cref{cor:target}; absorption
+and termination hypotheses give \cref{cor:halting}, with the complete
+configuration counted in the state width.
+
+The lower-bound development constructs the modulus-counter permutation
+as a native Boolean circuit of size at most $50(k+1)$ on $2k$ bits.
+It proves injectivity of its powers below
+$\lcm(1,\ldots,2^k-1)$, applies Mathlib's exponential lower bound for this
+least common multiple, and counts circuit descriptions including output
+wires using the Circuit library.  For every $k\geq64$, it proves that
+some such power requires more than
+$\floor{2^k/(1024(k+1))}$ gates.  Thus both the small update circuit and
+the hard-power conclusion of \cref{thm:lower} are checked.  The exponent
+is existential; this is not a lower bound for a specified short exponent.
 
 \paragraph{Universes and representations.}
 The packing and reconstruction lemmas quantify over
@@ -1102,27 +1193,26 @@ $\alpha:\mathrm{Type}\ u$ for arbitrary $u$; only the relevant invariant
 subset must be finite.  The theorem \texttt{fixed\_power\_encoded}
 transports the circuit bound to a finite invariant set $S\subseteq\alpha$
 with an encoding $e:\alpha\to\bits^n$ injective on $S$, provided
-$c(e(x))=e(F(x))$ for $x\in S$.  The result computes $e(F^T(x))$ on
-encoded starting states and counts $|S|$, retaining the actual bit width
-$n$.  No unit-cost primitive for an arbitrary operation on $\alpha$ is
-introduced.  Separate initialization and decoding circuits, when needed,
-must be charged separately.
+$c(e(x))=e(F(x))$ for $x\in S$.  It computes $e(F^T(x))$ on encoded
+starting states and counts $|S|$, retaining the actual bit width $n$.
+The encoded inversion theorem assumes an injective encoding of the whole
+finite permutation domain.  Navigation circuit bounds are stated for
+bit states; their underlying finite-dynamics identities are universe
+polymorphic.  Arbitrary operations on $\alpha$ are not unit-cost gates,
+and separate initialization or decoding circuits must be charged.
 
 \paragraph{Checked boundary.}
-The fixed-power and invariant-set claims are exported as
-\texttt{fixedPowerBound} and \texttt{fixedPowerOnBound}.
-The encoded-state and image-sensitive claims are
-\texttt{fixed\_power\_encoded} and \texttt{image\_sensitive}.
-All four are checked end to end, including circuit existence, semantics, and size.
-Their guarded axiom lists contain only \texttt{propext},
-\texttt{Classical.choice}, and \texttt{Quot.sound}.  There are no
-\texttt{sorry} placeholders or additional axioms.  Noncomputable choices
-select checkpoints, enumeration orders, and circuit witnesses; this is
-an existence formalization, not an extracted efficient compiler.
-The navigation theorems, variable-time and batched bounds, counting lower
-bound, and additional proposals are not claimed to be mechanized.
-Nor does kernel checking establish historical priority or that the
-formal statement captures every possible intended circuit convention.
+The principal public results have guarded axiom lists containing only
+\texttt{propext}, \texttt{Classical.choice}, and \texttt{Quot.sound}.
+There are no \texttt{sorry} placeholders, additional axioms, or native
+evaluation shortcuts.  Noncomputable choices select checkpoints,
+enumerations, and circuit witnesses.  This is an existence formalization,
+not an extracted compiler or a preprocessing-time guarantee.
+The sharper active-trajectory parameter, affine-controller proposal,
+AKS improvement, generic-hardness proportion, remainder-function
+comparison, and exponent-description-length corollary are not separately
+mechanized.  Nor does kernel checking establish historical priority or
+that a formal statement captures every intended circuit convention.
 
 \section{Scope and remaining questions}\label{sec:scope}
 

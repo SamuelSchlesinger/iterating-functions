@@ -1,6 +1,6 @@
 # Square-Root Circuit Bounds for Iterated Functions
 
-Preliminary research draft, October 15, 2026.
+Preliminary research draft, October 16, 2026.
 
 ## Files
 
@@ -10,7 +10,7 @@ Preliminary research draft, October 15, 2026.
 - [Submission metadata](submission_metadata.txt): editable title, author field, keywords, and LaTeX abstract.
 - [Semantic checks](verify_small_instances.py): finite checks using only the Python standard library.
 - [Validation results](validation.txt): output of the checks in this package.
-- [Lean formalization](lean/README.md): checked fixed-power circuits and extensions.
+- [Lean formalization](lean/README.md): checked circuit constructions, navigation, and the lower bound.
 - [Detailed review](REVIEW.md): all ten proposals, proof requirements, and attribution.
 - [Extension checks](verify_extensions.py): graph labels, hitting times, and checkpoint refinements.
 - [Makefile](Makefile): compilation and checking commands.
@@ -77,9 +77,12 @@ cases, plus exact inversion on every permutation of at most five states.
 These finite tests do not establish gate counts or historical novelty.
 Separately, the Lean development checks actual Boolean circuit constructions,
 semantics, and size for the fixed-power tradeoff and its invariant-set,
-image-sensitive, and encoded-state forms. The optimized real square-root
-formula, navigation theorems, variable-time and batched results, and lower
-bounds remain outside the current mechanized boundary.
+image-sensitive, and encoded-state forms, real square-root optimization,
+permutation inversion, variable-time and batched evaluation, cycle labels,
+transient depth, reachability and first hitting times, recognizable targets,
+and halting complete configurations. It also checks the matching-exponent
+lower bound, including the linear-size update circuit. See the theorem map
+in `lean/README.md` for precise statements and explicit constants.
 
 The paper now includes cycle labels and an O(n^2 B)-gate pair-input
 reachability/first-hitting-time theorem. The review records the other proposals

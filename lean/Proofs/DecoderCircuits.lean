@@ -52,10 +52,11 @@ theorem synthesis_repeatedValue (s : Set (State n → Bool)) (f : State n → St
   apply (hidx.trans hsel).mono Set.Subset.rfl Set.Subset.rfl
   nlinarith [Nat.zero_le (K * n ^ 2), Nat.zero_le (K * n * w), Nat.zero_le (K * w ^ 2)]
 
-theorem synthesis_hitValue (s : Set (State n → Bool)) (c : Circuit Boolean.signature n n)
-    (K : ℕ) (index : State n → BitVec w) (payload : State n → State n)
+theorem synthesis_hitValue {a : ℕ} (s : Set (State a → Bool))
+    (c : Circuit Boolean.signature n n)
+    (K : ℕ) (index : State a → BitVec w) (payload : State a → State n)
     (hi : ∀ i : Fin w, (fun x => (index x).getLsbD i.val) ∈ s)
-    (hp : wires payload ⊆ s) (hc : ∀ b : Bool, (fun _ : State n => b) ∈ s) :
+    (hp : wires payload ⊆ s) (hc : ∀ b : Bool, (fun _ : State a => b) ∈ s) :
     Synthesis Boolean.interpretation s
       (wires fun x => hitValue (c.eval Boolean.interpretation) K (index x) (payload x))
       (K * c.size + 200 * (K + 1) * (n + w + 1) ^ 2) := by

@@ -292,9 +292,11 @@ or extraction of an edit list from a transition circuit. The sparse-transition c
 application and the finite-field corollary, including the use of the external
 discrete-logarithm theorem, are also outside the current Lean boundary.
 
-The AKS polynomial improvement and full-state-space effective compiler are
-still proposals in `REVIEW.md`, not separately formalized or asserted as
-theorems in the manuscript. The paper's cryptographic discussion
+The AKS polynomial improvement is stated and proved in prose in the
+manuscript (Theorem `thm:aks`), but is not formalized; the mechanized
+bounds use Batcher networks. The full-state-space effective compiler is
+still a proposal in `REVIEW.md`, not formalized or asserted as a theorem
+in the manuscript. The paper's cryptographic discussion
 and literature comparisons remain prose arguments.
 
 Pinned dependencies, also recorded in the Lake manifest:

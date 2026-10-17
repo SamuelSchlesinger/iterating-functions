@@ -278,7 +278,9 @@ algorithm for that iteration problem.
 
 The present construction uses the same checkpoint and batched-lookup
 principles.  Batcher's sorting networks~\cite{Batcher68} implement the
-lookup, while the shifted payload in \cref{eq:overview-identity} and the
+lookup; the asymptotically smaller networks of Ajtai, Koml\'os, and
+Szemer\'edi~\cite{AKS83} save a factor of $n$ (\cref{sec:aks}), while
+the shifted payload in \cref{eq:overview-identity} and the
 checkpoint-or-repetition lemma handle general powers and functional graphs.
 No RAM memory probe is treated as a unit-cost circuit operation.
 Checkpointing, sorting-based lookup, and square-root-size permutation
@@ -1069,6 +1071,85 @@ $0\leq\alpha\leq 1$, \cref{eq:batch-variable} is at most
 This is an upper-bound sharing statement.  It is not a direct-sum
 separation against optimal circuits for a single trajectory.
 
+\subsection{A polynomial improvement with AKS sorting networks}
+\label{sec:aks}
+
+The factor $n^3$ in \cref{thm:main} has two sources: $O(n)$ gates per
+comparator on $O(n)$-bit records, and the $O(\log^2 R)=O(n^2)$ comparators
+per record of Batcher's networks.  Ajtai, Koml\'os, and Szemer\'edi
+constructed comparator networks sorting $R$ keys with $O(R\log R)$
+comparators~\cite{AKS83}.  Replacing Batcher's networks by theirs saves
+one factor of $n$.  Their constants are very large, so this is an
+asymptotic statement only.  The Lean development mechanizes the Batcher
+version; nothing in this subsection is mechanized.
+
+\begin{lemma}[Lookup and repetition with AKS networks]\label[lemma]{lem:lookup-aks}
+The dictionary lookup of \cref{lem:lookup} and the repeated-state detection
+of \cref{lem:repeat} have circuits of sizes
+\[
+  O\!\left((M+Q)\bigl(w+\log(M+Q+2)\bigr)\log(M+Q+2)\right)
+  \quad\text{and}\quad
+  O\!\left(Q\bigl(w+\log(Q+2)\bigr)\log(Q+2)\right),
+\]
+respectively.  In particular, for $w=O(n)$ and $\log(M+Q+2)=O(n)$ both
+costs are $O(n^2(M+Q))$.
+\end{lemma}
+
+\begin{proof}
+Repeat the proofs of \cref{lem:lookup,lem:repeat} with every sorting
+network replaced by an AKS network on the same records, padded with
+dummy records as before.  The networks use $O(R\log(R+2))$ comparators,
+each of cost $O(w+\log(R+2))$.  The scans and the selection of a
+flagged record cost $O(R(w+\log(R+2)))$ gates and are unchanged.
+\end{proof}
+
+\begin{theorem}[AKS-strengthened tradeoff]\label{thm:aks}
+Under the assumptions of \cref{thm:main}, put $A_2=s+n^2$.  For every
+integer $T\geq0$ and every integer $1\leq L\leq N$,
+\[
+  \CC(F^T)=O\!\left(Ls+n^2\left(L+\frac NL\right)\right),
+  \qquad\text{hence}\qquad
+  \CC(F^T)=O\!\left(A_2+n\sqrt{NA_2}\right).
+\]
+\end{theorem}
+
+\begin{proof}
+Use the construction of \cref{sec:fixed} unchanged, and implement its
+lookup and repeated-state detection by \cref{lem:lookup-aks}.  These now
+cost $O(n^2(N/L+L))$ and $O(n^2L)$ gates.  Every other component already
+fits this bound: the two simulations cost $O(Ls)$; the residue-table
+multiplexer, the trajectory selections, and the final output selection
+cost $O(nL)$; and the long division and modular correction of
+\cref{eq:period} cost $O(n^2)$.  For the optimized bound, choose
+$L=\max\{1,\ceil{\sqrt{n^2N/A_2}}\}$ and argue as for
+\cref{eq:L-choice}, with $n^3$ replaced by $n^2$ and $A$ by $A_2$.
+Then $L\leq\ceil{\sqrt N}\leq N$ since $A_2\geq n^2$, and
+$\sqrt{n^2NA_2}=n\sqrt{NA_2}$.
+\end{proof}
+
+The proofs of the following results use the lookup and repetition
+circuits only through the per-record cost of \cref{lem:lookup,lem:repeat},
+together with $O(Ls)$ simulation, $O(nL)$ selection, and $O(n^2)$
+arithmetic.  Each therefore holds with $n^3$ replaced by $n^2$ in its
+parameterized bound and with $A$ replaced by $A_2$ in its optimized bound:
+the long-trajectory, invariant-set and image-sensitive bounds
+(\cref{thm:active-mass,thm:invariant,cor:image}), exact permutation
+inversion (\cref{cor:inverse}), variable-time iteration
+(\cref{thm:variable}, by $m$ applications of \cref{thm:aks}), and batched
+fixed powers and independent input times
+(\cref{thm:batch,cor:batch-variable}).  For the batched bound, the shared
+lookup costs $O(n^2(N/L+rL))$ and the $r$ separate repetition tests cost
+$O(rn^2L)$, giving
+\[
+  \CC(B_{F,T,r})=O\!\left(rA_2+n\sqrt{rNA_2}\right).
+\]
+For the permutation of \cref{sec:lower}, $\CC(P_n)=O(n)$ gives $A_2=O(n^2)$
+and $\max_T\CC(P_n^T)=O(n^22^{n/2})$, within a factor $O(n^3)$ of the
+lower bound in \cref{thm:lower}.  We do not claim the improvement for the
+navigation and target results of \cref{sec:structure} or for
+\cref{thm:long-time}, whose proofs contain further $n^3$ terms that we
+have not re-examined.
+
 \section{Functional-graph navigation}\label{sec:structure}
 
 Write $B=A+\sqrt{n^3NA}$.  For a state $x$, let $\mu(x)$ be its distance
@@ -1846,6 +1927,13 @@ Kenneth E. Batcher.
 Computer Conference}, AFIPS Conference Proceedings, volume 32,
 pages 307--314, 1968.
 \newblock \href{https://doi.org/10.1145/1468075.1468121}{doi:10.1145/1468075.1468121}.
+
+\bibitem{AKS83}
+Mikl\'os Ajtai, J\'anos Koml\'os, and Endre Szemer\'edi.
+\newblock An $O(n\log n)$ sorting network.
+\newblock In \emph{Proceedings of the 15th Annual ACM Symposium on Theory
+of Computing (STOC)}, pages 1--9, 1983.
+\newblock \href{https://doi.org/10.1145/800061.808726}{doi:10.1145/800061.808726}.
 
 \bibitem{Hellman80}
 Martin E. Hellman.

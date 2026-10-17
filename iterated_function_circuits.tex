@@ -689,8 +689,11 @@ how hard it is to find one.  For a map given by a circuit, deciding
 whether a checkpoint set of a given size exists is
 $\mathsf{coNP}$-complete; for a map given as a table, a minimum set is
 computable in polynomial time.  The proof rests on a min--max duality for
-directed paths in in-forests.  None of the results in this section is
-mechanized in Lean, and none is used elsewhere in the paper.
+directed paths in in-forests.  That duality, \cref{lem:forest-duality},
+is checked in Lean as \texttt{ForestDuality.forest\_duality}, for an
+arbitrary vertex set of a finite in-forest; the component formula, the
+complexity results and the table algorithm are not mechanized.  None of
+the results in this section is used elsewhere in the paper.
 
 \begin{definition}\label[definition]{def:ckpt}
 Let $F$ be a map on a finite set $V$ of $N$ states, and let $K\geq1$.  A
@@ -2516,7 +2519,9 @@ The accompanying \texttt{lean/} project proves existence of actual Boolean
 circuits with evaluation semantics and gate bounds.  It covers
 \cref{tab:results}, the invariant-set, image-sensitive and active-mass
 refinements, permutation inversion, complete-configuration simulation,
-and the lower-bound results.  The semantic lemmas also support arbitrary
+and the lower-bound results.  It also checks the in-forest duality
+\cref{lem:forest-duality} of \cref{sec:min-checkpoints}, a purely
+combinatorial statement without circuits.  The semantic lemmas also support arbitrary
 state types with finite invariant subsets and supplied Boolean encodings;
 initialization and decoding costs remain additional.
 

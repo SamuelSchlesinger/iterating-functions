@@ -26,6 +26,7 @@ public import Proofs.ActivePowers
 public import Proofs.AffineController
 public import Proofs.SparseCounterTime
 public import Proofs.SparseNavigation
+public import Proofs.ForestDuality
 
 /-!
 # Public results and axiom audit
@@ -302,5 +303,10 @@ namespace IteratedFunctions
 [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms visit_count_of_first
+
+/-- info: 'IteratedFunctions.ForestDuality.forest_duality' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms ForestDuality.forest_duality
 
 end IteratedFunctions

@@ -89,6 +89,7 @@ natural-number division in integer budgets means floor division.
 | `affine_controller_power` | Arbitrary Boolean affine payload maps give bound `D = 2 + 2^q*(p*(5*(p+1)+1) + 6*q + 4*p + 1) ≤ 32*2^q*(q+p^2+1)`. Neither injectivity nor commutation is required. |
 | `affine_controller_polynomial` | If `2^q ≤ K*(q+p+1)^d`, every fixed power has a circuit of size at most `32*K*(q+p+1)^(d+2)`. |
 | `affine_controller_variable_time` | The affine-controller iterator with an `m`-bit time input has at most `m*(D + 4*(q+p))` gates. |
+| `ForestDuality.forest_duality` | In a finite in-forest (partial successor `σ : α → Option α` with no cycles) with requirements `r`, inside any vertex set `S`: some hitting set of the required paths and some family of pairwise vertex-disjoint required paths have equal size, every hitting set is at least that large, and every disjoint family is at most that large (`ForestDuality.packing_card_le_cover` is weak duality). Paths are given by start and length. This is the duality lemma of the minimum-checkpoint section; the component formula, coNP-completeness and the table algorithm are not mechanized. |
 
 The explicit constants are loose accounting bounds, not practical circuit-size
 estimates. The `+1`s cover zero-width encodings and empty invariant sets.

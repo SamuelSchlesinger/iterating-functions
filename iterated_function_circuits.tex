@@ -2137,6 +2137,629 @@ and no inverse-coordinate circuit is required.
 A finite-field application, including the cost of discrete-logarithm
 coordinates, is given in \cref{app:binary-field}.
 
+\section{Black-box lower bounds for fast-forwarding}\label{sec:blackbox}
+
+The constructions of \cref{sec:fixed} use the transition only through
+evaluations.  This section asks how far that use is optimal for oracle
+algorithms that may store advice about the map.  If an algorithm must
+handle every exponent, or the single exponent $\ord(P)-1$, then it inverts
+the permutation $P$, and the inversion bounds of Yao and of De, Trevisan,
+and Tulsiani~\cite{Yao90,DTT10} give $S\,t\geq\widetilde\Omega(\varepsilon N)$
+in the notation below.  Here we treat one exponent fixed in advance, for
+random maps and for random permutations.  The results are prose results.
+Apart from the phase identities of \cref{lem:bb-phase}, which are checked
+in Lean as \texttt{canonicalTime\_apply} and
+\texttt{iterate\_eq\_canonical\_iff}, nothing in this section is mechanized.  Two lemmas about random
+maps are used as explicit hypotheses; they are supported by heuristics and
+by simulation but are not proved here.
+
+Throughout this section $\log$ is to base $2$ and $\ln$ is natural.  The
+letter $t$ denotes a number of oracle queries, not an input time, and $S$
+denotes a number of advice bits, not an invariant set.
+
+\subsection{Preprocessing algorithms and the upper bounds}
+
+Let $V$ be a set of $N$ states and let $f$ be a random map on $V$, either
+uniform among all $N^N$ maps or uniform among all $N!$ permutations.  An
+\emph{$(S,t)$-algorithm} is a pair $(A_0,A_1)$.  The preprocessing stage
+$A_0$ sees all of $f$ and outputs an advice string $z\in\bits^S$.  The
+online stage $A_1$ receives $z$ and an input $x\in V$, makes at most $t$
+adaptive oracle queries to $f$, and outputs a state.  It computes $f^T$
+with success $\varepsilon$ if
+\[
+  \Pr_{f,x}\bigl[A_1^f(A_0(f),x)=f^T(x)\bigr]\geq\varepsilon,
+\]
+where $x$ is uniform and independent of $f$.  Preprocessing time is not
+charged.  Randomness may be fixed by averaging, so we assume that both
+stages are deterministic.  A query to $q$ returns $f(q)$; only forward
+queries are allowed.
+
+The construction of \cref{sec:fixed} is such an algorithm.  With $K=2L$,
+the advice consists of the at most $N/L$ checkpoint records
+$(h,z_h)$ and the residue table \cref{eq:residue-table}, so
+$S=O((N/L+L)\log N)$.  The online stage walks $K$ steps, looks up the
+first checkpoint, and walks at most $K$ more steps, so $t\leq 4L$.  Hence,
+for every map and every exponent,
+\begin{equation}\label{eq:bb-upper-perm}
+  S\,t=O(N\log N)\qquad(t\leq\sqrt N).
+\end{equation}
+For maps whose images shrink, \cref{cor:image} first walks $d$ steps and
+then uses checkpoints inside $\operatorname{im}(f^d)$.  This gives
+$S=O((|\operatorname{im}(f^d)|/L+L)\log N)$ and $t\leq d+4L$.  For a
+uniformly random map and each fixed $d$, Flajolet and
+Odlyzko~\cite{FO90} show
+$\mathbb E|\operatorname{im}(f^d)|/N\to\tau_d$ as $N\to\infty$, where
+$\tau_0=1$, $\tau_{d+1}=1-e^{-\tau_d}$, and $\tau_d\sim 2/d$.  If the
+profile $|\operatorname{im}(f^d)|=O(N/d)$ persists for $d$ growing with
+$N$, which is a heuristic and not proved here, then $d=L=\floor{t/5}$
+gives
+\begin{equation}\label{eq:bb-upper-map}
+  S\,t^2=O(N\log N)\qquad(t\leq N^{1/3}),
+\end{equation}
+with balancing point $S=t=N^{1/3}$.  The question is whether
+\cref{eq:bb-upper-perm,eq:bb-upper-map} are optimal for a fixed exponent.
+
+\subsection{Phases and random-mapping lemmas}
+
+We use the notation of \cref{sec:structure}: $\mu(x)$ is the transient
+depth of $x$, $\ell(x)$ the length of its eventual cycle, and $c(x)$ the
+least state on that cycle.  Let $\kappa(x)$ be the least $k\geq0$ with
+$f^k(x)=c(x)$.  Then $\kappa(x)\leq\mu(x)+\ell(x)-1$, and
+$\kappa(x)\equiv-\phi(x)\pmod{\ell(x)}$.
+
+\begin{lemma}[Phase identities]\label[lemma]{lem:bb-phase}
+Let $f$ be any map on a finite set.
+\begin{enumerate}[label=\textup{(P\arabic*)}]
+\item If $x$ is transient, then $\kappa(f(x))=\kappa(x)-1$.
+\item If $T\geq\mu(x)$ and $a\geq0$, then $f^T(x)=f^a(c(x))$ if and only if
+  $a+\kappa(x)\equiv T\pmod{\ell(x)}$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+(P1) The states $x$ and $f(x)$ have the same cycle.  Since $x$ is
+transient, $x\neq c(x)$, so $\kappa(x)\geq1$ and $f^{k}(f(x))=c(x)$ holds
+exactly when $f^{k+1}(x)=c(x)$.
+
+(P2) Write $\ell=\ell(x)$ and $\kappa=\kappa(x)$, and choose $r$ with
+$T+r\ell\geq\kappa$.  Since $T\geq\mu(x)$, the state $f^T(x)$ is cyclic,
+so $f^T(x)=f^{T+r\ell}(x)=f^{T+r\ell-\kappa}(c(x))$.  The state $c(x)$ has
+least period $\ell$, so $f^i(c(x))=f^j(c(x))$ if and only if
+$i\equiv j\pmod\ell$.
+\end{proof}
+
+Thus a correct value $f^T(x)$ with $T\geq\mu(x)$ determines
+$\kappa(x)\bmod\ell(x)$, and it carries no other information about $x$.
+By (P1), $\kappa$ strictly decreases along every path to a cycle.
+
+Now let $f$ be a uniformly random map on $V$.  Write
+$\rho(x)=\mu(x)+\ell(x)$ for the number of distinct states on the
+trajectory of $x$, and put $D_0=2\sqrt{N\ln N}$.
+
+\begin{lemma}[Rho lengths]\label[lemma]{lem:bb-L0}
+$\Pr[\max_x\rho(x)>D_0]\leq 1/N$.
+\end{lemma}
+
+\begin{proof}
+Let $k=\ceil{D_0}$.  For a fixed $x$, the event $\rho(x)>k$ says that
+$x,f(x),\ldots,f^k(x)$ are distinct.  Each new value is uniform and
+independent of the earlier ones, so this has probability
+$\prod_{i=1}^k(1-i/N)\leq e^{-k(k+1)/(2N)}\leq N^{-2}$.  Take a union
+bound over $x$.
+\end{proof}
+
+\begin{lemma}[Cycle length and depth of one state]\label[lemma]{lem:bb-L3}
+For every state $x$ and every $m\geq0$,
+\[
+  \Pr[\ell(x)\leq m]\leq\frac{2m}{\sqrt N}
+  \qquad\text{and}\qquad
+  \Pr[\mu(x)<m]\leq\frac{2m}{\sqrt N}.
+\]
+\end{lemma}
+
+\begin{proof}
+Let $K=\rho(x)$.  Conditioned on $K=k$, the first $k$ trajectory states
+are distinct and $f^k(x)$ is uniform among them.  So $\mu(x)$ is uniform
+on $\{0,\ldots,k-1\}$ and $\ell(x)=k-\mu(x)$ is uniform on
+$\{1,\ldots,k\}$.  Both probabilities are therefore at most
+$m\,\mathbb E[1/K]$.  Now $\Pr[K=k]=\Pr[K\geq k]\,k/N$, so
+\[
+  \mathbb E[1/K]=\frac1N\sum_{k\geq1}\Pr[K\geq k]=\frac{\mathbb E[K]}{N}.
+\]
+Finally $\mathbb E[K]=\sum_{k\geq1}\prod_{i<k}(1-i/N)\leq
+1+\int_0^\infty e^{-u^2/(2N)}\,du=1+\sqrt{\pi N/2}\leq2\sqrt N$.
+\end{proof}
+
+The proof of \cref{thm:bb-map} also uses two statements that we do not
+prove.
+
+\begin{definition}[Random-mapping hypotheses]\label{def:bb-hyp}
+Let $f$ be a uniformly random map on $N$ states.
+\begin{enumerate}[label=\textup{(L\arabic*)},start=1]
+\item There is an absolute constant $C_1$ such that, with probability at
+  least $1-1/N$, every state $w$ and every $0\leq j\leq\sqrt N$ satisfy
+  $|f^{-j}(w)|\leq C_1(j+1)\ln N$.
+\item There is an absolute constant $C_2$ such that, with probability at
+  least $1-1/N$, for every cycle and every $k\geq0$ at most
+  $C_2\sqrt N\ln N$ states with that eventual cycle satisfy $\kappa(x)=k$.
+\end{enumerate}
+\end{definition}
+
+Heuristically, the in-tree above a state is close to a critical Poisson
+Galton--Watson tree.  Its generation $j$ survives with probability about
+$2/j$ and then has size about $j$ times an exponential variable, which
+suggests (L1).  A class of equal $\kappa$ takes one level from each tree
+hanging on the cycle, which suggests (L2).  The script
+\texttt{verify\_random\_mapping\_lemmas.py} checks (P1), (P2), and
+\cref{lem:bb-L0} on random maps with $N=2^{12},2^{14},2^{16}$.  In these
+runs, $\max_{w,\,j\leq64}|f^{-j}(w)|/((j+1)\ln N)$ is at most $0.93$ and
+the largest class in (L2) has at most $1.5\sqrt N$ states.  Such
+simulations test typical behaviour only, not the tail probability
+$1/N$.
+
+\subsection{Random maps}
+
+\begin{theorem}[Random maps, assuming (L1) and (L2)]\label{thm:bb-map}
+Assume (L1) and (L2).  There is an absolute constant $C$ with the
+following property.  Let $f$ be a uniformly random map on $N$ states, let
+$T\geq D_0$, $0<\varepsilon\leq1$, and $1\leq t\leq\varepsilon^2\sqrt N/1024$.
+Suppose an $(S,t)$-algorithm computes $f^T$ with success $\varepsilon$.
+Put
+\[
+  m_1=\floor{\frac{\varepsilon N}{C\,t^2\ln N}},\qquad
+  m_2=\floor{\frac{\varepsilon N}{C\,t^3\ln N}},
+\]
+and
+\begin{align*}
+  \beta_1&=m_1\Bigl(\tfrac12\log N-2\log t-3\log\tfrac1\varepsilon
+     -3\log\log N-C\Bigr),\\
+  \beta_2&=m_2\Bigl(\log N-5\log t-\log\tfrac1\varepsilon
+     -\log\log N-C\Bigr).
+\end{align*}
+Then $S\geq\min\{\beta_1,\beta_2\}-\log(8/\varepsilon)-3$.  If, on every
+input $x$ with $\mu(x)>t$, the online stage does not query $f^t(x)$, then
+$S\geq\beta_1-\log(8/\varepsilon)-3$.
+\end{theorem}
+
+The proof is an encoding argument in the style of Gennaro and Trevisan
+and of De, Trevisan, and Tulsiani~\cite{GT00,DTT10}: a typical map is
+described in fewer than $\log N^N$ bits by omitting some of its values,
+which the decoder recovers with the help of the advice.
+
+\begin{proof}
+Let $C_1,C_2$ be the constants of (L1) and (L2), and put
+$\ell_0=\varepsilon^2\sqrt N/512$.  The hypothesis on $t$ gives
+$\varepsilon\geq32N^{-1/4}$ and $t+1\leq2t\leq\ell_0$.
+
+\emph{Step 0: typical maps.}  Let $\mathcal F$ be the set of maps $f$ with
+the following four properties.
+\begin{enumerate}[label=(\alph*)]
+\item The algorithm is correct on a set $G_f$ of at least $\varepsilon N/2$
+  inputs.
+\item The events of \cref{lem:bb-L0}, (L1), and (L2) hold.
+\item At most $\varepsilon N/16$ states $x$ satisfy $\ell(x)<\ell_0$.
+\item At most $\varepsilon N/16$ states $x$ satisfy $\mu(x)\leq t$.
+\end{enumerate}
+By averaging, (a) holds with probability at least $\varepsilon/2$.  Event
+(b) fails with probability at most $3/N\leq\varepsilon/16$.  By
+\cref{lem:bb-L3}, the expected numbers of states violating (c) and (d)
+are at most $2\ell_0\sqrt N=\varepsilon^2N/256$, so by Markov's inequality
+each of (c) and (d) fails with probability at most $\varepsilon/16$.
+Hence $|\mathcal F|\geq(\varepsilon/4)N^N$.
+
+Fix $f\in\mathcal F$ and $z=A_0(f)$.  Let $Q(x)$ be the set of states
+queried by $A_1(z,x)$, so $|Q(x)|\leq t$.  Let
+\[
+  G'=\{x\in G_f:\ \ell(x)\geq\ell_0,\ \mu(x)>t\},
+\]
+so $|G'|\geq3\varepsilon N/8$.  For $x\in G'$ the states
+$x,f(x),\ldots,f^t(x)$ are distinct and transient.  Split $G'$ into
+$G_1=\{x:f^t(x)\notin Q(x)\}$ and $G_2=G'\setminus G_1$.  The map $f$ has
+\emph{type~1} if $|G_1|\geq3\varepsilon N/16$, and \emph{type~2}
+otherwise, in which case $|G_2|\geq3\varepsilon N/16$.  One type contains
+a set $\mathcal F_i\subseteq\mathcal F$ of at least $(\varepsilon/8)N^N$
+maps.  For each type we give an injective encoding of $\mathcal F_i$.  Its
+length is then at least $N\log N-\log(8/\varepsilon)$.  Under the last
+hypothesis of the theorem every map in $\mathcal F$ has type~1.
+
+\emph{Step 1: selection for type~1.}  For $x\in G_1$ put $w(x)=f^t(x)$
+and $\Pi(x)=\{x,f(x),\ldots,f^{t-1}(x)\}$.  By (L1) with $j=t$, at most
+$C_1(t+1)\ln N\leq2C_1t\ln N$ inputs share a value $w(x)$.  So the set
+$\mathcal C$ of these values has at least $3\varepsilon N/(32C_1t\ln N)$
+elements.  For each $w\in\mathcal C$ fix one $x_w\in G_1$ with
+$w(x_w)=w$.  Join $w\neq w'$ in $\mathcal C$ by an edge if
+$w'\in Q(x_w)\cup\Pi(x_w)$ or $w\in Q(x_{w'})\cup\Pi(x_{w'})$.  Each $w$
+names at most $2t$ others, so the average degree is at most $4t$.  By
+Tur\'an's theorem in the form $\alpha\geq n/(\bar d+1)$, there is an
+independent set of size at least
+$|\mathcal C|/(4t+1)\geq3\varepsilon N/(160C_1t^2\ln N)$.  Taking
+$C\geq54C_1$, it contains a set $W$ with exactly $m_1$ elements.  Put
+$X=\{x_w:w\in W\}$.  For $w\in W$, neither $Q(x_w)$ nor $\Pi(x_w)$ meets
+$W$: the state $w$ is excluded by type~1 and by distinctness of the
+trajectory, and other members of $W$ by independence.
+
+\emph{Step 2: encoding for type~1.}  The code consists of the following
+parts.
+\begin{enumerate}[label=(E\arabic*)]
+\item The advice $z$, in $S$ bits.
+\item The set $X$, as one of $\binom N{m_1}$ subsets.
+\item The $N-m_1$ values of $f$ outside $W$, as one integer below
+  $N^{N-m_1}$, in the following order.  First, for $x\in X$ in increasing
+  order, simulate $A_1(z,x)$ and list $f(q)$ for each query $q$ whose value
+  is not yet listed.  Second, for $x\in X$ in increasing order, list the
+  values on $\Pi(x)$ not yet listed.  Third, list the remaining values
+  outside $W$ in increasing order of the argument.
+\item For each $w\in W$, a lap number $a_w\leq D_0/\ell_0$ and an index
+  below $C_2\sqrt N\ln N$, all as one integer.
+\end{enumerate}
+The decoder reads (E1) and (E2) and replays the simulations.  Every query
+lies outside $W$, so each needed value is either known or next in (E3).
+The walks along $\Pi(x)$ also avoid $W$ and end at $w=f^t(x)$.  So the
+decoder learns $W$ and the matching $x\leftrightarrow w$, and then the
+third part of (E3).  It now knows $f$ outside $W$.
+
+All states of $W$ are transient, so every cycle consists of known values;
+the decoder knows all cycles, their lengths, and their least states.  Fix
+$w\in W$ and $x=x_w$, and write $\ell=\ell(x)\geq\ell_0$.  The simulated
+output is $f^T(x)$, because $x\in G_f$.  By \cref{lem:bb-L0},
+$T\geq D_0\geq\mu(x)$, so $f^T(x)=f^a(c(x))$ for a known $a<\ell$, and
+(P2) gives $\kappa(x)\equiv T-a\pmod\ell$.  The states
+$x,\ldots,f^{t-1}(x)$ are transient, so (P1) gives $\kappa(w)=\kappa(x)-t$.
+Since $\kappa(w)\leq\mu(w)+\ell-1<D_0+\ell$, the lap number
+$a_w=\floor{\kappa(w)/\ell}$ is at most $D_0/\ell_0$, and with it the
+decoder knows $\kappa(w)$ exactly.
+
+The decoder now recovers $f$ on $W$ in increasing order of $\kappa$, with
+ties broken by label.  Let $u=f(w)$.  By (P1), every transient state on the
+path from $u$ to its cycle has $\kappa<\kappa(w)$, so every state of $W$ on
+that path has already been recovered.  Let $U_w$ be the set of states $v$
+whose path to a cycle is currently known, whose cycle is the cycle of $x$,
+and which satisfy $\kappa(v)=\kappa(w)-1$.  Then $u\in U_w$ by (P1), and
+$|U_w|\leq C_2\sqrt N\ln N$ by (L2).  The index in (E4) identifies $u$.
+After the last step the decoder knows $f$, so the encoding is injective.
+
+\emph{Step 3: counting for type~1.}  Using
+$\log\binom N{m}\leq m\log(eN/m)$ and allowing three bits for rounding,
+\[
+  S+m_1\log\frac{eN}{m_1}+(N-m_1)\log N
+  +m_1\log\Bigl(\bigl(\tfrac{D_0}{\ell_0}+1\bigr)C_2\sqrt N\ln N\Bigr)+3
+  \geq N\log N-\log\frac8\varepsilon.
+\]
+Here $D_0/\ell_0+1\leq1025\sqrt{\ln N}/\varepsilon^2$ and, since
+$m_1\geq\varepsilon N/(2Ct^2\ln N)$ whenever $m_1\geq1$,
+$\log(eN/m_1)\leq2\log t+\log(1/\varepsilon)+\log\ln N+\log(2eC)$.
+Rearranging gives $S\geq\beta_1-\log(8/\varepsilon)-3$, once $C$ also
+satisfies $C\geq11+\log C_2+\log(2eC)$.  If $m_1=0$ the claim is trivial.
+
+\emph{Step 4: type~2.}  For $x\in G_2$ the run queries $f^t(x)$ and at
+most $t-1$ of the states $x,\ldots,f^{t-1}(x)$.  Let $j(x)$ be the largest
+$j<t$ with $f^j(x)\notin Q(x)$, put $w(x)=f^{j(x)}(x)$, and let
+$\Pi(x)=\{x,\ldots,f^{j(x)-1}(x)\}$.  By maximality, $f(w(x))\in Q(x)$:
+the run queries $f(w)$ without querying $w$.  By (L1), at most
+$\sum_{j<t}C_1(j+1)\ln N\leq C_1t^2\ln N$ inputs share a value $w(x)$.
+The selection of Step~1 then yields an independent set of size at least
+$3\varepsilon N/(80C_1t^3\ln N)\geq m_2$, and we fix $W$ and $X$ as before.
+The code consists of (E1), (E2), (E3) with the new sets $\Pi(x)$, and,
+for each $w\in W$, the number $j(x_w)<t$ and the position, among at most
+$t$ queries of $A_1(z,x_w)$, of the query $f(w)$.  The decoder reads
+$j(x)$ before walking along $\Pi(x)$; it then knows $w$, and the stated
+position gives $f(w)$.  This part does not use correctness of the
+outputs.  The counting gives
+\[
+  S\geq m_2\Bigl(\log N-\log\frac{eN}{m_2}-2\log t\Bigr)
+  -\log\frac8\varepsilon-3\geq\beta_2-\log\frac8\varepsilon-3.\qedhere
+\]
+\end{proof}
+
+\begin{corollary}\label[corollary]{cor:bb-map}
+Assume (L1) and (L2), and let $T\geq D_0$.  Fix $0<\delta\leq1/20$.  There
+are $c>0$ and $N_0(\delta)$ such that, for $N\geq N_0(\delta)$ and
+$\varepsilon\geq N^{-\delta/4}$, the following hold.
+\begin{enumerate}[label=(\alph*)]
+\item If $t\leq N^{1/5-\delta}$, then $S\,t^3\geq c\,\delta\,\varepsilon N$.
+\item If $t\leq N^{1/4-\delta}$ and the online stage never queries
+  $f^t(x)$ on an input $x$ with $\mu(x)>t$, then $S\,t^2\geq c\,\delta\,\varepsilon N$.
+\item For constant $\varepsilon$ and $N\geq N_0(\varepsilon)$,
+  $\max\{S,t\}\geq N^{1/5}/\log N$.
+\end{enumerate}
+\end{corollary}
+
+\begin{proof}
+In each case $t\leq\varepsilon^2\sqrt N/1024$ for large $N$, and the
+relevant bracket in \cref{thm:bb-map} is at least $\delta\log N$.  For
+(a), the bracket of $\beta_2$ is at least
+$(19\delta/4)\log N-O(\log\log N)$, and that of $\beta_1$ is at least
+$(1/10+5\delta/4)\log N-O(\log\log N)$; also $m_2\leq m_1$ and
+$m_2\geq\varepsilon N/(2Ct^3\ln N)$.  For (b), the bracket of $\beta_1$ is
+at least $(5\delta/4)\log N-O(\log\log N)$.  For (c), if
+$t\leq N^{1/5}/\log N$ then the bracket of $\beta_2$ is at least
+$4\log\log N-O_\varepsilon(1)$ and $m_2\geq N^{2/5}$, while the bracket
+of $\beta_1$ is $\Omega(\log N)$; so $S\geq N^{1/5}$.
+\end{proof}
+
+Part (b) covers the checkpoint algorithms of \cref{eq:bb-upper-map}: their
+online stage walks to a checkpoint and then walks from a stored payload
+far along the trajectory.  It queries $f^i(x)$ only for $i<t$ or
+$i>T-t>t$.  For an input of depth greater than $t$, the state $f^t(x)$ is
+transient and occurs only at time $t$, so it is not queried.  In the range
+$t\leq N^{1/4-\delta}$, (b) matches
+\cref{eq:bb-upper-map} up to a factor $O(\log N)$.  For general
+algorithms, (a) loses a factor $t$.  The loss has two sources.  In
+type~2 the omitted state $w(x)$ may sit at any of $t$ distances from $x$,
+so up to $\Theta(t^2\log N)$ inputs can share it; and every selection loses
+a factor $t$ to the conflict graph.  Distinct inputs genuinely share
+omitted states: in the checkpoint algorithm all inputs below a checkpoint
+share it, and there are only $O(N/t^2)$ checkpoints.
+
+\begin{remark}[A barrier at $t=N^{1/4}$]\label[remark]{rem:bb-barrier}
+The type-1 encoding recovers each omitted value from a correct value of
+$f^T$.  By (P2), such a value carries only $\log\ell(x)\leq\frac12\log
+N+O(\log\log N)$ bits about $f$ beyond what the decoder knows, while naming
+$m$ omitted states costs about $m\log(N/m)$ bits.  An encoding of this
+type therefore proves a positive bound only when $m\geq N^{1/2-o(1)}$.
+For $t\geq N^{1/4+\delta}$, the advice of \cref{eq:bb-upper-map} is
+$O(N^{1/2-2\delta}\log N)$, so no such encoding can be valid there, and
+this method cannot reach the balancing point $N^{1/3}$.  This is an
+observation about the method, not a lower bound.  Corrigan-Gibbs and
+Kogan~\cite{CGK19} show that improving Yao's bound for function
+inversion would give new lower bounds for depth-two circuits, and that
+strong bounds for nonadaptive inversion would give lower bounds for
+linear-size logarithmic-depth circuits.  We know of no analogous reduction
+for fast-forwarding at $S\leq\sqrt N$.  The barrier above concerns the
+proof technique, and it is not evidence that \cref{eq:bb-upper-map} is
+optimal or not.
+\end{remark}
+
+The assumption $T\geq D_0$ makes every answer a cyclic state.  For
+$t<T<\sqrt N$, most answers lie in trees, and we have no bound.
+
+\subsection{Random permutations and a fixed exponent}
+
+Now let $P$ be a uniformly random permutation of $V$ and fix
+$T\geq0$, independent of $P$.  On a cycle of length $\ell$,
+$P^T=P^{T\bmod\ell}$, so the hardness of $P^T$ depends on the divisors of
+numbers near $T$.  For an integer $h\geq0$ put
+\[
+  \Lambda(T,h)=\{\ell\leq N:\ \ell\mid T-a\text{ for some integer }a
+     \text{ with }|a|\leq h\}.
+\]
+If $T\leq h$ then $\Lambda(T,h)=\{1,\ldots,N\}$.  If $h<T\leq N^{O(1)}$, each
+$T-a$ has $N^{o(1)}$ divisors, so $|\Lambda(T,h)|\leq(2h+1)N^{o(1)}$.  If
+$T$ is uniform modulo $\lcm(1,\ldots,N)$, then
+$\mathbb E|\Lambda(T,h)|\leq(2h+1)\sum_{\ell\leq N}1/\ell$.  On the other
+hand $T=\lcm(1,\ldots,N)$ gives $P^T=\mathrm{id}$ and
+$\Lambda=\{1,\ldots,N\}$.
+
+The following class contains the algorithm of \cref{eq:bb-upper-perm}.
+A \emph{path-following algorithm with one correction walk} with walk
+length $t$ queries $x,P(x),\ldots,P^{t-1}(x)$, then chooses a state $y$ as
+a function of $z$ and the values seen, queries $y,\ldots,P^{t'-1}(y)$ for
+some $t'\leq t$, and outputs any function of everything seen.  Write
+$R(x)=\{y,\ldots,P^{t'-1}(y)\}$ for the correction walk.  We require
+$P^t(x)\notin R(x)$ for every $x$ whose cycle length is not in
+$\Lambda(T,2t)$.  The checkpoint algorithm satisfies this: its correction
+walk is $P^{[T-t+d,\,T-1]}(x)$ for a checkpoint at distance $d$, and it
+contains $P^t(x)$ only if $\ell(x)\mid T-a$ with $t<a\leq2t$.
+
+\begin{theorem}[Fixed powers of a random permutation]\label{thm:bb-perm}
+Let $0<\varepsilon\leq1$ and $t\geq1$, and put
+\[
+  I=\ceil{16(t+1)/\varepsilon},\qquad h=2t+I+1,\qquad\sigma=2(t+I+1).
+\]
+Assume $|\Lambda(T,h)|+4\sigma\leq\varepsilon^2N/64$.  Suppose a
+path-following algorithm with one correction walk of length $t$ and $S$
+advice bits computes $P^T$ with success $\varepsilon$.  Then one of the
+following holds.
+\begin{enumerate}[label=(\roman*)]
+\item With the same advice and $2t+I+1$ forward queries, some algorithm
+  inverts $P$ at a uniform point with probability at least
+  $\varepsilon^2/128$.  Consequently
+  $S\,(2t+I+1)\geq\widetilde\Omega(\varepsilon^2N)$~\cite{Yao90,DTT10}.
+\item $S\geq m\bigl(\log N-4\log t-7\log(1/\varepsilon)-44\bigr)
+  -\log(8/\varepsilon)-3$, where
+  $m=\floor{\varepsilon^2N/(3948\,t)}$.
+\end{enumerate}
+\end{theorem}
+
+In particular, if $t\leq N^{1/4-\delta}$ and $\varepsilon\geq N^{-\delta/8}$,
+then $S\,t\geq\widetilde\Omega(\delta\varepsilon^3N)$.  For constant
+$\varepsilon$ this is the shape of \cref{eq:bb-upper-perm}.
+
+\begin{proof}
+Call a cycle \emph{bad} if its length lies in $\Lambda(T,h)$ or is at most
+$4\sigma$.  A uniform permutation has, for each $\ell\leq N$, exactly one
+state on cycles of length $\ell$ in expectation.  So the expected number
+of states on bad cycles is at most $\varepsilon^2N/64$, and by Markov's
+inequality it exceeds $\varepsilon N/16$ with probability at most
+$\varepsilon/4$.  Let $\mathcal F$ be the set of permutations on which the
+algorithm is correct on a set $G$ of at least $\varepsilon N/2$ inputs and
+at most $\varepsilon N/16$ states lie on bad cycles.  Then
+$|\mathcal F|\geq(\varepsilon/4)N!$.  Fix $P\in\mathcal F$, its advice $z$,
+and let $G'\subseteq G$ be the inputs on good cycles, so
+$|G'|\geq7\varepsilon N/16$.  Distances below are measured along cycles,
+in either direction.
+
+\emph{Step 1: inversion.}  Let $B$ be the set of $y\in G'$ whose
+correction walk $R(y)$ contains $P^{-i}(y)$ for some $1\leq i\leq I$.
+Suppose $|B|\geq\varepsilon N/16$ for at least half of $\mathcal F$.  On
+challenge $y$, run $A_1(z,y)$ and then walk at most $I+1$ further steps
+from the last state of $R(y)$.  If $y\in B$, the walk reaches $y$, and the
+preceding state is $P^{-1}(y)$.  This inverter makes at most $2t+I+1$
+queries and succeeds with probability at least
+$(\varepsilon/8)(\varepsilon/16)$, which is case~(i).  Otherwise, let
+$\mathcal F'$ be the set of at least $(\varepsilon/8)N!$ permutations in
+$\mathcal F$ with $|B|<\varepsilon N/16$, and put $G_2=G'\setminus B$, so
+$|G_2|\geq3\varepsilon N/8$.
+
+\emph{Step 2: a correct state below.}  For $x\in G_2$ let $w(x)=P^t(x)$.
+This map is injective, and $w(x)$ is not queried on input $x$: it is not
+on the first walk because the cycle is longer than $t$, and it is not on
+$R(x)$ by the class restriction.  Let $i(x)$ be the least $i\in[1,I]$ with
+$P^{t+i}(x)\in G_2$.  If there is none, the window
+$P^{[t+1,t+I]}(x)$ lies in a maximal run of at least $I$ consecutive
+states outside $G_2$, and the window starts within $t+1$ steps after the
+start of that run, because $x\in G_2$.  There are at most $N/I$ such runs,
+so at most $(t+1)N/I\leq\varepsilon N/16$ inputs fail.  For the others put
+$u'(x)=P^{t+i(x)}(x)\in G_2$ and
+\[
+  v(x)=P^T(u'(x))=P^{t+i(x)}\bigl(P^T(x)\bigr).
+\]
+
+\emph{Step 3: few wrong collisions.}  Let $\mathrm{wr}(v)$ be the number of
+inputs $y$ with $A_1(z,y)=v\neq P^T(y)$.  At most $N/K$ states $v$ have
+$\mathrm{wr}(v)>K$, and each $v$ equals $v(x)$ for at most $I$ inputs $x$.
+With $K=16I/\varepsilon$, discarding the inputs with
+$\mathrm{wr}(v(x))>K$ loses at most $\varepsilon N/16$ of them.  The
+remaining values $w(x)$ form a set $\mathcal C$ with
+$|\mathcal C|\geq\varepsilon N/4$; for $w\in\mathcal C$ write $x_w$,
+$i_w$, $u'_w$, and $v_w$.
+
+\emph{Step 4: selection.}  Choose greedily $W_1\subseteq\mathcal C$ with
+pairwise distances greater than $\sigma$; then
+$|W_1|\geq|\mathcal C|/(2\sigma+1)$.  For $w\in W_1$ the sets
+$\Pi(x_w)=P^{[-t,-1]}(w)$, $P^{[1,i_w-1]}(w)$, and
+$\Pi(u'_w)=P^{[i_w,i_w+t-1]}(w)$ lie within distance $\sigma$ of $w$ and
+do not contain $w$, so they avoid $W_1$.  Join $w\neq w'$ if $w'$ lies in
+$R(x_w)$, in $R(u'_w)$, or on the target walk
+$P^{[0,t+i_w-1]}(P^T(x_w))$, or symmetrically.  Each of these sets is a
+cycle interval of fewer than $\sigma$ states, so it contains at most one
+state of $W_1$; the average degree is at most $6$, and Tur\'an's theorem
+gives an independent set of size at least
+$|W_1|/7\geq\varepsilon N/(28(2\sigma+1))$.  Since
+$2\sigma+1\leq141t/\varepsilon$, this is at least
+$\varepsilon^2N/(3948t)$, and we fix a subset $W$ with exactly $m$
+elements.  The three conflict sets of $w$ do not contain $w$ itself:
+$w\notin R(x_w)$ by the class restriction; $w\notin R(u'_w)$ because
+$u'_w\notin B$; and $w$ on the target walk would give
+$\ell(w)\mid T-a$ with $-I\leq a\leq t$, so $\ell(w)\in\Lambda(T,h)$.
+
+\emph{Step 5: encoding.}  The code consists of $z$; the set
+$X=\{x_w:w\in W\}$, as one of $\binom Nm$ subsets; the restriction of $P$
+to $V\setminus W$, as an injection listed first in simulation order for
+$X$ and then by argument, in $\log(N!/m!)$ bits; and, for each $w$, the
+number $i_w$ and an index into
+\[
+  U_w=\bigl\{u'':\ P^{[0,i_w-2]}(u'')\text{ is known and }
+     A_1(z,P^{i_w-1}(u''))\text{ can be simulated and equals }v_w\bigr\}.
+\]
+The simulations on $X$ avoid $W$ and reveal $W=\{P^t(x)\}$, so the decoder
+can read the injection.  It obtains $v_w$ by walking $t+i_w$ steps from
+the simulated output $P^T(x_w)$.  The true value $u=P(w)$ lies in $U_w$ by
+Steps 2--4.  Distinct $u''\in U_w$ give distinct states $P^{i_w-1}(u'')$,
+each with output $v_w$; at most one of them is correct, because $P^T$ is
+injective.  So $|U_w|\leq1+\mathrm{wr}(v_w)\leq K+1$.
+
+\emph{Step 6: counting.}  Injectivity on $\mathcal F'$ gives
+\[
+  S\geq\log m!-m\log\frac{eN}m-m\log\bigl(I(K+1)\bigr)
+  -\log\frac8\varepsilon-3
+  \geq m\Bigl(2\log m-\log N-3-\log\bigl(I(K+1)\bigr)\Bigr)
+  -\log\frac8\varepsilon-3.
+\]
+Here $I\leq33t/\varepsilon$, so $I(K+1)\leq17I^2/\varepsilon\leq2^{15}t^2/\varepsilon^3$,
+and $m\geq\varepsilon^2N/(7896t)$ whenever $m\geq1$.  Substituting gives
+case~(ii).
+\end{proof}
+
+If the algorithm is correct on every input on a good cycle, the same
+proof works with $I=1$ and $K=0$.  Inputs $x$ with $P^{t+1}(x)\notin G_2$
+are then at most $N-|G_2|$, because $x\mapsto P^{t+1}(x)$ is a bijection,
+and each $U_w$ has one element.  Under $|\Lambda(T,2t+2)|+8(t+2)\leq N/64$,
+this gives either $S(2t+2)\geq\widetilde\Omega(N)$ or
+\[
+  S\geq m\bigl(\log N-2\log t-20\bigr)-5,\qquad m=\floor{N/(182t)}.
+\]
+So $S\,t\geq\widetilde\Omega(N)$ for $t\leq N^{1/2-\delta}$, the full range of
+\cref{eq:bb-upper-perm}, and the second case gives
+$S\,t\geq\Omega(\delta N\log N)$.  The checkpoint algorithm is of this
+kind.
+
+For general adaptive algorithms, the same scheme takes the first
+unqueried state $P^{j(x)}(x)$ with $j(x)\leq t$ as the omitted state.  All
+requirements become conflict edges, of out-degree $O(t+I)$, and the
+inversion branch walks $I$ steps from each query.  A sketch along these
+lines gives either $S\,t^2\geq\widetilde\Omega(\varepsilon^2N)$ by
+inversion, or
+$S\geq(\varepsilon^2N/(Ct^2))(\log N-8\log t-7\log(1/\varepsilon)-C)$,
+hence $S\,t^2\geq\widetilde\Omega(\delta\varepsilon^2N)$ for
+$t\leq N^{1/8-\delta}$.  We have not checked every inequality of this
+sketch.
+
+The divisor condition also controls a simpler model.  For integers $T$
+and $N$ put
+\[
+  D_T=\max_{|a|<N}\bigl|\{\ell:\ |a|<\ell\leq N,\ \ell\mid T-a\}\bigr|.
+\]
+
+\begin{lemma}[Bit-fixing model]\label[lemma]{lem:bb-bitfix}
+Suppose an adversary fixes $P$ on $p$ states, after which $P$ is uniform
+among the permutations that extend these values.  Let $x$ be uniform and
+independent of $P$.  If an algorithm makes $t$ forward queries, with
+$p+t\leq N/2$, then it outputs $P^T(x)$ with probability at most
+$(p+2t+2D_T)/N$.
+\end{lemma}
+
+\begin{proof}
+Let $Q$ be the partial injection formed by the fixed values and the query
+answers, with $|Q|\leq p+t$.  Given $Q$ and $x$, the permutation $P$ is
+uniform among extensions of $Q$.  The cycle of $x$ can be closed within
+$Q$ in two ways.  Either $x$ lies on a cycle of the fixed values, which
+has probability at most $p/N$; or some query $q$ returns the first state
+of the path of $Q$ through $q$.  That answer is uniform over at least
+$N/2$ unused states, so each query closes a cycle with probability at most
+$2/N$.
+
+Otherwise, contract each maximal path of $Q$, including single states,
+to a node.  There are $M=N-|Q|\geq N/2$ nodes, and the extensions of $Q$
+correspond to uniform permutations of the nodes.  The node cycle through
+the node $C_0$ of $x$ can be sampled as a uniform ordering
+$C_1,\ldots,C_{M-1}$ of the other nodes together with an independent
+uniform $r\in\{1,\ldots,M\}$; the cycle is $C_0,C_1,\ldots,C_{r-1}$.  The
+cycle length $\ell(r)=|C_0|+\cdots+|C_{r-1}|$ is strictly increasing in
+$r$.  Fix the output $y$ and the ordering.  If $y$ lies in $C_0$ at
+offset $a$ after $x$ or $b$ before $x$, then $P^T(x)=y$ means
+$\ell(r)\mid T-a$ or $\ell(r)\mid T+b$, with $\ell(r)>a$ or $\ell(r)>b$.
+If $y$ lies in $C_s$ with $s\geq1$, it is on the cycle only when $r>s$,
+and then at a distance $a<\ell(r)$ from $x$ that does not depend on $r$;
+again $\ell(r)\mid T-a$.  In each case at most $D_T$ values of $r$
+qualify, so the probability is at most $D_T/M\leq2D_T/N$.
+\end{proof}
+
+With $p=0$ it bounds algorithms without advice.  The heuristic of
+Coretti, Dodis, Guo, and Steinberger~\cite{CDGS18} replaces $S$ advice
+bits and $t$ queries by about $p=S\,t$ fixed values.  Here it predicts
+$S\,t\geq\varepsilon N-2D_T-2t$, matching \cref{eq:bb-upper-perm}.  Their
+presampling theorem and its permutation version~\cite{CDG18} do not apply
+directly, because they also charge the queries a challenger needs to
+verify an answer, and verifying $y=P^T(x)$ may require walking the whole
+cycle of $x$.
+
+\subsection{Open problems}
+
+The bounds above leave four questions.
+\begin{enumerate}
+\item For a fixed exponent with $D_T=N^{o(1)}$, for example a prime
+  $T>N$, does every $(S,t)$-algorithm on a random permutation satisfy
+  $S\,t\geq\widetilde\Omega(\varepsilon N)$, as for inversion?
+  \Cref{thm:bb-perm} proves this for path-following algorithms with
+  $t\leq N^{1/4-\delta}$ and constant $\varepsilon$, and \cref{lem:bb-bitfix} proves the analogue in
+  the bit-fixing model.
+\item For random maps and $T\geq D_0$, does every algorithm satisfy
+  $S\,t^2\geq\widetilde\Omega(\varepsilon N)$ for all $t\leq N^{1/3}$?
+  This would make the balancing point $N^{1/3}$ of \cref{eq:bb-upper-map}
+  optimal.  \Cref{cor:bb-map} gives $S\,t^3$ in general, and $S\,t^2$ for
+  algorithms that do not query $f^t(x)$, only for $t$ below $N^{1/5}$ and
+  $N^{1/4}$.  Proving (L1) and (L2) is a smaller open task.
+\item The bit-fixing heuristic with $p=S\,t$ predicts both conjectures.
+  A presampling theorem that charges verification by the information it
+  needs, about $\frac12\log N$ bits for a phase, rather than by its query
+  cost would settle them in that form.  We know of none.
+\item Multi-instance arguments, as used by Akshima, Guo, and
+  Liu~\cite{AGL22} for Merkle--Damg\aa{}rd collisions, may avoid
+  \cref{rem:bb-barrier}: bound the probability that $k$ independent
+  challenges all succeed, then convert with $k$ of order $S$.
+\end{enumerate}
+
 \section{Lean formalization}\label{sec:lean}
 
 The accompanying \texttt{lean/} project proves existence of actual Boolean
@@ -2175,6 +2798,11 @@ Sparse checkpoints and charged lookup give square-root state-space bounds
 for arbitrary fixed iterates and functional-graph navigation.  The counting
 example makes the exponent sharp for unrestricted fixed powers; it does not
 establish sharpness for polynomial-width input times.
+
+In the black-box model, \cref{sec:blackbox} gives partial lower bounds
+for a fixed exponent: matching ones for permutations within restricted
+algorithm classes, and, under two random-mapping hypotheses, polynomial
+ones for random maps.
 
 Two directions remain: the additive bound
 $s+\widetilde O(2^{n/2})$, and broader classes of transitions with cheaply
@@ -2432,6 +3060,66 @@ Ming Li and Paul Vit\'anyi.
 Applications}.
 \newblock Texts in Computer Science. Springer, fourth edition, 2019.
 \newblock \href{https://doi.org/10.1007/978-3-030-11298-1}{doi:10.1007/978-3-030-11298-1}.
+
+\bibitem{FO90}
+Philippe Flajolet and Andrew M. Odlyzko.
+\newblock Random mapping statistics.
+\newblock In \emph{Advances in Cryptology -- EUROCRYPT '89}, LNCS 434,
+pages 329--354. Springer, 1990.
+\newblock \href{https://doi.org/10.1007/3-540-46885-4_34}{doi:10.1007/3-540-46885-4\_34}.
+
+\bibitem{Yao90}
+Andrew C. Yao.
+\newblock Coherent functions and program checkers.
+\newblock In \emph{Proceedings of the Twenty-Second Annual ACM Symposium
+on Theory of Computing}, STOC, pages 84--94, 1990.
+\newblock \href{https://doi.org/10.1145/100216.100226}{doi:10.1145/100216.100226}.
+
+\bibitem{DTT10}
+Anindya De, Luca Trevisan, and Madhur Tulsiani.
+\newblock Time space tradeoffs for attacks against one-way functions and
+{PRG}s.
+\newblock In \emph{Advances in Cryptology -- CRYPTO 2010}, LNCS 6223,
+pages 649--665. Springer, 2010.
+\newblock \href{https://doi.org/10.1007/978-3-642-14623-7_35}{doi:10.1007/978-3-642-14623-7\_35}.
+
+\bibitem{GT00}
+Rosario Gennaro and Luca Trevisan.
+\newblock Lower bounds on the efficiency of generic cryptographic
+constructions.
+\newblock In \emph{Proceedings of the 41st Annual Symposium on Foundations
+of Computer Science (FOCS)}, pages 305--313, 2000.
+\newblock \href{https://doi.org/10.1109/SFCS.2000.892119}{doi:10.1109/SFCS.2000.892119}.
+
+\bibitem{CDGS18}
+Sandro Coretti, Yevgeniy Dodis, Siyao Guo, and John Steinberger.
+\newblock Random oracles and non-uniformity.
+\newblock In \emph{Advances in Cryptology -- EUROCRYPT 2018}, LNCS 10820,
+pages 227--258. Springer, 2018.
+\newblock \href{https://doi.org/10.1007/978-3-319-78381-9_9}{doi:10.1007/978-3-319-78381-9\_9}.
+
+\bibitem{CDG18}
+Sandro Coretti, Yevgeniy Dodis, and Siyao Guo.
+\newblock Non-uniform bounds in the random-permutation, ideal-cipher, and
+generic-group models.
+\newblock In \emph{Advances in Cryptology -- CRYPTO 2018}, LNCS 10991,
+pages 693--721. Springer, 2018.
+\newblock \href{https://doi.org/10.1007/978-3-319-96884-1_23}{doi:10.1007/978-3-319-96884-1\_23}.
+
+\bibitem{CGK19}
+Henry Corrigan-Gibbs and Dmitry Kogan.
+\newblock The function-inversion problem: barriers and opportunities.
+\newblock In \emph{Theory of Cryptography -- TCC 2019}, LNCS 11891,
+pages 393--421. Springer, 2019.
+\newblock \href{https://doi.org/10.1007/978-3-030-36030-6_16}{doi:10.1007/978-3-030-36030-6\_16}.
+
+\bibitem{AGL22}
+Akshima, Siyao Guo, and Qipeng Liu.
+\newblock Time-space lower bounds for finding collisions in
+{M}erkle--{D}amg{\aa}rd hash functions.
+\newblock In \emph{Advances in Cryptology -- CRYPTO 2022}, pages 192--221.
+Springer, 2022.
+\newblock \href{https://doi.org/10.1007/978-3-031-15982-4_7}{doi:10.1007/978-3-031-15982-4\_7}.
 
 \end{thebibliography}
 

@@ -13,6 +13,7 @@ public import Proofs.Targets
 public import Proofs.OrbitStructure
 public import Proofs.BatchVariableTime
 public import Proofs.LowerBound
+public import Proofs.PrimeCycles
 public import Proofs.NavigationCircuits
 public import Proofs.SparseDisplacement
 public import Proofs.StreamingRemainder
@@ -222,6 +223,31 @@ namespace IteratedFunctions
 [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms matching_lower_bound
+
+/-- info: 'IteratedFunctions.PrimeCycles.power_apply_mod' depends on axioms:
+[propext, Quot.sound] -/
+#guard_msgs in
+#print axioms PrimeCycles.power_apply_mod
+
+/-- info: 'IteratedFunctions.PrimeCycles.iterate_eq_iterate_iff' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms PrimeCycles.iterate_eq_iterate_iff
+
+/-- info: 'IteratedFunctions.PrimeCycles.card_range_iterate' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms PrimeCycles.card_range_iterate
+
+/-- info: 'IteratedFunctions.PrimeCycles.classPrime_coprime' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms PrimeCycles.classPrime_coprime
+
+/-- info: 'IteratedFunctions.PrimeCycles.near_landau_lower_bound' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms PrimeCycles.near_landau_lower_bound
 
 /-- info: 'IteratedFunctions.sparse_counter_centralizer' depends on axioms:
 [propext, Classical.choice, Quot.sound] -/

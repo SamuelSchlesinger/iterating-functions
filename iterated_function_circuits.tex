@@ -1293,7 +1293,8 @@ polynomial-size permutation with $2^{\Theta(2^{n/2}\sqrt n)}$ distinct
 powers whose hardest power has complexity $\Theta(2^{n/2}/\sqrt n)$,
 within a constant factor of what any counting argument over powers can
 give.  The family is nonuniform only through $O(n)$ hardwired bits.
-These results are prose results; they are outside the Lean development.
+Lean checks only the combinatorial core; \cref{rem:near-landau-lean}
+lists what is mechanized.
 
 \paragraph{Construction.}
 Fix a constant $C\geq1$.  For a large integer $K$ put
@@ -1482,6 +1483,30 @@ Each power of $F_n$ restricts to the same power of $F$ when $e=0$, and is
 computed by a circuit for that power of $F$ with $e$ passed through, so
 $\max_T\CC(F_n^T)=\max_T\CC(F^T)$.
 \end{proof}
+
+\begin{remark}[Mechanized part]\label[remark]{rem:near-landau-lean}
+The module \texttt{PrimeCycles.lean} checks the following for every
+function $f$ with values below $2^m$, not only for the affine maps.  The
+lengths $\ell_r>1$ are distinct primes in $[2^{K-1},2^K)$
+(\texttt{classPrime\_coprime}).  For arbitrary lengths below $2^K$, $F^T$
+is given by the formula in the proof of \cref{thm:near-landau} and depends
+on $T$ only through the table $r\mapsto T\bmod\ell_r$
+(\texttt{power\_apply\_mod}).  For pairwise coprime lengths,
+$F^S=F^T$ exactly when $S\equiv T\pmod\lambda$, so $\lambda$ is the
+order of $F$ and its number of distinct powers
+(\texttt{iterate\_eq\_iterate\_iff}, \texttt{card\_range\_iterate}).
+Finally, \texttt{near\_landau\_lower\_bound} proves that $F$ is a
+bijection with $\lambda\geq2^{(K-1)c}$, where $c=\nu2^m$ is the number
+of classes containing a prime, and that if $3q+h(2q+n_K+1)<(K-1)c$ and
+$n_K+q+1\leq2^h$, then some $F^T$ with $T<\lambda$ has no native circuit
+with at most $q$ gates.  This step counts ordered circuit descriptions
+as in \cref{lem:count}, not minimum circuits as in
+\cref{lem:relabel-count}.  With $h=m+O(1)$ it therefore gives the lower
+bound of \cref{thm:near-landau} with $\nu/2$ in place of $\nu$.  The
+circuit for $F$, the prime number theorem estimate,
+\cref{lem:nl-classes}, \cref{lem:relabel-count}, the upper bound, and
+\cref{cor:near-landau-average} remain prose results.
+\end{remark}
 
 \begin{remark}[The counting ceiling]\label[remark]{rem:landau-ceiling}
 The lower bound above, like that of \cref{thm:lower}, uses only the number
@@ -2457,7 +2482,9 @@ The exported theorems have guarded axiom lists containing only
 checkpoints, enumerations, and circuit witnesses; the result is nonuniform
 existence.  The sparse chart's existence and circuit cost are checked, but
 the edit-list compiler's algorithm and runtime, sparse-transition counting
-application, and finite-field corollary remain prose results.  The
+application, and finite-field corollary remain prose results, and only
+the combinatorial core of \cref{sec:near-landau} is checked
+(\cref{rem:near-landau-lean}).  The
 cryptographic and literature discussions are also outside the mechanized
 boundary.  Kernel checking establishes neither historical priority nor
 independent fidelity to every intended model convention.

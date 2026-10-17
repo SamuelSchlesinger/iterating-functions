@@ -1744,6 +1744,204 @@ accessing a nonuniform table is charged.  These differences specify the
 claim being compared; they do not establish historical novelty of the
 present bounds.
 
+\subsection{Cycle spectra and cycle-length transfer}\label{sec:spectrum}
+
+The fixed-power construction stores one payload per checkpoint.  The
+following decomposition shows where the information about $T$ actually
+resides: in one residue per distinct cycle length.  Write $\ell_F$ for the
+map $x\mapsto\ell(x)$, with $(n+1)$-bit outputs, let $c(F)$ be the number
+of distinct cycle lengths of $F$, let $\lambda(F)$ be their least common
+multiple, and let $\mu(F)=\max_x\mu(x)$.  Since distinct cycle lengths sum
+to at most $N$, always $c(F)\leq\sqrt{2N}$.  The results of this subsection
+are prose results; they are outside the Lean formalization.
+
+\begin{theorem}[Spectrum decomposition]\label{thm:spectrum}
+For every $T\geq0$,
+\[
+ \CC(F^T)\leq\CC(\ell_F)+\CC(\Iter_{F,n+1})+O(c(F)\,n).
+\]
+\end{theorem}
+\begin{proof}
+If $T<N$, hardwire $T$ as the $(n+1)$-bit time input of a circuit for
+$\Iter_{F,n+1}$.  Otherwise let $\ell_1<\cdots<\ell_c$ be the distinct cycle
+lengths and hardwire $r_i=(T-N)\bmod\ell_i$.  Compute $\ell=\ell(x)$, the
+flags $e_i=[\ell=\ell_i]$, and $r=\bigvee_ie_i\wedge r_i$; exactly one
+flag is set, so $r=(T-N)\bmod\ell(x)$, and this costs $O(cn)$ gates.
+Since $r<\ell\leq N$, the integer $u=N+r<2N$ is obtained by setting bit
+$n$ above the $n$ bits of $r$, with no gates.  Both $T$ and $u$ are at
+least $N\geq\mu(x)$ and are congruent modulo $\ell(x)$, so
+$F^T(x)=F^u(x)=\Iter_{F,n+1}(x,u)$.
+\end{proof}
+
+Combined with \cref{thm:labels,thm:variable} the right-hand side is
+$O(nB)$, so the decomposition is not a better general bound.  Its content
+is structural: all dependence on $T$ is confined to the $c(F)$-entry table
+$\ell\mapsto T\bmod\ell$.  For $P_n$, $\ell_{P_n}(a,b)$ is $a$ on active
+states and $1$ otherwise, which costs $O(n)$ gates; \cref{eq:easy-iterator}
+gives $\CC(\Iter_{P_n,n+1})=O(n^2)$; and $c(P_n)=B$.  Hence
+\[
+ \max_{T\geq0}\CC(P_n^T)=O\!\left(n\,2^{n/2}\right),
+\]
+a factor $n^2$ below the bound from \cref{thm:main}, and within $O(n^2)$
+of \cref{thm:lower}.  A finer treatment of the residue table determines
+the leading constant; we do not pursue it here.
+
+The next lemma relates the four quantities that the decomposition
+involves.  Write $\Omega(\lambda)$ for the number of prime factors of
+$\lambda$ counted with multiplicity, so $\Omega(\lambda)\leq\log_2\lambda$.
+
+\begin{lemma}[Transfer lemmas]\label[lemma]{lem:transfer}
+Let $\ell_1<\cdots<\ell_c$ be the distinct cycle lengths of $F$ and
+$\lambda=\lambda(F)=\prod_pp^{e_p}$.
+\begin{enumerate}
+\item\label{it:squaring} For every $m\geq1$,
+ $\CC(\Iter_{F,m})\leq\sum_{j<m}\CC(F^{2^j})+O(mn)$.
+\item\label{it:spectrum-test}
+ $\CC(\ell_F)\leq(c+1)\,\CC(\Iter_{F,n+1})+O(cn)$.  For a permutation
+ the factor $c+1$ may be replaced by $c$.
+\item\label{it:prime-power-test}
+ $\CC(\ell_F)\leq\CC(F^N)+\Omega(\lambda)
+ \bigl(\max_{d\mid\lambda}\CC(F^d)+O(n^2)\bigr)$.  For a permutation the
+ term $\CC(F^N)$ may be omitted.
+\item\label{it:order-count} If $\CC(F^T)\leq s$ for every $T\geq0$, with
+ $s\geq n$, then $\lambda(F)\leq2^{O(s\log s)}$.
+\end{enumerate}
+\end{lemma}
+\begin{proof}
+Part~\ref{it:squaring} is the proof of \cref{thm:variable}, with the
+circuits for $F^{2^j}$ taken optimal.
+
+For the other parts, put $y=F^N(x)$.  It is cyclic and $\ell(y)=\ell(x)$,
+and a cyclic state satisfies $F^d(y)=y$ exactly when $\ell(y)\mid d$.  For
+a permutation every state is cyclic and we may take $y=x$.
+
+Part~\ref{it:spectrum-test}.  Compute $y=\Iter_{F,n+1}(x,N)$ and the flags
+$g_i=[\Iter_{F,n+1}(y,\ell_i)=y]$; all time inputs are at most $N$.  Then
+$g_i=1$ exactly when $\ell(y)\mid\ell_i$.  Since $\ell(y)$ is itself one of
+the $\ell_i$, and every multiple of it in the list is at least as large,
+the least $\ell_i$ with $g_i=1$ is $\ell(x)$.  Comparisons and the
+priority selection cost $O(cn)$ gates.
+
+Part~\ref{it:prime-power-test}.  For a prime $p\mid\lambda$ and
+$0\leq f\leq e_p$, put $d_{p,f}=\lambda/p^{e_p-f}$.  Its $q$-adic
+valuation is $e_q$ for $q\neq p$ and $f$ for $q=p$.  Since
+$\ell(y)\mid\lambda$, the divisibility $\ell(y)\mid d_{p,f}$ holds exactly
+when $v_p(\ell(y))\leq f$.  Hence
+\[
+ v_p(\ell(x))=\min\bigl(\{f<e_p:F^{d_{p,f}}(y)=y\}\cup\{e_p\}\bigr).
+\]
+This uses $\sum_pe_p=\Omega(\lambda)$ fixed powers applied to $y$, each
+followed by an $n$-bit equality test.  Select the hardwired constant
+$p^{v_p(\ell(x))}$ among $e_p+1$ candidates and multiply it into a running
+product.  Every partial product divides $\ell(x)\leq N$, so each
+multiplication has $(n+1)$-bit operands and costs $O(n^2)$ gates.  There
+are at most $\Omega(\lambda)$ primes.
+
+Part~\ref{it:order-count}.  Put $\mu=\mu(F)$.  For $\mu\leq a<b<\mu+\lambda$
+the difference $b-a$ is not divisible by $\lambda$, so some cycle length
+$\ell$ does not divide it.  At a state $y$ on such a cycle,
+$F^a(y)\neq F^b(y)$.  Thus $F^\mu,\ldots,F^{\mu+\lambda-1}$ are $\lambda$
+distinct maps of complexity at most $s$, and \cref{lem:count} with $q=s\geq n$
+gives $\lambda\leq(s+1)16^s(n+s+2)^{2s+n}=2^{O(s\log s)}$.
+\end{proof}
+
+Call a function of a family \emph{easy} if it has circuits of size
+polynomial in $n$.
+
+\begin{theorem}[Which maps have only easy powers]\label{thm:easy-powers}
+Let $F_n$ be maps with $\CC(F_n)=n^{O(1)}$.
+\begin{enumerate}
+\item\label{it:char} If every $F_n$ is a permutation, then
+ $\max_T\CC(F_n^T)=n^{O(1)}$ if and only if $\Iter_{F_n,n}$ and
+ $\ell_{F_n}$ are easy and $\log_2\lambda(F_n)=n^{O(1)}$.  In particular,
+ if all powers are easy then the cycle length is easy.
+\item\label{it:few-lengths} If $c(F_n)=n^{O(1)}$, then
+ $\max_T\CC(F_n^T)$ and $\CC(\Iter_{F_n,n+1})$ are polynomially related:
+ \[
+  \CC(\Iter_{F,n+1})\leq(n+1)\max_T\CC(F^T)+O(n^2),\qquad
+  \max_T\CC(F^T)\leq(c+2)\,\CC(\Iter_{F,n+1})+O(cn).
+ \]
+\item\label{it:inverse} For a permutation $P$,
+ $\CC(P^{-1})\leq\CC(\ell_P)+\CC(\Iter_{P,n})+O(n)$.
+\end{enumerate}
+\end{theorem}
+\begin{proof}
+Part~\ref{it:char}, forward direction: part~\ref{it:squaring} of \cref{lem:transfer} with $m=n$ bounds the iterator, part~\ref{it:order-count}
+bounds $\log_2\lambda$ by $O(s\log s)$, and part~\ref{it:prime-power-test}
+then bounds $\CC(\ell_F)$ by $\log_2\lambda$ times a polynomial.  Reverse
+direction: hardwire $T'=T\bmod\lambda$, which has $n^{O(1)}$ bits.  Since
+$\ell(x)\mid\lambda$, we have $T\bmod\ell(x)=T'\bmod\ell(x)$.  Compute this
+remainder by streaming the bits of $T'$ as in \cref{thm:long-time}, at
+$O(n)$ gates per bit.  The remainder is at most $N-1$, so it fits the
+$n$-bit time input of $\Iter_{F,n}$, and every state of a permutation is
+cyclic, so $F^T(x)=\Iter_{F,n}(x,T'\bmod\ell(x))$.
+
+Part~\ref{it:few-lengths}: the first inequality is
+part~\ref{it:squaring} of \cref{lem:transfer}, and the second combines
+\cref{thm:spectrum} with part~\ref{it:spectrum-test} of \cref{lem:transfer}.
+
+Part~\ref{it:inverse}: $P^{-1}(x)=P^{\ell(x)-1}(x)$, and $\ell(x)-1\leq N-1$
+has $n$ bits.
+\end{proof}
+
+More generally, a permutation with easy $\ell$ and an easy iterator has
+easy $T$-th power whenever the residues $\ell\mapsto T\bmod\ell$ on its
+spectrum are computed by a small circuit.  Part~\ref{it:char} of \cref{thm:easy-powers} fails without the bound on $\lambda$: for $P_n$ the cycle
+length and the iterator are easy, but some powers are hard.  Conversely,
+the cycle length can be hard while the map, its inverse, and its iterator
+are all easy.
+
+\begin{proposition}[Hard cycle length, easy iterator and inverse]
+\label[proposition]{prop:hard-cycle-length}
+For $w\geq2$ define $P$ on triples $(M,a,x)$ of $w$-bit integers, so
+$n=3w$, by
+\[
+ P(M,a,x)=\begin{cases}
+ (M,a,ax\bmod M),&M\geq2,\ a,x<M,\ \gcd(a,M)=\gcd(x,M)=1,\\
+ (M,a,x),&\text{otherwise}.
+ \end{cases}
+\]
+Then $P$ is a permutation, and $P$, $P^{-1}$, and $\Iter_{P,m}$ have
+circuits of size $\poly(w)$ and $\poly(w,m)$.  If $\ell_P$ has circuits of
+size $q$, then a circuit of size $O(w)(q+\poly(w))$ outputs a nontrivial
+factor of every composite $w$-bit integer.  Consequently, if no
+polynomial-size circuits find a nontrivial factor of every composite
+$w$-bit integer, then $\ell_P$ requires superpolynomial circuits.
+\end{proposition}
+\begin{proof}
+For fixed valid $(M,a)$, multiplication by the unit $a$ permutes the units
+below $M$, and invalid triples are fixed; so $P$ is a permutation.
+Validity tests use gcd circuits, and modular products cost $\poly(w)$
+gates.  The inverse multiplies by $a^{-1}\bmod M$, computed by an
+extended-Euclid circuit.  The iterator returns $(M,a,a^tx\bmod M)$ on valid
+triples, with $a^t\bmod M$ computed by square-and-multiply over the $m$
+bits of $t$.  On a valid triple, $a^jx\equiv x$ exactly when $a^j\equiv1$,
+so $\ell_P(M,a,x)=\ord_M(a)$.
+
+Now let $M$ be composite.  If $M$ is even, output $2$.  If $M=r^e$ with
+$e\geq2$, output $r$; integer $e$-th roots for all $e\leq w$ cost
+$\poly(w)$ gates.  Otherwise $M$ is odd with at least two distinct prime
+factors.  Draw $a$ uniformly from $[1,M-1]$ by rejection sampling on the
+bit length of $M$.  If $\gcd(a,M)>1$, output it.  Otherwise put
+$r=\ell_P(M,a,1)=\ord_M(a)$.  If $r$ is even and
+$a^{r/2}\not\equiv-1\pmod M$, then $\gcd(a^{r/2}-1,M)$ is a nontrivial
+factor, and for such $M$ this happens with probability at least $1/2$
+over a uniform unit $a$~\cite{Mil76,Sho97}.  One trial therefore succeeds
+with probability at least $1/4$, and $O(w)$ independent trials fail with
+probability below $2^{-w-1}$.  A union bound over all $w$-bit $M$ and
+Adleman's argument~\cite{Adleman78} fix the random bits.  Each trial uses
+one copy of the circuit for $\ell_P$ and $\poly(w)$ further gates.
+\end{proof}
+
+By \cref{thm:easy-powers}, the permutation of
+\cref{prop:hard-cycle-length} then has superpolynomially many distinct
+cycle lengths and some hard fixed powers, under the same hypothesis.  The
+hardness obtained is only superpolynomial, since factoring has circuits of
+size $2^{\tilde O(w^{1/3})}$.  Whether the cycle length of an explicit
+polynomial-size permutation can be hard without number-theoretic
+assumptions is a question about space-bounded computation; we do not
+pursue it here.
+
 \subsection{Recognizable targets and terminating computations}
 
 \begin{corollary}[First recognizable target]\label[corollary]{cor:target}
@@ -2425,6 +2623,20 @@ Leonard Adleman.
 \newblock In \emph{Proceedings of the 19th Annual Symposium on Foundations
 of Computer Science (FOCS)}, pages 75--83, 1978.
 \newblock \href{https://doi.org/10.1109/SFCS.1978.37}{doi:10.1109/SFCS.1978.37}.
+
+\bibitem{Mil76}
+Gary L. Miller.
+\newblock Riemann's hypothesis and tests for primality.
+\newblock \emph{Journal of Computer and System Sciences}, 13(3):300--317,
+1976.
+\newblock \href{https://doi.org/10.1016/S0022-0000(76)80043-8}{doi:10.1016/S0022-0000(76)80043-8}.
+
+\bibitem{Sho97}
+Peter W. Shor.
+\newblock Polynomial-time algorithms for prime factorization and discrete
+logarithms on a quantum computer.
+\newblock \emph{SIAM Journal on Computing}, 26(5):1484--1509, 1997.
+\newblock \href{https://doi.org/10.1137/S0097539795293172}{doi:10.1137/S0097539795293172}.
 
 \bibitem{LV19}
 Ming Li and Paul Vit\'anyi.

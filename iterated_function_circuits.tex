@@ -1651,6 +1651,201 @@ has a linear-size circuit.  Membership in $\mathsf{PSPACE}/\poly$ gives
 only an upper bound.  These examples show that neither the length of an
 exponent nor its numerical size forces hardness.
 
+\subsection{The counting barrier}\label{sec:counting-barrier}
+
+The lower bound of \cref{thm:lower} counts the distinct powers of one
+map.  This subsection shows how far such counting can go for an
+arbitrary map, which maps admit it at all, and why the exponent $1/2$
+is also the limit of oracle-based constructions.  Lean checks
+\cref{lem:num-powers} for arbitrary maps on finite types
+(\texttt{iterate\_eq\_iterate\_iff}, \texttt{card\_range\_iterate}) and
+the counting step behind \cref{prop:count-general} in its native basis:
+if the ordered description budget for $q$ gates, or the explicit bound
+$2^{3q+h(2q+n+1)}$ with $n+q+1\leq2^h$, is below $\mu(F)+\lambda(F)$, then
+some $F^T$ with $T<\mu(F)+\lambda(F)$ has no circuit with at most $q$ gates
+(\texttt{exists\_hard\_power\_of\_budget\_lt},
+\texttt{exists\_hard\_power}).  The final arithmetic of
+\cref{prop:count-general} in the paper's basis and the remaining results
+of this subsection are not mechanized.
+
+For $F:\bits^n\to\bits^n$ write $\mu(F)$ for the largest pre-period
+(transient depth) of a state, $\lambda(F)$ for the least common
+multiple of the cycle lengths of its functional graph, and $D(F)$ for
+the number of distinct maps among $F^0,F^1,F^2,\ldots$.
+
+\begin{lemma}[Number of powers]\label[lemma]{lem:num-powers}
+For integers $0\leq a<b$, $F^a=F^b$ holds if and only if
+$a\geq\mu(F)$ and $\lambda(F)\mid b-a$.  Consequently
+$D(F)=\mu(F)+\lambda(F)$.
+\end{lemma}
+
+\begin{proof}
+If $a\geq\mu$, then $F^a(x)$ lies on a cycle for every $x$, and the
+length of that cycle divides $\lambda$; so $\lambda\mid b-a$ gives
+$F^b(x)=F^a(x)$.  Conversely, suppose $a<\mu$ and let $x$ have
+pre-period $\mu$.  Then $F^a(x)$ has pre-period $\mu-a>0$, while
+$F^b(x)$ has pre-period $\max(\mu-b,0)<\mu-a$, so the two states
+differ.  If $a\geq\mu$ but some cycle length $\ell$ does not divide
+$b-a$, then any $x$ on that cycle has $F^a(x)\neq F^b(x)$.  Since
+$\lambda$ divides $b-a$ exactly when every cycle length does, this
+proves the equivalence.  The powers $F^0,\ldots,F^{\mu+\lambda-1}$ are
+therefore pairwise distinct, because two of them with $a<b$ would need
+$a\geq\mu$ and $0<b-a<\lambda$; and every $F^T$ with $T\geq\mu+\lambda$
+equals $F^{T-\lambda}$.
+\end{proof}
+
+\begin{proposition}[Counting over the powers of one map]
+\label[proposition]{prop:count-general}
+For every $n\geq4$ and every $F:\bits^n\to\bits^n$,
+\[
+  \max_{T\geq0}\CC(F^T)\;\geq\;
+  \frac{\log_2D(F)-n^2-n-1}{3n}-1.
+\]
+\end{proposition}
+
+\begin{proof}
+Let $q=\floor{(\log_2D-n^2-n-1)/(3n)}$; if $q<0$ there is nothing to
+prove.  Every cycle length is at most $N$, so $\lambda\leq N!$ and
+$\log_2D\leq\log_2(N+N!)\leq nN+1$.  Hence $q\leq N/3+1$, and
+$n+q+2\leq N$ for $n\geq4$.  By \cref{lem:count}, at most
+\[
+  (q+1)16^q(n+q+2)^{2q+n}
+  \leq2^{\log_2(q+1)+4q+(2q+n)n}
+  \leq2^{3nq+n^2+n}
+\]
+maps have complexity at most $q$, using $4q\leq nq$ and
+$\log_2(q+1)\leq n$.  By the choice of $q$ this is less than $D$, so
+by \cref{lem:num-powers} some power has complexity greater than $q$.
+\end{proof}
+
+For $F=P_n$, where $\mu=0$ and $\log_2D=\log_2D_B\geq2^{n/2}-O(n)$, this
+recovers \cref{thm:lower} up to the constant factor.
+
+\begin{corollary}[A ceiling on the number of powers]
+\label[corollary]{cor:landau}
+If $\CC(F)\leq s$ and $A=s+n^3$, then
+\[
+  \log_2\lambda(F)\leq\log_2D(F)
+  =O\!\left(nA+n^{5/2}\sqrt{NA}\right).
+\]
+\end{corollary}
+
+\begin{proof}
+Combine \cref{prop:count-general} with the upper bound
+\cref{eq:optimized}, which holds for every power.
+\end{proof}
+
+For comparison, let $g(N)$ be Landau's function, the largest order of
+a permutation of $N$ points.  The cycle lengths of any map on $N$
+states sum to at most $N$, so $\lambda(F)\leq g(N)$ for every $F$, and
+Landau's theorem~\cite{Landau03}, $\ln g(N)\sim\sqrt{N\ln N}$, gives
+\[
+  \log_2g(N)=(1+o(1))\frac{\sqrt{N\ln N}}{\ln2}
+  =\Theta\bigl(2^{n/2}\sqrt n\bigr).
+\]
+Thus \cref{cor:landau} says that a map with a polynomial-size circuit
+can have at most as many powers as an arbitrary map, up to $\poly(n)$
+factors in the exponent, and \cref{eq:lcm-lower} shows that $P_n$,
+with $\log_2D_B\geq2^{n/2}-O(n)$, is extremal up to such factors.
+Conversely, a counting argument through \cref{lem:count} can certify
+hardness $q$ only when $3nq+n^2+n<\log_2D(F)\leq\log_2(N+g(N))$, so it
+never certifies more than $O(2^{n/2}/\sqrt n)$ for any map on $n$ bits.
+Counting over the powers of a single map therefore cannot go beyond the
+exponent $1/2$ of \cref{thm:main}; the matching exponent of
+\cref{thm:lower} is a counting barrier, not only a limit of the
+construction.
+
+The ceiling also says which maps have hard powers by counting.  Let
+$c(F)$ be the number of distinct cycle lengths.  Distinct lengths sum to
+at most $N$, so $c(F)(c(F)+1)/2\leq N$, that is,
+$c(F)\leq\sqrt{2N}$, and by the arithmetic--geometric mean inequality
+$\log_2\lambda(F)\leq c(F)\log_2(N/c(F))$.  A bound of
+$2^{n/2}/n$ from \cref{prop:count-general} needs
+$\log_2D(F)\geq3\cdot2^{n/2}$, hence $c(F)=\Omega(2^{n/2}/n)$, within
+a factor $O(n)$ of the maximum; $P_n$ has $c(P_n)=2^{n/2}-1$.  Typical
+maps are far from this.  For a uniformly random permutation of $N$
+points, $\ln\ord$ is asymptotically normal with mean
+$\tfrac12(\ln N)^2$~\cite{ET67}, so
+$\log_2\ord\approx\tfrac{\ln2}{2}n^2\approx0.35\,n^2$ with high
+probability; for a uniformly random map, $\ln\lambda$ has mean
+asymptotic to $\tfrac18(\ln N)^2$~\cite{Harris73}, giving about
+$\tfrac{\ln2}{8}n^2\approx0.09\,n^2$ bits.  Both have $O(n)$ cycles in
+expectation.  For such maps $\log_2D(F)=O(n^2)$, every power equals
+$F^{T'}$ with an exponent $T'$ of $O(n^2)$ bits, and counting gives
+nothing.  Hard powers obtained by counting are therefore a non-generic
+phenomenon; for typical maps the question is that of
+\cref{sec:lower-limits}, about exponents of polynomial length.
+
+\paragraph{The image profile is the right parameter.}
+\Cref{cor:image} charges $|\operatorname{im}(F^d)|$ in place of $N$, and
+this is sharp.  For $n=a+b$ with $a$ even, let
+$F(u,v)=(P_a(u),0^b)$ on $\bits^a\times\bits^b$.  Then $\CC(F)=O(n)$
+and $|\operatorname{im}(F)|=2^a$, so \cref{cor:image} with $d=1$ gives
+$\max_T\CC(F^T)=O(n^32^{a/2})$, however large $b$ is.  On the other
+hand $F^T(u,0^b)=(P_a^T(u),0^b)$ for $T\geq1$, so a circuit for $F^T$
+yields one for $P_a^T$ by fixing $v=0^b$ and projecting, and
+\cref{thm:lower} supplies $T\geq1$ with
+$\CC(F^T)=\Omega(2^{a/2}/a)$.  Permutations, for which no image shrinks,
+are the hardest case, which is why the sharpness example of
+\cref{sec:lower} is a permutation.
+
+For random-like maps the image shrinks substantially.  If
+$|\operatorname{im}(F^d)|\leq cN/d$ at $d=\ceil{N^{1/3}}$, then
+\cref{cor:image}, with $F^d$ unrolled in $ds$ gates and $T<d$ handled by
+unrolling, gives
+\[
+  \CC(F^T)=O\!\left(N^{1/3}\bigl(s+n^{3/2}\sqrt{cA}\bigr)\right)
+  \qquad\text{for every }T.
+\]
+For a uniformly random map and each fixed $d$,
+$\mathbb E|\operatorname{im}(F^d)|/N\to\tau_d$ as $N\to\infty$, where
+$\tau_0=1$, $\tau_{d+1}=1-e^{-\tau_d}$ and $\tau_d\sim2/d$~\cite{FO90};
+so random maps heuristically have the profile $2N/d$, with $c\approx2$.
+This is a statement about expectations for fixed $d$, not about any
+explicit family, and extending it to $d=\ceil{N^{1/3}}$ is a heuristic.
+Whether a natural explicit family of polynomial-size maps satisfies such
+an image profile is open.  The implication itself is unconditional.
+
+\paragraph{Black-box tightness.}
+The construction uses $F$ only through evaluations.  In the
+preprocessing model, where an unbounded preprocessing stage produces an
+advice string of $S$ bits about $F$ and an online stage makes $t$ oracle
+queries to $F$, the construction of \cref{sec:fixed} has
+$S=O(n(N/L+L))$ bits (payloads and residue table) and $t=O(L)$ queries
+for every $T$; the batched lookup makes no queries.  So $S\,t=O(nN)$ for
+$L\leq\sqrt N$.
+
+\begin{proposition}[Black-box tightness]\label[proposition]{prop:blackbox}
+Let $P$ be a uniformly random permutation of $\bits^n$.  Suppose that an
+algorithm with $S$ bits of advice about $P$ and $t$ oracle queries
+outputs $P^T(x)$ for every $T\geq0$, or merely for $T=\ord(P)-1$, with
+probability at least $\varepsilon$ over $P$ and a uniform $x$.  Then
+$S\,t\geq\widetilde\Omega(\varepsilon N)$.
+\end{proposition}
+
+\begin{proof}
+$P^{\ord(P)-1}=P^{-1}$, and the preprocessing may compute $\ord(P)$.
+The algorithm therefore inverts $P$ at a uniform point with probability
+$\varepsilon$, and the time--space lower bound for inverting a random
+permutation with advice~\cite{Yao90,DTT10} gives the claim.
+\end{proof}
+
+Hence the tradeoff $S\,t=O(N\log N)$ of the construction, and its
+balancing point $L\approx\sqrt N$, are optimal up to polylogarithmic
+factors among all schemes that use the transition only as an oracle.
+Mazor and Pass~\cite[Theorem~5.8]{MP24} give a related statement for
+circuits with oracle gates for the permutation.  Improving the
+exponent of \cref{cor:inverse} for a specific permutation therefore
+requires using its circuit, not only its values.  Whether the same
+holds for a fixed cycle type, such as a random relabelling
+$\sigma\circ P_n\circ\sigma^{-1}$ of $P_n$, does not follow directly from
+these bounds, which concern uniformly random permutations, and is left
+open.  For noninjective maps the black-box question is also open: the
+image bound above gives advice times queries squared of
+$\widetilde O(N)$ for random-like maps, but verifying $y=F^T(x)$ costs
+about $\sqrt N$ queries, and the standard presampling and compression
+arguments do not apply directly.
+
 \section{Input times and shared evaluation}
 
 \subsection{An iteration count supplied as input}\label{sec:variable}
@@ -3032,7 +3227,9 @@ The accompanying \texttt{lean/} project proves existence of actual Boolean
 circuits with evaluation semantics and gate bounds.  It covers
 \cref{tab:results}, the invariant-set, image-sensitive and active-mass
 refinements, permutation inversion, complete-configuration simulation,
-and the lower-bound results, as well as the semantic identities of
+and the lower-bound results, including the exact number of distinct powers
+of a finite map (\cref{lem:num-powers}) and the counting step of
+\cref{prop:count-general}, as well as the semantic identities of
 \cref{sec:spectrum} (but not their gate counts).  The semantic lemmas also support arbitrary
 state types with finite invariant subsets and supplied Boolean encodings;
 initialization and decoding costs remain additional.
@@ -3385,6 +3582,56 @@ Stephen Wolfram.
 \newblock Random sequence generation by cellular automata.
 \newblock \emph{Advances in Applied Mathematics}, 7(2):123--169, 1986.
 \newblock \href{https://doi.org/10.1016/0196-8858(86)90028-X}{doi:10.1016/0196-8858(86)90028-X}.
+
+\bibitem{Landau03}
+Edmund Landau.
+\newblock {\"U}ber die {M}aximalordnung der {P}ermutationen gegebenen
+{G}rades.
+\newblock \emph{Archiv der Mathematik und Physik}, 3rd series, 5:92--103, 1903.
+
+\bibitem{ET67}
+Paul Erd\H{o}s and P\'al Tur\'an.
+\newblock On some problems of a statistical group-theory. {III}.
+\newblock \emph{Acta Mathematica Academiae Scientiarum Hungaricae},
+18:309--320, 1967.
+\newblock \href{https://doi.org/10.1007/BF02280290}{doi:10.1007/BF02280290}.
+
+\bibitem{Harris73}
+Bernard Harris.
+\newblock The asymptotic distribution of the order of elements in
+symmetric semigroups.
+\newblock \emph{Journal of Combinatorial Theory, Series A}, 15:66--74, 1973.
+\newblock \href{https://doi.org/10.1016/0097-3165(73)90036-8}{doi:10.1016/0097-3165(73)90036-8}.
+
+\bibitem{FO90}
+Philippe Flajolet and Andrew M. Odlyzko.
+\newblock Random mapping statistics.
+\newblock In \emph{Advances in Cryptology -- EUROCRYPT '89}, LNCS 434,
+pages 329--354. Springer, 1990.
+\newblock \href{https://doi.org/10.1007/3-540-46885-4_34}{doi:10.1007/3-540-46885-4\_34}.
+
+\bibitem{Yao90}
+Andrew C. Yao.
+\newblock Coherent functions and program checkers.
+\newblock In \emph{Proceedings of the Twenty-Second Annual ACM Symposium
+on Theory of Computing}, STOC, pages 84--94, 1990.
+\newblock \href{https://doi.org/10.1145/100216.100226}{doi:10.1145/100216.100226}.
+
+\bibitem{DTT10}
+Anindya De, Luca Trevisan, and Madhur Tulsiani.
+\newblock Time space tradeoffs for attacks against one-way functions and
+{PRG}s.
+\newblock In \emph{Advances in Cryptology -- CRYPTO 2010}, LNCS 6223,
+pages 649--665. Springer, 2010.
+\newblock \href{https://doi.org/10.1007/978-3-642-14623-7_35}{doi:10.1007/978-3-642-14623-7\_35}.
+
+\bibitem{MP24}
+Noam Mazor and Rafael Pass.
+\newblock The non-uniform perebor conjecture for time-bounded
+{K}olmogorov complexity is false.
+\newblock In \emph{15th Innovations in Theoretical Computer Science
+Conference (ITCS)}, LIPIcs 287, 80:1--80:20, 2024.
+\newblock \href{https://eccc.weizmann.ac.il/report/2023/175/}{ECCC TR23-175}.
 
 \end{thebibliography}
 

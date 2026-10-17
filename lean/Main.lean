@@ -8,6 +8,7 @@ module
 public import Statement
 public import Proofs.Extensions
 public import Proofs.Applications
+public import Proofs.UniversalMap
 public import Proofs.VariableTime
 public import Proofs.Targets
 public import Proofs.OrbitStructure
@@ -450,5 +451,60 @@ namespace IteratedFunctions
 [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms ForestDuality.forest_duality
+
+/-- info: 'IteratedFunctions.iterate_simulation' depends on axioms:
+[propext, Quot.sound] -/
+#guard_msgs in
+#print axioms iterate_simulation
+
+/-- info: 'IteratedFunctions.simulation_circuit' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms simulation_circuit
+
+/-- info: 'IteratedFunctions.prodMap_power_circuit' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms prodMap_power_circuit
+
+/-- info: 'IteratedFunctions.prodMap_power_circuit_left' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms prodMap_power_circuit_left
+
+/-- info: 'IteratedFunctions.smul_zpow_circuit' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms smul_zpow_circuit
+
+/-- info: 'IteratedFunctions.smul_iterate_circuit' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms smul_iterate_circuit
+
+/-- info: 'IteratedFunctions.smul_inverse_circuit' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms smul_inverse_circuit
+
+/-- info: 'IteratedFunctions.pairAction_iterate' depends on axioms:
+[propext, Quot.sound] -/
+#guard_msgs in
+#print axioms pairAction_iterate
+
+/-- info: 'IteratedFunctions.Universal.step_round' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms Universal.step_round
+
+/-- info: 'IteratedFunctions.Universal.step_iterate' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms Universal.step_iterate
+
+/-- info: 'IteratedFunctions.Universal.universal_power_circuit' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms Universal.universal_power_circuit
 
 end IteratedFunctions

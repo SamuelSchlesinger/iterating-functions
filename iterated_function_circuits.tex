@@ -4196,6 +4196,420 @@ and no inverse-coordinate circuit is required.
 A finite-field application, including the cost of discrete-logarithm
 coordinates, is given in \cref{app:binary-field}.
 
+\section{Applications}\label{sec:applications}
+
+This section collects four consequences of the fixed-power construction:
+computations with a bounded number of nondeterministic or alternating
+choices, the running time of the preprocessing, a single explicit map that
+collects the hardness of all linear-size maps, and the structure of
+permutations whose iterator is easy but whose inverse is not.  Only the
+simulation and hardwiring arguments of \cref{sec:universal-map,sec:asymmetric}
+are mechanized in Lean, as described there; the rest of this section is
+prose.
+
+\subsection{A bounded number of choices}\label{sec:bounded-choice}
+
+Let a deterministic computation have its configurations encoded in $b$
+bits, as in \cref{cor:halting}, and suppose that some configurations are
+\emph{choice configurations} with two successors $\sigma_0(c)$ and
+$\sigma_1(c)$, while every other configuration $c$ has the single successor
+$\sigma(c)$; halting configurations are absorbing.  Suppose that a circuit
+of size $s$ decides whether $c$ is a choice configuration and computes
+$\sigma_0(c)$, $\sigma_1(c)$ and $\sigma(c)$, and that along every path from
+an initial configuration $\iota(x)$, $x\in\bits^n$, at most $g$ choice
+configurations are visited.  Let $\mathrm{Conf}\subseteq\bits^b$ be a set
+containing every configuration on such a path.  In an alternating
+computation each choice configuration is labelled existential or
+universal by the same circuit.  Acceptance is the least fixed point:
+a halting configuration accepts according to its state, an existential
+(universal) choice configuration accepts when some (every) successor
+accepts, a nonchoice configuration accepts when its successor does, and
+a configuration accepts only if this is forced after finitely many
+steps.  A nondeterministic computation is the special case in which
+every choice is existential.
+
+\begin{proposition}[Bounded alternation]\label[proposition]{prop:bounded-choice}
+In this setting put $b'=b+g+\ceil{\log_2(g+2)}$, $M=(g+1)|\mathrm{Conf}|$
+and $A'=s+O(g\log(g+2))+b'^3$.  Acceptance on $\bits^n$ has a circuit of
+size
+\[
+  2^{g+1}\cdot O\!\left(A'+\sqrt{b'^3MA'}\right)+O(2^g).
+\]
+For an in-place machine with $h$ heads, tape alphabet $\Gamma$, state set
+$Q$ and $|\mathrm{Conf}|\leq|\Gamma|^n n^h|Q|$, and with $h$, $Q$ and
+$\Gamma$ fixed, this is $2^g|\Gamma|^{n/2}\poly(n,g)$.
+\end{proposition}
+
+\begin{proof}
+For a choice word $y\in\bits^g$ let $F_y$ act on pairs $(c,i)$, where
+$0\leq i\leq g$ counts the choices made so far:
+\[
+  F_y(c,i)=
+  \begin{cases}
+    (\sigma_{y_{i+1}}(c),\,i+1), & c\text{ a choice configuration and }i<g,\\
+    (\sigma(c),\,i), & c\text{ a nonchoice configuration},\\
+    (c,i), & \text{otherwise}.
+  \end{cases}
+\]
+With $y$ supplied as $g$ further state bits that never change, these maps
+form one map on $b'$ bits whose circuit has $s+O(g\log(g+2))$ gates: the
+bit $y_{i+1}$ is selected by a multiplexer and the counter is incremented
+conditionally.  The deterministic trajectory of $(\iota(x),0)$ under
+$F_y$ is the computation path that resolves its $j$th choice by $y_j$.
+Fix $y$.  The set of pairs reachable from $\{(\iota(x),0):x\in\bits^n\}$ is
+forward invariant under $F_y$ and has at most $M$ elements.  A trajectory
+in a set of $M$ states that has not reached an absorbing state after $M$
+steps never does, so $F_y^M(\iota(x),0)$ is a halting configuration if and
+only if the path determined by $y$ halts, and it is then the final
+configuration.  By \cref{thm:invariant}, with the bits of $y$ hardwired and
+$L$ optimized as in \cref{eq:L-choice} with $N$ replaced by $M$, the bit
+\[
+  v_y(x)=[\,F_y^M(\iota(x),0)\text{ is an accepting halting configuration}\,]
+\]
+has a circuit of size $O(A'+\sqrt{b'^3MA'})$.
+
+For a prefix $u\in\bits^j$ with $j<g$, let $F^{(u)}$ be $F_{u0^{g-j}}$
+modified to fix every pair $(c,j)$ in which $c$ is a choice configuration.
+The trajectory of $(\iota(x),0)$ under $F^{(u)}$ follows the path with
+choices $u$ until it reaches its $(j+1)$st choice configuration, and stops
+there.  The same argument gives a circuit of the same size for the bit
+$e_u(x)$ that says whether $F^{(u)\,M}(\iota(x),0)$ is a universal choice
+configuration with counter $j$.
+
+Now evaluate the choice tree.  Put $\mathrm{val}(y)=v_y(x)$ for
+$y\in\bits^g$, and for $|u|<g$ let $\mathrm{val}(u)$ be the AND of
+$\mathrm{val}(u0)$ and $\mathrm{val}(u1)$ if $e_u(x)=1$ and their OR
+otherwise.  This uses $O(2^g)$ further gates.  We claim that
+$\mathrm{val}(\varepsilon)$ is the acceptance bit.  By induction on $g-|u|$,
+$\mathrm{val}(u)$ is the value of the configuration at which the path with
+choices $u$ makes its $(|u|+1)$st choice, if it makes one.  If it makes
+none, every $y$ extending $u$ determines the same path, so all leaves below
+$u$ equal its acceptance bit and so does $\mathrm{val}(u)$, whatever $e_u$
+is.  A path that never halts determines the value $0$, as the least fixed
+point requires, because only finitely many choices occur on it.  The
+circuits $v_y$ and $e_u$ number $2^g+2^g-1$, which gives the bound.  For
+the in-place case, $b=n\ceil{\log_2|\Gamma|}+h\ceil{\log_2n}+O(1)$ and
+a step circuit decodes each head position and updates the cells under
+the heads with $O(hn)$ gates, so $s=O(hn)$, $b'$ and $A'$ are $\poly(n,g)$ and
+$\sqrt M\leq\sqrt{g+1}\,|\Gamma|^{n/2}n^{h/2}|Q|^{1/2}$.
+\end{proof}
+
+The factor $2^g$ is the price of enumerating the choice words; the
+dictionaries of different words $y$ cannot be shared, because their
+invariant sets are disjoint.  For a binary alphabet the bound
+$2^{n/2+g}\poly(n)$ is below the truth-table bound whenever
+$g\leq(1/2-\varepsilon)n$ for a fixed $\varepsilon>0$ and $n$ is large.  Unbounded nondeterminism lies outside the method.
+When $g$ is not bounded, the configuration graph has out-degree two, a
+computation is a tree rather than a trajectory, and neither
+\cref{lem:checkpoints} nor the correction identity \cref{eq:identity} has
+an analogue.  Whether nondeterministic in-place machines admit circuits of
+size $|\Gamma|^{n/2}\poly(n)$ is open.
+
+\subsection{The cost of writing down the circuit}\label{sec:preprocessing}
+
+The circuits of \cref{thm:main} are nonuniform: the checkpoint payloads
+depend on all of $F$ and on $T$.  When $F$ is given by a circuit, they can
+nevertheless be computed in time close to linear in $N$.  We use a
+checkpoint set that is easier to compute than the path packing of
+\cref{lem:checkpoints}.
+
+\begin{lemma}[Depth-residue checkpoints]\label[lemma]{lem:residue-checkpoints}
+Let $F$ be a map on $N$ states and $1\leq L\leq N$.  There is a set $H$ of
+at most $2N/L$ states such that, for every $x$, the list
+$x,F(x),\ldots,F^{2L}(x)$ contains an element of $H$ or a repeated state.
+Given the table of $F$, such a set is computed in $O(N)$ operations.
+\end{lemma}
+
+\begin{proof}
+Among the $L$ residue classes of the depths of noncycle vertices modulo
+$L$, choose one of minimum size and put its vertices into $H$; this adds at
+most $N_{\mathrm{tree}}/L$ vertices.  On every cycle of length
+$\ell\geq L$, number the vertices in the forward direction and put those
+with indices $0,L,2L,\ldots$ below $\ell$ into $H$, at most
+$\ceil{\ell/L}\leq2\ell/L$ per cycle.  Leave cycles shorter than $L$
+unmarked.  Then $|H|\leq2N/L$.  A trajectory starting at depth at least
+$L$ meets every depth residue among its first $L$ states, hence meets $H$.
+Otherwise it reaches its cycle in fewer than $L$ steps, then either meets
+a mark within $L$ further steps or, on a short cycle, repeats a state
+within $L$ further steps.  The cycles, the depths and the class sizes are
+found by one traversal of the functional graph and one breadth-first
+search from the cycles along reversed edges.
+\end{proof}
+
+Replacing \cref{lem:checkpoints} by this lemma in \cref{sec:fixed} changes
+only the constant in the size of the dictionary, so it gives the bound of
+\cref{thm:main} with the same $K=2L$.
+
+\begin{proposition}[Preprocessing time]\label[proposition]{prop:preprocessing}
+On a random-access machine with words of $\Theta(n)$ bits, given a circuit of
+size $s$ for $F$ and the binary expansion of $T$, a circuit for $F^T$ of the
+size in \cref{eq:optimized} is computed with
+\[
+  O\!\left(Ns+N+G+\sqrt N\ceil{\log_2(T+2)/n}\right)
+\]
+word operations, where $G=O(A+\sqrt{n^3NA})$ is the size of the output.
+\end{proposition}
+
+\begin{proof}
+If $T<K$ the circuit is $T$ copies of $F$.  Otherwise:
+\begin{enumerate}
+\item Evaluate $F$ on all $N$ states, $O(Ns)$ operations, and compute $H$ by
+  \cref{lem:residue-checkpoints}, $O(N)$.
+\item The payloads are $z_h=F^j(h)$ with the common exponent $j=T-K$.  Run a
+  depth-first search on the reversed forest from each cycle vertex,
+  keeping the current root-to-vertex path on a stack.  At a vertex $h$ of
+  depth $d_h>j$ the payload is the stack entry $j$ positions below the
+  top.  At a vertex of depth $d_h\leq j$ attached to the cycle vertex $c$
+  of a cycle of length $\ell$, stored as an array, the payload is the cycle
+  vertex at position
+  $\mathrm{pos}(c)+\bigl((T\bmod\ell)-K-d_h\bigr)\bmod\ell$.  Cycle
+  vertices are handled by the same formula with $d_h=0$.  This takes
+  $O(N)$ operations once $T\bmod\ell$ is known for every cycle length.
+\item The distinct cycle lengths sum to at most $N$, so there are at most
+  $\sqrt{2N}$ of them.  The residue table \cref{eq:residue-table} needs
+  $T\bmod p$ for $p\leq K\leq2\ceil{\sqrt N}$.  Each reduction of $T$
+  modulo an $O(n)$-bit integer takes $O(\ceil{\log_2(T+2)/n})$ word
+  operations by schoolbook division, so all residues take
+  $O(\sqrt N\ceil{\log_2(T+2)/n})$ operations.
+\item Emit the trajectory circuits, the Batcher network of
+  \cref{lem:lookup} with the hardwired dictionary, the repetition and
+  arithmetic circuits and the residue table, in time linear in their
+  size.  Batcher's network is generated recursively.\qedhere
+\end{enumerate}
+\end{proof}
+
+In bit operations the bound is multiplied by $\poly(n)$.  This refines the
+polynomial bound in $N$, $s$ and $\log T$ recorded in the review notes
+accompanying the repository.  In particular, if a uniform family $F_n$ has
+circuits of size $2^{O(n)}$ computable in time $2^{O(n)}$, and $T_n$ is
+computable in time $2^{O(n)}$, then the circuits for $F_n^{T_n}$ of size
+$2^{n/2}\poly(n,s)$ are computable in time $2^{O(n)}$, that is, they form an
+$\mathsf{E}$-uniform family.  The same holds for the final-configuration
+circuits of \cref{cor:halting}, where $T=2^b$.  Only the circuit for the
+first halting time, which uses \cref{thm:depth}, has not been analysed
+here.
+
+\subsection{A universal linear-size map}\label{sec:universal-map}
+
+Hardness of a fixed power of some linear-size map transfers to a single
+explicit map with a logarithmic loss in the state width.
+
+Fix $n$ and a constant $c\geq1$, and let $G=(c+1)n$.  Normalize every
+circuit of size at most $cn$ for a map on $n$ bits to exactly $G$ gates in
+topological order whose last $n$ gates are the outputs, by inserting dummy gates and then appending $n$ gates that copy the
+outputs.  Such a circuit is described by
+a list $D$ of $G$ entries, each an operation and two operand indices in
+$[0,n+G)$, so $|D|=O(n\log n)$.  Let $U=U_{n,c}$ act on states
+$(D,x,w,\mathit{pc})$ with $x\in\bits^n$, $w\in\bits^G$ and a counter
+$0\leq\mathit{pc}\leq G$, of total width $m=O(n\log n)$:
+\begin{itemize}
+\item if $\mathit{pc}<G$, set $w_{\mathit{pc}}$ to the operation of entry
+  $\mathit{pc}$ of $D$ applied to its operands, where index $i$ refers to
+  $x_i$ for $i<n$ and to $w_{i-n}$ otherwise, and increment $\mathit{pc}$;
+\item if $\mathit{pc}=G$, copy the last $n$ bits of $w$ into $x$, clear
+  $w$ and reset $\mathit{pc}$ to $0$.
+\end{itemize}
+Other values of $\mathit{pc}$ are treated as $G$, and $D$ never changes.
+
+\begin{proposition}[Universal map]\label[proposition]{prop:universal}
+$U_{n,c}$ is computable in time $\poly(n)$ from $(n,c)$ and has
+$\CC(U_{n,c})=O(n\log n)=O(m)$.  Put $\tau=G+1$.  For every
+$F:\bits^n\to\bits^n$ with $\CC(F)\leq cn$ and every $T\geq0$,
+\[
+  \CC(F^T)\leq\CC(U_{n,c}^{\tau T}).
+\]
+Consequently, if some maps $F_n$ with $\CC(F_n)\leq cn$ have
+$\CC(F_n^{T_n})\geq2^{\varepsilon n}$, then
+$\CC(U_{n,c}^{\tau T_n})\geq2^{\Omega(m/\log m)}$, where the exponent
+$\tau T_n$ has $O(\log T_n+\log n)$ bits.
+\end{proposition}
+
+\begin{proof}
+One step selects entry $\mathit{pc}$ of $D$ with a multiplexer over $G$
+entries of $O(\log n)$ bits, $O(n\log n)$ gates; selects the two operands
+from the $n+G$ bits of $x$ and $w$, $O(n)$ gates; and writes the result
+through a decoder of $\mathit{pc}$, $O(n)$ gates.  The reset step and the
+selection between the two cases cost $O(n)$ gates.  For the description
+$D_F$ of $F$, gate $\mathit{pc}$ reads only $x$ and gates with smaller
+indices, which have been written since the last reset, so
+$U^{\tau}(D_F,x,0,0)=(D_F,F(x),0,0)$ and by induction
+$U^{\tau T}(D_F,x,0,0)=(D_F,F^T(x),0,0)$.  Hardwiring $D_F$, $w=0$ and
+$\mathit{pc}=0$ in a circuit for $U^{\tau T}$ and projecting onto $x$
+gives a circuit for $F^T$ of no larger size, since constants and
+projections are free.  The final claim follows from
+$n=\Omega(m/\log m)$.
+\end{proof}
+
+Lean checks the simulation and hardwiring steps of this proof in
+\texttt{UniversalMap.lean}.  \texttt{iterate\_simulation} derives
+$U^{\tau T}\circ\mathrm{enc}=\mathrm{enc}\circ F^T$ from the one-step
+identity, and \texttt{simulation\_circuit} turns a circuit for $U^{\tau T}$,
+correct on encoded states, into one for $F^T$ when the encoding places the
+input bits among constant bits; in the native basis this costs two gates
+for the constants.  \texttt{Universal.step\_round} defines the step map on
+abstract states $(D,x,w,\mathit{pc})$ over any CSLib signature and proves
+$U^{G+1}(D_c,x,0,0)=(D_c,c(x),0,0)$ for every CSLib circuit $c$ with at most
+$G$ gates, where $D_c$ lists the gates of $c$ followed by padding.  In this
+version the reset step reads the output wires through indices stored in
+$D$, which is equivalent to the appended copy gates above.
+\texttt{Universal.universal\_power\_circuit} combines these steps:
+under any bit encoding of the states that writes $x$ directly and fixes
+the remaining bits of a start state to constants determined by $D_c$, a
+circuit for $U^{(G+1)T}$ gives one for $c^T$ with at most two more gates.
+The gate count $\CC(U_{n,c})=O(n\log n)$, the bit encoding of $D$, $w$ and
+$\mathit{pc}$, the uniformity claim and the asymptotic consequence are not
+mechanized.
+
+\begin{remark}[One explicit candidate]\label[remark]{rem:universal-product}
+Let $W=U_{n,c}\times P_{2k}$ act on $m+2k$ bits by
+$(u,z)\mapsto(U_{n,c}(u),P_{2k}(z))$.  Every power satisfies
+$\CC(W^T)\geq\max\{\CC(U_{n,c}^T),\CC(P_{2k}^T)\}$, since each factor is a
+projection of $W^T$ with the other input fixed.  So this single explicit
+linear-size map has a power of complexity $\Omega(2^k/k)$ by
+\cref{thm:lower}, unconditionally but at an exponent of exponential length,
+and at each exponent $\tau T$ it is at least as hard as every map on $n$
+bits with at most $cn$ gates is at $T$, whether or not that map is
+explicit.  So if any such map has a hard power at an explicit exponent
+$T$ of polynomial length, the explicit map $W$ has one at the explicit
+exponent $\tau T$, with only a logarithmic loss in the state width.
+Lean checks the projection inequality, up to the two native constant
+gates, as \texttt{prodMap\_power\_circuit} and
+\texttt{prodMap\_power\_circuit\_left}.
+\end{remark}
+
+\subsection{Asymmetric iterators}\label{sec:asymmetric}
+
+A permutation family can make all polynomially long iterations easy while
+its inverse stays hard only under strong conditions.  For a permutation
+$P$ let $\ell(x)$ be the length of the cycle of $x$, $c(P)$ the number of
+distinct cycle lengths, and $\lambda(P)=\ord(P)$ the least common multiple
+of the cycle lengths.
+
+\begin{definition}
+A family of permutations $P_n$ of $\bits^n$ with $\CC(P_n)=n^{O(1)}$ has an
+\emph{asymmetric iterator} if $\CC(\Iter_{P_n,p(n)})=n^{O(1)}$ for every
+polynomial $p$, while $\CC(P_n^{-1})$ is not bounded by any polynomial.
+\end{definition}
+
+\begin{proposition}[Necessary conditions]\label[proposition]{prop:asym-necessary}
+If $P_n$ has an asymmetric iterator, then none of the following is bounded
+by a polynomial in $n$: the circuit complexity of $x\mapsto\ell(x)$; the
+number $c(P_n)$ of distinct cycle lengths; and $\log_2\lambda(P_n)$.
+Every power $P_n^{T_n}$ whose complexity is not polynomially bounded,
+for instance $P_n^{-1}=P_n^{\lambda-1}$, has an exponent whose bit length
+is not polynomially bounded.
+\end{proposition}
+
+\begin{proof}
+Since $\ell(x)-1<2^n$,
+$P^{-1}(x)=\Iter_{P,n}(x,\ell(x)-1)$, so
+$\CC(P^{-1})\leq\CC(\ell)+\CC(\Iter_{P,n})+O(n)$.  Let
+$\ell_1<\cdots<\ell_c$ be the distinct cycle lengths.  A point $x$ satisfies
+$P^{\ell_i}(x)=x$ exactly when $\ell(x)\mid\ell_i$, and $\ell(x)$ is itself
+in the list, so
+$\ell(x)=\min\{\ell_i:\Iter_{P,n+1}(x,\ell_i)=x\}$.  With the list
+hardwired this gives
+$\CC(\ell)\leq c\,(\CC(\Iter_{P,n+1})+O(n))+O(cn)$.  If
+$\log_2\lambda\leq p(n)$, then
+$P^{-1}(x)=\Iter_{P,p(n)}(x,\lambda-1)$ with $\lambda-1$ hardwired.
+Finally, $P^T=\Iter_{P,m}(\cdot,T)$ with $T$ hardwired whenever $T$ has $m$
+bits.  Each implication contradicts the assumption on $P^{-1}$ when the
+quantity in question is polynomially bounded.
+\end{proof}
+
+\begin{proposition}[Quantum inversion]\label[proposition]{prop:asym-quantum}
+If $\Iter_{P,2n+1}$ has a circuit of size $q$, then $P^{-1}$ has a quantum
+circuit of size $\poly(n,q)$ that is correct with probability at least
+$2/3$ on every input.  If $P_n$ and $\Iter_{P_n,2n+1}$ are computable in
+polynomial time, then $P_n^{-1}\in\mathsf{FBQP}$.  Hence a uniform family
+with an asymmetric iterator would give $\mathsf{FBQP}\not\subseteq
+\mathsf{FP/poly}$, and also $\mathsf{PSPACE}\not\subseteq\mathsf{P/poly}$.
+\end{proposition}
+
+\begin{proof}
+The function $t\mapsto\Iter_{P,2n+1}(x,t)$ on $[0,2^{2n+1})$ is periodic with
+least period $\ell(x)\leq2^n$ and injective on each period, so Shor's period
+finding~\cite{Sho97}, or Kitaev's phase estimation~\cite{Kit95}, returns
+$\ell(x)$ with probability $\Omega(1/\log n)$ using $\poly(n)$ queries.  Any
+candidate $r$ with $1\leq r\leq2^n$ and $\Iter(x,r)=x$ is a multiple of
+$\ell(x)$, so $y=\Iter(x,r-1)$ satisfies $P(y)=x$; the circuit checks
+$P(y)=x$ and repeats $O(\log n)$ times.  For the last claim, $P_n^{-1}$ is
+computable in polynomial space by iterating $P_n$, so its bit language lies
+in $\mathsf{PSPACE}$ but, by assumption, not in $\mathsf{P/poly}$.
+\end{proof}
+
+So asymmetric iterators cannot be shown to exist unconditionally with
+current techniques.  The natural candidates fail for a simple reason.
+
+\begin{remark}[Fixed group elements]\label[remark]{rem:fixed-element}
+Suppose $P(x)=g\cdot x$ for a group action given by a polynomial-size circuit
+on encodings of group elements and points, with a fixed element $g$.  Then
+$P^T(x)=g^T\cdot x$, and hardwiring an encoding of $g^T$ gives a
+polynomial-size circuit for every power, including $P^{-1}$.  This covers
+$x\mapsto ax\bmod M$, the RSA permutation $x\mapsto x^e\bmod N$ on
+$(\mathbb Z/N)^\times$ with fixed $N$, where $g^T$ is the exponent
+$e^T\bmod\lambda(N)$, Rabin squaring on the quadratic residues of a fixed
+Blum integer, and the action of a fixed ideal class: all are symmetric
+nonuniformly.  Making the modulus part of the state, as in the time-lock
+puzzle of Rivest, Shamir and Wagner~\cite{RSW96}, removes the hardwired
+group order, but then the iterator $x\mapsto x^{2^t}\bmod N$ and the inverse
+are both believed hard without the factorization of $N$ and both easy with
+it.  Lean checks the hardwiring step: given a circuit for an encoded group
+action, \texttt{smul\_zpow\_circuit} gives a circuit for
+$x\mapsto g^T\cdot x$ for every integer $T$ with at most two more gates, and
+\texttt{smul\_iterate\_circuit} and \texttt{smul\_inverse\_circuit}
+specialize it to $P^T$ and $P^{-1}$.  The examples are not mechanized.
+\end{remark}
+
+The generator must therefore be part of the input, in a group in which
+multiplication is easy and inversion is not.
+
+\begin{proposition}[Groups with infeasible inversion]\label[proposition]{prop:gii}
+Let $\mathcal G_n$ be groups with injective encodings into $\bits^n$, such
+that the set of encodings is recognized, and multiplication is computed,
+by circuits of size $n^{O(1)}$, while the map $g\mapsto g^{-1}$ has no
+polynomial-size circuits.  Then $P_n(g,x)=(g,gx)$ on pairs of encodings,
+and the identity on all other strings, is a permutation family with an
+asymmetric iterator, and $\ell(g,x)=\ord(g)$.
+\end{proposition}
+
+\begin{proof}
+Left multiplication by $g$ is a bijection of $\mathcal G_n$, so $P_n$ is a
+permutation of $\bits^{2n}$.  For an $m$-bit $t$, square-and-multiply
+computes $g^t$ with $O(m)$ multiplications, so
+$\Iter_{P_n,m}((g,x),t)=(g,g^tx)$ has size $\poly(n,m)$.  With the encoding
+of the identity $e$ hardwired, $P_n^{-1}(g,e)=(g,g^{-1})$, so a
+polynomial-size circuit for $P_n^{-1}$ would invert group elements.
+\end{proof}
+
+Lean checks only the identity $P^t(g,x)=(g,g^tx)$ for any monoid action,
+as \texttt{pairAction\_iterate}; the circuit bounds in this proof are prose.
+
+Groups with infeasible inversion were introduced in the theses of
+Hohenberger and of Molnar and used for directed transitive signatures and
+broadcast encryption; Yamakawa, Yamada, Hanaoka and Kunihiro construct one
+from indistinguishability obfuscation and factoring~\cite{YYHK14}, and
+Altu\u{g} and Chen propose a candidate from isogenies over RSA
+moduli~\cite{AC19}, which also surveys this history.  Whether either
+candidate admits the injective encodings and recognizable encoding set
+that \cref{prop:gii} needs is not settled here.  Any such group is broken
+by a quantum computer, by order finding on $g$ followed by $g^{\ord(g)-1}$,
+in accordance with \cref{prop:asym-quantum}.
+
+\begin{remark}[No separation from a random power oracle]\label[remark]{rem:random-power-oracle}
+Oracle separations need care with advice.  A uniformly random permutation
+of $N$ points has $\ln N+O(1)$ cycles in expectation, hence $O(n)$
+distinct cycle lengths with high probability.  Given the list of these
+lengths as $O(n^2)$ bits of advice and the power oracle
+$(t,y)\mapsto P^t(y)$, the spectrum test in the proof of
+\cref{prop:asym-necessary} finds $\ell(x)$ with $O(n)$ queries, and one more
+query returns $P^{\ell(x)-1}(x)=P^{-1}(x)$.  So a random permutation with
+its power oracle separates iterating from inverting only for algorithms
+without advice.  By \cref{prop:asym-necessary}, an oracle separation
+against circuits needs a permutation with superpolynomially many distinct
+cycle lengths.
+\end{remark}
+
 \section{Lean formalization}\label{sec:lean}
 
 The accompanying \texttt{lean/} project proves existence of actual Boolean
@@ -4208,6 +4622,8 @@ of a finite map (\cref{lem:num-powers}) and the counting step of
 \cref{sec:spectrum} (but not their gate counts).  It also covers the reachable-set bounds for in-place machines given a step
 circuit (\cref{sec:inplace}).  It also checks the in-forest duality
 \cref{lem:forest-duality}, a combinatorial statement without circuits.
+The simulation and hardwiring arguments of
+\cref{sec:universal-map,sec:asymmetric} are checked as well.
 The semantic lemmas also support arbitrary
 state types with finite invariant subsets and supplied Boolean encodings;
 initialization and decoding costs remain additional.
@@ -4649,6 +5065,41 @@ Patrick X. Gallagher.
 \newblock On the distribution of primes in short intervals.
 \newblock \emph{Mathematika}, 23(1):4--9, 1976.
 \newblock \href{https://doi.org/10.1112/S0025579300016442}{doi:10.1112/S0025579300016442}.
+
+\bibitem{Sho97}
+Peter W. Shor.
+\newblock Polynomial-time algorithms for prime factorization and discrete
+logarithms on a quantum computer.
+\newblock \emph{SIAM Journal on Computing}, 26(5):1484--1509, 1997.
+\newblock \href{https://doi.org/10.1137/S0097539795293172}{doi:10.1137/S0097539795293172}.
+
+\bibitem{Kit95}
+A. Yu. Kitaev.
+\newblock Quantum measurements and the {Abelian} stabilizer problem.
+\newblock Preprint, 1995.
+\newblock \href{https://arxiv.org/abs/quant-ph/9511026}{arXiv:quant-ph/9511026}.
+
+\bibitem{RSW96}
+Ronald L. Rivest, Adi Shamir, and David A. Wagner.
+\newblock Time-lock puzzles and timed-release crypto.
+\newblock Technical Report MIT/LCS/TR-684, Massachusetts Institute of
+Technology, 1996.
+
+\bibitem{YYHK14}
+Takashi Yamakawa, Shota Yamada, Goichiro Hanaoka, and Noboru Kunihiro.
+\newblock Self-bilinear map on unknown order groups from indistinguishability
+obfuscation and its applications.
+\newblock In \emph{Advances in Cryptology -- CRYPTO 2014}, LNCS 8617, pages
+90--107. Springer, 2014.
+\newblock \href{https://doi.org/10.1007/978-3-662-44381-1_6}{doi:10.1007/978-3-662-44381-1\_6}.
+
+\bibitem{AC19}
+Salim Ali Altu\u{g} and Yilei Chen.
+\newblock Hard isogeny problems over {RSA} moduli and groups with infeasible
+inversion.
+\newblock In \emph{Advances in Cryptology -- ASIACRYPT 2019}, LNCS 11922,
+pages 293--322. Springer, 2019.
+\newblock \href{https://doi.org/10.1007/978-3-030-34621-8_11}{doi:10.1007/978-3-030-34621-8\_11}.
 
 \end{thebibliography}
 

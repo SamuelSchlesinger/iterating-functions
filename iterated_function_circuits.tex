@@ -1752,8 +1752,17 @@ resides: in one residue per distinct cycle length.  Write $\ell_F$ for the
 map $x\mapsto\ell(x)$, with $(n+1)$-bit outputs, let $c(F)$ be the number
 of distinct cycle lengths of $F$, let $\lambda(F)$ be their least common
 multiple, and let $\mu(F)=\max_x\mu(x)$.  Since distinct cycle lengths sum
-to at most $N$, always $c(F)\leq\sqrt{2N}$.  The results of this subsection
-are prose results; they are outside the Lean formalization.
+to at most $N$, always $c(F)\leq\sqrt{2N}$.  The semantic identities of
+this subsection are checked in Lean, in \texttt{Proofs/Spectrum.lean}:
+the reduction $F^T(x)=F^{N+((T-N)\bmod\ell(x))}(x)$ for $T\geq N$
+(\texttt{iterate\_eq\_card\_add\_mod}) and the bound $N+((T-N)\bmod\ell(x))<2N$
+(\texttt{card\_add\_mod\_lt}); the spectrum test for maps and for permutations
+(\texttt{cycle\_test\_iff}, \texttt{cycleSpectrum\_test},
+\texttt{injective\_spectrum\_test}); and $P^{-1}(x)=P^{\ell(x)-1}(x)$
+(\texttt{perm\_symm\_eq\_iterate}).  The squaring bound is the mechanized
+binary-powering construction behind \texttt{variable\_time}.  The gate
+counts below, the prime-power test, the order bound and the factoring
+example remain prose results outside the Lean formalization.
 
 \begin{theorem}[Spectrum decomposition]\label{thm:spectrum}
 For every $T\geq0$,
@@ -2341,7 +2350,8 @@ The accompanying \texttt{lean/} project proves existence of actual Boolean
 circuits with evaluation semantics and gate bounds.  It covers
 \cref{tab:results}, the invariant-set, image-sensitive and active-mass
 refinements, permutation inversion, complete-configuration simulation,
-and the lower-bound results.  The semantic lemmas also support arbitrary
+and the lower-bound results, as well as the semantic identities of
+\cref{sec:spectrum} (but not their gate counts).  The semantic lemmas also support arbitrary
 state types with finite invariant subsets and supplied Boolean encodings;
 initialization and decoding costs remain additional.
 

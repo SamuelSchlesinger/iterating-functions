@@ -2143,8 +2143,10 @@ This section collects four consequences of the fixed-power construction:
 computations with a bounded number of nondeterministic or alternating
 choices, the running time of the preprocessing, a single explicit map that
 collects the hardness of all linear-size maps, and the structure of
-permutations whose iterator is easy but whose inverse is not.  None of these
-statements is mechanized in Lean.
+permutations whose iterator is easy but whose inverse is not.  Only the
+simulation and hardwiring arguments of \cref{sec:universal-map,sec:asymmetric}
+are mechanized in Lean, as described there; the rest of this section is
+prose.
 
 \subsection{A bounded number of choices}\label{sec:bounded-choice}
 
@@ -2379,6 +2381,26 @@ projections are free.  The final claim follows from
 $n=\Omega(m/\log m)$.
 \end{proof}
 
+Lean checks the simulation and hardwiring steps of this proof in
+\texttt{UniversalMap.lean}.  \texttt{iterate\_simulation} derives
+$U^{\tau T}\circ\mathrm{enc}=\mathrm{enc}\circ F^T$ from the one-step
+identity, and \texttt{simulation\_circuit} turns a circuit for $U^{\tau T}$,
+correct on encoded states, into one for $F^T$ when the encoding places the
+input bits among constant bits; in the native basis this costs two gates
+for the constants.  \texttt{Universal.step\_round} defines the step map on
+abstract states $(D,x,w,\mathit{pc})$ over any CSLib signature and proves
+$U^{G+1}(D_c,x,0,0)=(D_c,c(x),0,0)$ for every CSLib circuit $c$ with at most
+$G$ gates, where $D_c$ lists the gates of $c$ followed by padding.  In this
+version the reset step reads the output wires through indices stored in
+$D$, which is equivalent to the appended copy gates above.
+\texttt{Universal.universal\_power\_circuit} combines these steps:
+under any bit encoding of the states that writes $x$ directly and fixes
+the remaining bits of a start state to constants determined by $D_c$, a
+circuit for $U^{(G+1)T}$ gives one for $c^T$ with at most two more gates.
+The gate count $\CC(U_{n,c})=O(n\log n)$, the bit encoding of $D$, $w$ and
+$\mathit{pc}$, the uniformity claim and the asymptotic consequence are not
+mechanized.
+
 \begin{remark}[One explicit candidate]\label[remark]{rem:universal-product}
 Let $W=U_{n,c}\times P_{2k}$ act on $m+2k$ bits by
 $(u,z)\mapsto(U_{n,c}(u),P_{2k}(z))$.  Every power satisfies
@@ -2391,6 +2413,9 @@ bits with at most $cn$ gates is at $T$, whether or not that map is
 explicit.  So if any such map has a hard power at an explicit exponent
 $T$ of polynomial length, the explicit map $W$ has one at the explicit
 exponent $\tau T$, with only a logarithmic loss in the state width.
+Lean checks the projection inequality, up to the two native constant
+gates, as \texttt{prodMap\_power\_circuit} and
+\texttt{prodMap\_power\_circuit\_left}.
 \end{remark}
 
 \subsection{Asymmetric iterators}\label{sec:asymmetric}
@@ -2470,7 +2495,11 @@ nonuniformly.  Making the modulus part of the state, as in the time-lock
 puzzle of Rivest, Shamir and Wagner~\cite{RSW96}, removes the hardwired
 group order, but then the iterator $x\mapsto x^{2^t}\bmod N$ and the inverse
 are both believed hard without the factorization of $N$ and both easy with
-it.
+it.  Lean checks the hardwiring step: given a circuit for an encoded group
+action, \texttt{smul\_zpow\_circuit} gives a circuit for
+$x\mapsto g^T\cdot x$ for every integer $T$ with at most two more gates, and
+\texttt{smul\_iterate\_circuit} and \texttt{smul\_inverse\_circuit}
+specialize it to $P^T$ and $P^{-1}$.  The examples are not mechanized.
 \end{remark}
 
 The generator must therefore be part of the input, in a group in which
@@ -2493,6 +2522,9 @@ $\Iter_{P_n,m}((g,x),t)=(g,g^tx)$ has size $\poly(n,m)$.  With the encoding
 of the identity $e$ hardwired, $P_n^{-1}(g,e)=(g,g^{-1})$, so a
 polynomial-size circuit for $P_n^{-1}$ would invert group elements.
 \end{proof}
+
+Lean checks only the identity $P^t(g,x)=(g,g^tx)$ for any monoid action,
+as \texttt{pairAction\_iterate}; the circuit bounds in this proof are prose.
 
 Groups with infeasible inversion were introduced in the theses of
 Hohenberger and of Molnar and used for directed transitive signatures and
@@ -2525,7 +2557,8 @@ The accompanying \texttt{lean/} project proves existence of actual Boolean
 circuits with evaluation semantics and gate bounds.  It covers
 \cref{tab:results}, the invariant-set, image-sensitive and active-mass
 refinements, permutation inversion, complete-configuration simulation,
-and the lower-bound results.  The semantic lemmas also support arbitrary
+the lower-bound results, and the simulation and hardwiring arguments of
+\cref{sec:universal-map,sec:asymmetric}.  The semantic lemmas also support arbitrary
 state types with finite invariant subsets and supplied Boolean encodings;
 initialization and decoding costs remain additional.
 

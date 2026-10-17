@@ -60,6 +60,9 @@ natural-number division in integer budgets means floor division.
 | `batched_variable_time_optimized` | Independent `m`-bit exponents for each member; `m` times the preceding batch budget plus `4*r*n` per binary position. |
 | `cycle_label_circuit`, `cycle_labels_optimized` | Canonical cycle state, exact cycle length, and phase, for every input; optimized size at most `30120000*B`. |
 | `checkpoint_depth_optimized` | Exact transient depth in at most `3000000*B` gates. The earlier binary-search theorem `depth_circuit_optimized` remains available with an extra `(n+1)^2` factor. |
+| `iterate_eq_card_add_mod`, `card_add_mod_lt` | Spectrum reduction on arbitrary finite types: for `card α ≤ T`, `f^[T] x = f^[card α + (T - card α) % cycleLength f x] x`, and the reduced exponent is below `2 * card α`. Semantic only; the gate count of the paper's spectrum decomposition is not mechanized. |
+| `cycle_test_iff`, `spectrum_test`, `cycleSpectrum_test` | `f^[card α + ℓ] x = f^[card α] x ↔ cycleLength f x ∣ ℓ`; hence the cycle length is the least member of the cycle spectrum (or any positive candidate set containing it) passing this test. |
+| `injective_cycle_test_iff`, `injective_spectrum_test`, `perm_symm_eq_iterate` | For injective maps the test needs no shift, and every permutation satisfies `σ.symm x = σ^[cycleLength σ x - 1] x`. |
 | `forestMarks_card`, `exists_forest_intervals` | At most twice as many marks after adding roots and branches; ancestry intervals with labels below the universe cardinality, on arbitrary finite types. |
 | `forest_reachability_circuit` | Pair-input reachability in at most `50000000*powerBudget n s N L` gates, using two shared dictionaries and short prefixes. |
 | `reachability_hitting_time` | A circuit on `2*n` input bits returning an existence flag and `n+1` time bits, in at most `300000000*B` gates. On positive instances the decoded time is the first hit and is strictly less than `N`. |

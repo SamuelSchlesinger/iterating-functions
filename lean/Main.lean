@@ -26,6 +26,7 @@ public import Proofs.ActivePowers
 public import Proofs.AffineController
 public import Proofs.SparseCounterTime
 public import Proofs.SparseNavigation
+public import Proofs.Spectrum
 
 /-!
 # Public results and axiom audit
@@ -302,5 +303,35 @@ namespace IteratedFunctions
 [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms visit_count_of_first
+
+/-- info: 'IteratedFunctions.iterate_eq_card_add_mod' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms iterate_eq_card_add_mod
+
+/-- info: 'IteratedFunctions.card_add_mod_lt' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms card_add_mod_lt
+
+/-- info: 'IteratedFunctions.cycle_test_iff' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms cycle_test_iff
+
+/-- info: 'IteratedFunctions.cycleSpectrum_test' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms cycleSpectrum_test
+
+/-- info: 'IteratedFunctions.injective_spectrum_test' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms injective_spectrum_test
+
+/-- info: 'IteratedFunctions.perm_symm_eq_iterate' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms perm_symm_eq_iterate
 
 end IteratedFunctions

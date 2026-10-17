@@ -45,6 +45,17 @@ The sparse counts include the one-state identity. Restricting to sizes 2--8
 gives 46,232 permutations and 334,381 distinct powers. The 100 huge-universe
 cases check algebraic identities, not an independent enumerative oracle.
 
+python3 verify_checkpoint_sets.py
+PASS: minimum-checkpoint-set checks succeeded.
+Seed: 20261017
+forest duality instances: 400
+maps (N <= 10, K <= 5): 1,900
+Finite checks do not establish complexity bounds or historical novelty.
+
+These compare brute-force minimum K-checkpoint sets with the component
+formula and with the table algorithm of the minimum-checkpoint section,
+and in-forest minimum covers with maximum packings.
+
 Lean command: make lean-check
 cd lean && lake build --wfail
 Build completed successfully (3778 jobs).

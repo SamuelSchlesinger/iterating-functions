@@ -26,6 +26,7 @@ public import Proofs.ActivePowers
 public import Proofs.AffineController
 public import Proofs.SparseCounterTime
 public import Proofs.SparseNavigation
+public import Proofs.NumberOfPowers
 
 /-!
 # Public results and axiom audit
@@ -302,5 +303,25 @@ namespace IteratedFunctions
 [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms visit_count_of_first
+
+/-- info: 'IteratedFunctions.iterate_eq_iterate_iff' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms iterate_eq_iterate_iff
+
+/-- info: 'IteratedFunctions.card_range_iterate' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms card_range_iterate
+
+/-- info: 'IteratedFunctions.exists_hard_power_of_budget_lt' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms exists_hard_power_of_budget_lt
+
+/-- info: 'IteratedFunctions.exists_hard_power' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms exists_hard_power
 
 end IteratedFunctions

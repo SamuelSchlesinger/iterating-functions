@@ -1288,8 +1288,17 @@ exponent nor its numerical size forces hardness.
 The lower bound of \cref{thm:lower} counts the distinct powers of one
 map.  This subsection shows how far such counting can go for an
 arbitrary map, which maps admit it at all, and why the exponent $1/2$
-is also the limit of oracle-based constructions.  None of the results
-in this subsection is mechanized in Lean.
+is also the limit of oracle-based constructions.  Lean checks
+\cref{lem:num-powers} for arbitrary maps on finite types
+(\texttt{iterate\_eq\_iterate\_iff}, \texttt{card\_range\_iterate}) and
+the counting step behind \cref{prop:count-general} in its native basis:
+if the ordered description budget for $q$ gates, or the explicit bound
+$2^{3q+h(2q+n+1)}$ with $n+q+1\leq2^h$, is below $\mu(F)+\lambda(F)$, then
+some $F^T$ with $T<\mu(F)+\lambda(F)$ has no circuit with at most $q$ gates
+(\texttt{exists\_hard\_power\_of\_budget\_lt},
+\texttt{exists\_hard\_power}).  The final arithmetic of
+\cref{prop:count-general} in the paper's basis and the remaining results
+of this subsection are not mechanized.
 
 For $F:\bits^n\to\bits^n$ write $\mu(F)$ for the largest pre-period
 (transient depth) of a state, $\lambda(F)$ for the least common
@@ -2329,7 +2338,9 @@ The accompanying \texttt{lean/} project proves existence of actual Boolean
 circuits with evaluation semantics and gate bounds.  It covers
 \cref{tab:results}, the invariant-set, image-sensitive and active-mass
 refinements, permutation inversion, complete-configuration simulation,
-and the lower-bound results.  The semantic lemmas also support arbitrary
+and the lower-bound results, including the exact number of distinct powers
+of a finite map (\cref{lem:num-powers}) and the counting step of
+\cref{prop:count-general}.  The semantic lemmas also support arbitrary
 state types with finite invariant subsets and supplied Boolean encodings;
 initialization and decoding costs remain additional.
 

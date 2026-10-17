@@ -1901,6 +1901,133 @@ navigation and target results of \cref{sec:structure} or for
 \cref{thm:long-time}, whose proofs contain further $n^3$ terms that we
 have not re-examined.
 
+\subsection{Depth}\label{sec:depth-size}
+
+The constructions above were stated for size only; for instance, the
+selection scan in the primitives is a sequential chain.  Every component
+except the two short simulations of $F$ can be made shallow without
+increasing its size by more than a constant factor, so the depth of a
+fixed-power circuit is governed by the $O(L)$ sequential applications of
+$F$.  Nothing in this subsection is mechanized.
+
+\begin{theorem}[Depth--size tradeoff]\label{thm:depth-size}
+Let $F$ have a circuit of size $s$ and depth $d$, and let
+$S\subseteq\bits^n$ be forward invariant under $F$ with $|S|=M$; the
+case $S=\bits^n$ gives $M=N$.  For every $T\geq0$ and $1\leq L\leq M$
+there is a circuit agreeing with $F^T$ on $S$ of size
+\[
+  O\!\left(Ls+n^3\left(L+\frac ML\right)\right)
+  \quad\text{and depth}\quad
+  O\!\left(Ld+n^2\log n\right).
+\]
+With the comparator networks of \cref{sec:aks} the size is
+$O(Ls+n^2(L+M/L))$ and the depth is $O(Ld+n\log n)$.
+\end{theorem}
+
+\begin{proof}
+Use the construction of \cref{sec:fixed}, with the invariant-set
+checkpoints of \cref{thm:invariant}, and implement each component as
+follows; all record widths are $w=O(n)$ and all record counts satisfy
+$\log(R+2)=O(n)$, since $M\leq N$ and $L\leq N$.
+
+\emph{Arithmetic.}  Addition, subtraction and comparison of $w$-bit
+words have circuits of size $O(w)$ and depth $O(\log w)$ by parallel
+prefix computation of the carries~\cite{LF80}.  The long division of
+\cref{eq:period} is a chain of $O(w)$ conditional subtractions, of size
+$O(w^2)$ and depth $O(w\log w)=O(n\log n)$.  The modular correction that
+follows has depth $O(\log n)$.
+
+\emph{Selection.}  A multiplexer tree over $q$ words has depth
+$O(\log q)$.  To select the first flagged record of a list of $q$, compute
+prefix ORs of the flags with a size-$O(q)$, depth-$O(\log q)$ prefix
+circuit~\cite{LF80}, mark the unique record whose flag is one and whose
+preceding prefix OR is zero, and combine the marked record by a balanced
+OR tree; size $O(qw)$ and depth $O(\log q)$.  This replaces the
+sequential scan described in the primitives.
+
+\emph{Sorting.}  Batcher's networks~\cite{Batcher68} have
+$O(\log^2R)$ comparator layers.  A comparator on $w$-bit records
+compares keys in depth $O(\log w)$ and then swaps by multiplexers in depth
+$O(1)$.  Each sorting network therefore has depth
+$O(\log^2R\cdot\log w)=O(n^2\log n)$.  The networks of~\cite{AKS83} have
+$O(\log R)$ layers, giving depth $O(n\log n)$.
+
+\emph{Payload propagation.}  The scan in \cref{lem:lookup} assigns to each
+query the payload of the dictionary record at the start of its equal-key
+run, if there is one.  Compute the run boundaries by comparing adjacent
+keys, in depth $O(\log w)$.  Each record then carries a triple
+(boundary bit, dictionary bit, payload), and the required values are the
+prefix products of these triples under the associative operation of a
+segmented copy scan, which keeps the right operand when it starts a run
+or carries a dictionary record and otherwise keeps the left payload.  This
+operation has a constant-depth circuit of size $O(w)$, so a prefix
+circuit~\cite{LF80} computes all values with size $O(Rw)$ and depth
+$O(\log R+\log w)=O(n)$.  Repeated-state detection (\cref{lem:repeat}) is a
+sorting network, adjacent comparisons and a first-flag selection, so it
+has the same depth bounds as the lookup.
+
+\emph{Simulations.}  If $T<K=2L$, the circuit consists of $T$ copies of $F$
+in series, of depth at most $2Ld$.  Otherwise the computation has one
+sequential spine: the trajectory \cref{eq:prefix}, of depth $Kd$; then the
+lookup and the selection of the checkpoint index $d$; then the second
+trajectory of length $K$, of depth $Kd$; then the selection of its entry
+$K-d$ and the final branch selection.  The repetition branch runs in
+parallel with the lookup and the second trajectory, and consists of
+repeated-state detection, the residue multiplexer, the division and a
+selection.  Summing along the spine gives depth
+$4Ld+O(n^2\log n)$ with Batcher's networks and $4Ld+O(n\log n)$ with the
+networks of~\cite{AKS83}.
+
+Each replacement changes the size of its component by at most a constant
+factor, so the sizes are those of \cref{thm:invariant} and of its
+AKS version in \cref{sec:aks}.
+\end{proof}
+
+For example, with $S=\bits^n$ and $L=\ceil{N^{1/4}}$, every $T$-step map
+of an $n$-bit iteration has a circuit of depth $O(N^{1/4}d+n^2\log n)$ and
+size $O(N^{1/4}s+n^3N^{3/4})$, whereas unrolling has depth $Td$.  More
+generally, for $d+n^2\log n\leq D\leq Nd$ the choice
+$L=\Theta(D/d)$ gives depth $O(D)$ and size $O(Ds/d+n^3(D/d+Nd/D))$.
+
+The same accounting applies to the batched construction of
+\cref{thm:batch}.  Its single shared lookup has
+$R=O(N/L+rL)$ records with $\log(R+2)=O(n)$, and the $r$ trajectories,
+repetition tests and corrections run in parallel, so
+$B_{F,T,r}$ has circuits of the size in \cref{eq:batch-tradeoff} and
+depth $O(Ld+n^2\log n)$.  For \cref{thm:variable} the $m$ stages are
+composed in series, which gives depth $m\cdot O(Ld+n^2\log n)$; we do not
+claim anything better for input times.
+
+\begin{corollary}[Cellular automata]\label[corollary]{cor:ca}
+Let $G$ be a cellular automaton on $m$ cells, arranged on a ring or with
+fixed boundary values, with finite alphabet $\Sigma$ and a fixed local
+rule of constant radius.  Encode each cell by $\ceil{\log_2|\Sigma|}$ bits.
+For every $T\geq0$ the $T$-step map of $G$ on configurations in
+$\Sigma^m$ has circuits of size
+$|\Sigma|^{m/2}\poly(m)$, and also circuits of depth
+$|\Sigma|^{m/4}\poly(m)$ and size $|\Sigma|^{3m/4}\poly(m)$.  The
+polynomials depend on $|\Sigma|$ and the radius, but not on $T$.
+\end{corollary}
+
+\begin{proof}
+Let $n=m\ceil{\log_2|\Sigma|}$ and let $F$ apply the local rule to every
+cell, mapping invalid cell codes to a fixed symbol.  Each output cell is a
+fixed function of a constant number of input bits, so $F$ has size $O(m)$
+and depth $O(1)$, and the set $S$ of valid encodings, of size
+$|\Sigma|^m$, is forward invariant.  Apply \cref{thm:depth-size} with
+$M=|\Sigma|^m$, $s=O(m)$ and $n=O(m)$: choosing $L$ as in
+\cref{eq:L-choice}, with $N$ replaced by $M$, gives size $O(m^3\sqrt M)$, and
+$L=\ceil{M^{1/4}}$ gives depth $O(M^{1/4}+m^2\log m)$ and size
+$O(mM^{1/4}+m^3M^{3/4})$.
+\end{proof}
+
+For instance, Wolfram's Rule~30~\cite{Wolfram86} on a ring of $m$ cells
+has, for every $T$, a $T$-step circuit of size $2^{m/2}\poly(m)$.
+Whether the exponent $1/2$ is sharp for cellular automata is not
+established here.  We expect that a radius-one automaton simulating an
+in-place implementation of $P_n$ inherits a lower bound of the form
+$2^{m/2}/\poly(m)$ from \cref{thm:lower}, but we do not prove it.
+
 \section{Functional-graph navigation}\label{sec:structure}
 
 Write $B=A+\sqrt{n^3NA}$.  For a state $x$, let $\mu(x)$ be its distance
@@ -3024,6 +3151,18 @@ Ming Li and Paul Vit\'anyi.
 Applications}.
 \newblock Texts in Computer Science. Springer, fourth edition, 2019.
 \newblock \href{https://doi.org/10.1007/978-3-030-11298-1}{doi:10.1007/978-3-030-11298-1}.
+
+\bibitem{LF80}
+Richard E. Ladner and Michael J. Fischer.
+\newblock Parallel prefix computation.
+\newblock \emph{Journal of the ACM}, 27(4):831--838, 1980.
+\newblock \href{https://doi.org/10.1145/322217.322232}{doi:10.1145/322217.322232}.
+
+\bibitem{Wolfram86}
+Stephen Wolfram.
+\newblock Random sequence generation by cellular automata.
+\newblock \emph{Advances in Applied Mathematics}, 7(2):123--169, 1986.
+\newblock \href{https://doi.org/10.1016/0196-8858(86)90028-X}{doi:10.1016/0196-8858(86)90028-X}.
 
 \end{thebibliography}
 

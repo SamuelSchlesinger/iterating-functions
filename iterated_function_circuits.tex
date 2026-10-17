@@ -274,7 +274,10 @@ the resulting class of functional problems as
 $\mathsf{FP}^{\mathsf{PSPACE}}$.  Our resource question differs: the map
 is fixed, the circuits are nonuniform, and the size bound remains
 exponential in the state length.  Our result supplies no polynomial-time
-algorithm for that iteration problem.
+algorithm for that iteration problem.  \Cref{sec:short-exponents} gives a nonuniform
+counterpart for short exponents: hard powers at exponents with
+polynomially many bits exist exactly when
+$\mathsf{PSPACE}\not\subseteq\mathsf{P}/\mathrm{poly}$.
 
 The present construction uses the same checkpoint and batched-lookup
 principles.  Batcher's sorting networks~\cite{Batcher68} implement the
@@ -1915,6 +1918,193 @@ the complement of recurrence of the predicate $1-P$, which changes the
 bound only by a constant number of gates.
 \end{proof}
 
+\subsection{Short exponents and polynomial space}\label{sec:short-exponents}
+
+The hard powers of \cref{sec:lower} have exponentially long exponents
+(\cref{cor:exponent-length}).  For exponents with polynomially many bits,
+the question changes character: \cref{cor:halting} has a vacuous bound
+when the configuration width is polynomial rather than $n+O(\log n)$.
+This subsection shows that hardness of short powers is exactly a circuit
+lower bound for $\mathsf{PSPACE}$.  None of its results is covered by the
+Lean formalization.
+
+Families are indexed by the state width.  A family of functions $(G_n)$
+is \emph{superpolynomially hard} if for every $k$ its complexity
+$\CC(G_n)$ exceeds $n^k$ for infinitely many $n$.
+
+\begin{theorem}[Short exponents and $\mathsf{PSPACE}$]\label{thm:pspace-short}
+The following are equivalent.
+\begin{enumerate}[label=(\roman*)]
+\item $\mathsf{PSPACE}\not\subseteq\mathsf{P}/\mathrm{poly}$.
+\item There are maps $F_n$ with $\CC(F_n)=O(n)$ and exponents
+  $T_n\leq 2^n$ such that $(F_n^{T_n})$ is superpolynomially hard.
+\item There are maps $F_n$ with $\CC(F_n)=n^{O(1)}$ and exponents
+  $T_n\leq 2^{n^{O(1)}}$ such that $(F_n^{T_n})$ is superpolynomially hard.
+\end{enumerate}
+The same equivalence holds with $\mathsf{P}/\mathrm{poly}$ replaced by
+subexponential size: some language in $\mathsf{PSPACE}$ has, for some
+$\delta>0$, complexity at least $2^{n^\delta}$ infinitely often if and
+only if some such family has $\CC(F_n^{T_n})\geq 2^{n^{\delta'}}$
+infinitely often for some $\delta'>0$.  In (ii) the maps can be taken
+to be permutations, with $T_n$ a power of two.
+\end{theorem}
+
+\begin{proof}
+(ii)$\Rightarrow$(iii) is immediate.
+
+(iii)$\Rightarrow$(i).  Suppose $\mathsf{PSPACE}\subseteq\mathsf{P}/\mathrm{poly}$.
+Let $\CC(F_n)\leq n^a$ and $T_n\leq 2^{n^c}$.  Consider the language $U$
+of tuples $\langle 1^n,D,t,x,i\rangle$ such that $D$ encodes a circuit of
+size at most $n^a$ on $n$ inputs, $t$ has $n^c+1$ bits, $x\in\bits^n$,
+$i\leq n$, and bit $i$ of $D^{\operatorname{val}(t)}(x)$ is one.  Use a
+fixed-length encoding of the fields for each $n$, so that the length
+$m(n)$ of a tuple is a polynomial in $n$.  A machine decides $U$ in
+polynomial space: it evaluates $D$ repeatedly, storing the current state
+and a counter of $n^c+1$ bits.  By assumption $U$ has circuits of size
+$m^e$ for some $e$.  Hardwiring the description of $F_n$, the exponent
+$T_n$, and each index $i$ gives $\CC(F_n^{T_n})\leq n\,m(n)^e=n^{O(1)}$
+for all large $n$, so (iii) fails.
+
+(i)$\Rightarrow$(ii).  Let $L\in\mathsf{PSPACE}\setminus\mathsf{P}/\mathrm{poly}$,
+decided by a deterministic one-tape machine $M$ that uses the cells
+$1,\ldots,S(n)$ with $S(n)=n^c$, halts on every input, and returns its
+head to cell $1$ before halting.  These normalizations cost only a
+polynomial in space.  Encode a configuration cell by cell: each cell
+holds a tape symbol and a control field, which is zero when the head is
+absent and otherwise names the machine state.  With $r=O(1)$ bits per
+cell, the state width is $b=rS(n)$.  Choose the symbol encoding so that
+the initial configuration on $w$ is obtained from $w$ by inserting
+constant bits; this map $\iota$ costs no gates.
+
+The next-configuration map acts on each cell by a fixed function of that
+cell and its two neighbours, so it has a circuit of size $O(b)$, and it
+fixes halting configurations.  Use it on all $2^b$ strings; on strings
+that are not valid configurations its values are irrelevant.  Valid
+configurations do not repeat before halting, so, as in the proof of
+\cref{cor:halting}, $F_b^{2^b}(\iota(w))$ is the halting configuration
+of $M$ on $w$.  Acceptance is read from the control field of cell $1$
+with $O(1)$ gates.  Hence
+\[
+ \CC(L_n)\leq\CC\bigl(F_{b(n)}^{2^{b(n)}}\bigr)+O(1).
+\]
+Since $b(n)$ is strictly increasing, define $F_b$ to be the identity on
+widths outside its range.  If $\CC(F_b^{2^b})\leq b^k$ for all large $b$,
+then $\CC(L_n)\leq O(n^{ck})$ for all large $n$, contradicting the choice
+of $L$.  The permutation strengthening is \cref{prop:pspace-permutation}.
+
+For the subexponential version, the argument for (iii)$\Rightarrow$(i)
+gives $\CC(F_n^{T_n})\leq n\,2^{m(n)^\delta}$ whenever every language in
+$\mathsf{PSPACE}$ has complexity at most $2^{m^\delta}$ for all large $m$;
+since $m(n)\leq n^e$, taking $\delta$ small rules out
+$\CC(F_n^{T_n})\geq 2^{n^{\delta'}}$ infinitely often.  Conversely, if
+$\CC(L_n)\geq 2^{n^\delta}$ infinitely often, the construction above gives
+$\CC(F_b^{2^b})\geq 2^{n^\delta}-O(1)\geq 2^{b^{\delta/(2c)}}$ for those
+$n$ when $n$ is large.
+\end{proof}
+
+The next construction uses reversible machines.  Lange, McKenzie, and
+Tapp~\cite{LMT00} show that every language decided in deterministic space
+$S(n)\geq\log n$ is decided by a reversible machine in space $O(S(n))$
+that halts on every input.  Each configuration of a reversible machine
+has at most one successor and at most one predecessor.  Both, and whether
+they exist, are determined by the constant number of cells around the
+head~\cite{Bennett73,LMT00}.  We count configurations without a successor
+in a nonhalting state as rejecting halts.
+
+\begin{proposition}[Hard permutations and cycle lengths]\label[proposition]{prop:pspace-permutation}
+Suppose $L\in\mathsf{DSPACE}(S(n))$ with $S(n)\geq n$ space-constructible.
+There are permutations $P_b$ of $\bits^b$ with $b=O(S(n))$ and
+$\CC(P_b)=O(b)$, an exponent $T=2^{b'}$ with $b'<b$, and a
+constant-insertion map $\iota$ from $\bits^n$ to $\bits^b$, such that
+for every $w\in\bits^n$:
+\begin{enumerate}[label=(\alph*)]
+\item one fixed output bit of $P_b^{T}(\iota(w))$ equals $L(w)$;
+\item $L(w)=1$ exactly when $\ell(\iota(w))\geq 2^{b'+1}$.
+\end{enumerate}
+Consequently, $\mathsf{PSPACE}\not\subseteq\mathsf{P}/\mathrm{poly}$ if and
+only if there are polynomial-time constructible permutations $P_b$ with
+$\CC(P_b)=O(b)$ whose cycle-length maps $x\mapsto\ell(x)$ are
+superpolynomially hard.
+\end{proposition}
+
+\begin{proof}
+Let $R$ be a reversible machine deciding $L$ in space $O(S)$, encoded cell
+by cell as in \cref{thm:pspace-short}.  Let $V$ be the set of valid
+configurations, those with exactly one head, and let $2^{v}$ be the number
+of strings of the configuration field, so $|V|\leq 2^{v}$.  Put
+$D=2^{v+2}$.  The state set consists of
+\[
+ (C,+),\quad (C,-)\qquad (C\in V),
+ \qquad\qquad
+ (C,j)\qquad(C\in V\ \text{accepting halting},\ 0\leq j<D).
+\]
+Define $P$ by
+\begin{align*}
+ (C,+)&\mapsto(R(C),+)&&\text{if $C$ has a successor},\\
+ (C,+)&\mapsto(C,-)&&\text{if $C$ is a rejecting halt},\\
+ (C,+)&\mapsto(C,0)&&\text{if $C$ is an accepting halt},\\
+ (C,j)&\mapsto(C,j+1)&&\text{if $j<D-1$, and $(C,D-1)\mapsto(C,-)$},\\
+ (C,-)&\mapsto(R^{-1}(C),-)&&\text{if $C$ has a predecessor},\\
+ (C,-)&\mapsto(C,+)&&\text{otherwise}.
+\end{align*}
+Every state has exactly one preimage.  For $(C',+)$ it is $(R^{-1}(C'),+)$
+if $C'$ has a predecessor and $(C',-)$ otherwise.  For $(C',-)$ it is
+$(R(C'),-)$, $(C',+)$, or $(C',D-1)$, according as $C'$ has a successor,
+is a rejecting halt, or is an accepting halt.  For $(C',j)$ with $j\geq1$
+it is $(C',j-1)$, and for $(C',0)$ it is $(C',+)$.  Thus $P$ is a
+permutation of the state set.
+
+Encode a state by the configuration field, a direction bit, a detour bit,
+and a $(v+2)$-bit counter, so $b=2v+4=O(S)$; strings encoding no state
+are fixed points.  Validity is a linear-size test, and the other
+conditions are local at the head, so $\CC(P_b)=O(b)$.  Fixing the
+strings that encode no state preserves bijectivity.
+
+Let $C_0,\ldots,C_k$ be the maximal configuration path through the initial
+configuration $I_w$, with $C_0$ having no predecessor and $C_k$ halting.
+It has no repetition, since the forward path from $I_w$ halts and $R$ is
+injective, so $k+1\leq 2^{v}$.  The cycle of $(I_w,+)$ visits
+$(C_0,+),\ldots,(C_k,+)$, then the $D$ detour states if $C_k$ accepts,
+then $(C_k,-),\ldots,(C_0,-)$.  Its length is $2(k+1)+D\cdot L(w)$.  Since
+$2(k+1)\leq 2^{v+1}<D$, part (b) holds with $b'=v+1$, because
+$2^{b'+1}=D$.  For part (a), take $T=2^{b'}=D/2$.  From $(I_w,+)$ the
+first detour state is reached after at most $k+1\leq 2^v<D/2$ steps and
+the detour lasts $D$ steps, so $P^{T}(\iota(w))$ is a detour state when
+$L(w)=1$.  When $L(w)=0$ the cycle contains no detour states.  The detour
+bit is the required output.
+
+For the equivalence, if $\mathsf{PSPACE}\not\subseteq\mathsf{P}/\mathrm{poly}$,
+apply (b) to a hard $L$ with polynomial $S$; testing $\ell\geq 2^{b'+1}$
+costs $O(b)$ gates, and the width bookkeeping is as in
+\cref{thm:pspace-short}.  Conversely, $\ell(x)$ is computable in polynomial
+space from a circuit for $P_b$ by walking the cycle with a $(b+1)$-bit
+counter, and the advice argument of \cref{thm:pspace-short} gives
+polynomial circuits for $\ell$ when $\mathsf{PSPACE}\subseteq\mathsf{P}/\mathrm{poly}$.
+\end{proof}
+
+Part (a) completes the permutation clause of \cref{thm:pspace-short}.
+The exponent $T=2^{b'}$ is explicit and has $O(b)$ bits.  This contrasts
+with \cref{sec:lower}, where an explicit permutation has hard powers
+at exponents of exponential length, without identifying an explicit hard
+exponent.  Here the permutation depends on a hard language, and its power
+at a single short exponent inherits hardness from that language.
+
+\begin{remark}[Linear space and exponential bounds]\label[remark]{rem:linear-space}
+The polynomial loss in the state width prevents a $2^{\varepsilon n}$
+version of \cref{thm:pspace-short}.  Linear space gives one up to advice.
+If $\mathsf{DSPACE}(O(n))\not\subseteq\mathsf{SIZE}(2^{\varepsilon n})$
+infinitely often, the construction of \cref{thm:pspace-short} with
+$S(n)=O(n)$ gives maps with $\CC(F_b)=O(b)$, $T_b=2^b$, and
+$\CC(F_b^{T_b})\geq 2^{\varepsilon' b}$ infinitely often, with
+$\varepsilon'>0$ depending on $\varepsilon$ and the machine.  Conversely,
+for such a family the power $F_b^{T_b}$ is computable in space $O(b)$
+from $O(b\log b)$ bits of advice describing $F_b$ and $T_b$: store all
+gate values and a counter.  Hence
+$\mathsf{DSPACE}(O(n))/O(n\log n)\not\subseteq\mathsf{SIZE}(2^{\varepsilon''n})$
+infinitely often for some $\varepsilon''>0$.  The two statements differ
+only in the advice.
+\end{remark}
+
 \section{Structured transitions}\label{sec:structured}
 
 The universal bound uses only the state width and the size of one
@@ -2409,6 +2599,18 @@ David Eppstein.
 \newblock The complexity of iterated reversible computation.
 \newblock \emph{TheoretiCS}, 2, Article 10, 1--41, 2023.
 \newblock \href{https://doi.org/10.46298/theoretics.23.10}{doi:10.46298/theoretics.23.10}.
+
+\bibitem{LMT00}
+Klaus-J\"orn Lange, Pierre McKenzie, and Alain Tapp.
+\newblock Reversible space equals deterministic space.
+\newblock \emph{J. Comput. System Sci.}, 60(2):354--367, 2000.
+\newblock \href{https://doi.org/10.1006/jcss.1999.1672}{doi:10.1006/jcss.1999.1672}.
+
+\bibitem{Bennett73}
+Charles H. Bennett.
+\newblock Logical reversibility of computation.
+\newblock \emph{IBM Journal of Research and Development}, 17(6):525--532, 1973.
+\newblock \href{https://doi.org/10.1147/rd.176.0525}{doi:10.1147/rd.176.0525}.
 
 \bibitem{Goldreich08}
 Oded Goldreich.

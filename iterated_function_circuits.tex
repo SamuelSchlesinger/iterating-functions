@@ -263,10 +263,33 @@ Boolean gate count.
 A closer circuit antecedent is Hirahara, Ilango, and
 Williams~\cite[Section~3.2]{HIW24}: they obtain square-root-size
 permutation-inversion circuits using checkpoints and batched lookup.
-Their lookup theorem builds on a lemma of Paul.  This draft generalizes
+Their Section~3.2 treats a single-cycle permutation explicitly and notes
+in one sentence that the construction extends to all permutations through
+the cycle decomposition.  Their lookup theorem~\cite[Theorem~2.2]{HIW24}
+generalizes a lemma of Paul~\cite[Lemma~2]{Paul76} on evaluating a
+Boolean function on many inputs by sorting; that lemma is an ancestor of
+the sorting-based batched lookups used there and in
+\cref{lem:lookup}.  This draft generalizes
 that permutation-inversion construction to arbitrary fixed forward powers
 of possibly noninjective maps.  It does not subsume their general-function
 inversion and compression theorems.
+
+For general functions, Fiat and Naor~\cite{FN99} extend Hellman's method
+to rigorous time--space tradeoffs for inverting arbitrary functions, in
+the random-access model; Hirahara, Ilango, and Williams implement their
+algorithm with circuits~\cite[Section~3.3]{HIW24}.  Lower bounds in this
+preprocessing model face a known barrier.  Corrigan-Gibbs and
+Kogan~\cite{CGK19} show that improving Yao's bound $ST=\widetilde\Omega(N)$
+for inverting a random function with $S$ bits of advice and $T$ queries
+would give new lower bounds for depth-two circuits with arbitrary gates,
+and that strong lower bounds for nonadaptive inverters would give lower
+bounds for linear-size logarithmic-depth circuits.  These barriers concern
+inversion, not forward powers, but they show that even black-box lower
+bounds in the preprocessing model can be as hard as circuit lower bounds.
+The lower bound of \cref{sec:lower} avoids such questions by counting
+over exponentially long exponents (\cref{sec:lower-limits}).  \Cref{sec:crypto} compares the
+construction with the treatment of preprocessing in the literature on
+verifiable delay functions and time-lock puzzles.
 
 Eppstein~\cite{Eppstein23} studies uniform iteration of polynomial-time
 bijections, with the iteration count supplied in binary, and characterizes
@@ -697,6 +720,187 @@ by decrementing the active cycle coordinate.  The selected hard powers
 have exponential worst-case forward complexity, so cannot themselves
 form a polynomial-time one-way function.  The counting argument gives
 no average-case inversion hardness.
+
+\subsection{Cryptographic consequences}\label{sec:crypto}
+
+Iterated round functions serve as delay functions.  Iterated hashing,
+which Boneh, Bonneau, B\"unz, and Fisch~\cite{BBBF18} discuss as the basic
+sequential function behind verifiable delay functions, the slow hash
+sloth~\cite{LW15}, and the candidate MinRoot~\cite{KMT22} all evaluate
+$g^T$ for a public round function $g$ on an $n$-bit state.  The security
+property, \emph{sequentiality}, asks
+that $g^T$ cannot be computed much faster than by $T$ sequential
+applications of $g$.  \Cref{thm:main} bounds the nonuniform complexity of
+$g^T$, so it limits what a nonuniform sequentiality claim can assert.
+This subsection records the resulting limits and checks them against
+concrete parameters.  Lean checks only the exponent reduction for
+sequential squaring and the arithmetic of the table entries
+(\cref{sec:lean}); the remaining statements are prose.  None of them
+affects a deployed parameter set that we examined.
+
+\paragraph{Depth.}
+Sequentiality concerns depth, while \cref{thm:main} counts gates.  Let $g$
+have a circuit of size $s$ and depth $d$.  For $T<K=2L$ the construction
+of \cref{sec:fixed} is $T$ copies of $g$ in series, of depth $Td<2Ld$.
+Otherwise its only long sequential parts are the two trajectories of $K$
+steps, of total depth $4Ld$.  The remaining components can be made shallow
+at a constant-factor increase in size: Batcher's networks~\cite{Batcher68}
+have $O(\log^2R)$ comparator layers for $R$ records, comparisons and
+additions of $O(n)$-bit words have depth $O(\log n)$ by parallel prefix
+computation~\cite{LF80}, the sequential scans in \cref{lem:lookup} and in
+the selections become prefix computations of logarithmic depth, and the
+long division in \cref{eq:period} has depth $O(n\log n)$.  With
+$\log R=O(n)$ this gives, for every $T\geq0$ and $1\leq L\leq N$, a circuit
+for $g^T$ of size $O(Ls+n^3(L+N/L))$ and depth $4Ld+O(n^2\log n)$.  We
+state this accounting as a sketch; the size bound is that of
+\cref{thm:main}.
+
+\paragraph{Speed-up and size.}
+Unrolling $g^T$ has depth $Td$.  For $T\leq\sqrt N$, choose $L$ of order
+$T/\sigma$ for a speed-up factor $\sigma$ with $4\leq\sigma\leq T$.  The
+depth becomes about $Td\cdot4/\sigma$, and when the dictionary term
+dominates the size is of order
+\[
+  \sigma\cdot\frac{n^3N}{T}.
+\]
+Equivalently, depth times size is of order $n^3Nd$, independently of $T$.
+In particular, even a constant-factor speed-up costs about $n^3N/T$
+gates in this construction.  For $T\geq\sqrt N$ the choice
+\cref{eq:L-choice} gives size $2^{n/2}\poly(n,s)$ and depth at most
+$4\ceil{\sqrt N}d+O(n^2\log n)$, an unbounded speed-up as $T$ grows.  All of this
+is an upper bound for one construction; we make no claim that smaller
+fast circuits do not exist.
+
+The same tradeoff appears in cryptanalysis as an average-case statement
+about random-access machines: with $S$ stored iterates spaced $L$ apart,
+a random challenge meets one within $L$ steps with probability about
+$SL/N$.  \Cref{thm:main} is the every-input, gate-counted form, with a
+size independent of $T$.
+
+\paragraph{A design rule.}
+Say that $g^T$ is sequential at level $k$ against circuits if no circuit
+of size below $2^k$ computes $g^T$ correctly on every input with depth at
+most a constant fraction of $Td$.  The construction above then shows the
+following.  If $T\leq\sqrt N$ and $Ts<2^k$, sequentiality at level $k$ requires
+roughly $n+3\log_2n-\log_2T\geq k$.  If sequentiality is required for every number
+of rounds, then, taking $T$ near $\sqrt N$ and beyond, it requires
+$2^{n/2}\poly(n,s)\geq2^k$, that is,
+\[
+  n\geq 2k-O(\log k)
+\]
+for polynomial $s$.  The rule is consistent with existing practice: sloth
+takes a prime $p\geq2^{2k}$ at security level $k$~\cite[Section~3.3]{LW15},
+so its state has about $2k$ bits; MinRoot claims 128-bit security with a
+512-bit state~\cite[Claim~1]{KMT22}; and time--memory--data tradeoffs for
+state recovery~\cite{BS00} are the source of the rule that a stream cipher's
+state should have at least twice as many bits as its key.  We do not claim
+the rule as new.  We found no derivation of it from the circuit size of
+iterates.  For noninjective round functions, \cref{cor:image} gives more.
+If $|\operatorname{im}(g^d)|=O(N/d)$ for $d$ near $N^{1/3}$, as is expected
+heuristically for random-like maps, then every $g^T$ has a circuit of size
+$N^{1/3}\poly(n,s)$, and the corresponding rule for unboundedly many rounds
+would be $n\geq3k-O(\log k)$.  We do not know whether any concrete hash
+function has this image profile.
+
+\paragraph{Concrete parameters.}
+\Cref{tab:crypto} lists $\log_2$ of the two sizes for some state lengths,
+with constant factors and polynomial factors other than $n^3$ omitted.
+We use $T=2^{40}$ honest rounds, generously; the MinRoot analysis report
+names $t\approx2^{30}$ as the practical range~\cite[Section~4.2.4]{MinRoot23}.
+MinRoot adds the round index to the state in every
+round~\cite[Section~4.1.2]{MinRoot23}, so its round function is a fixed map
+only on a state extended by a counter; this makes $n$ larger than $512$ and
+the sizes larger.
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+Round function & $n$ & $k$ & $\log_2\sqrt N$ & $\log_2(n^3N/T)$, $T=2^{40}$ \\
+\midrule
+MinRoot over a 256-bit field & $\geq512$ & 128 & $\geq256$ & $\geq499$ \\
+sloth with $p\approx2^{256}$ & 256 & 128 & 128 & 240 \\
+SHA-256 chain & 256 & 128 & 128 & 240 \\
+any 128-bit state & 128 & 128 & 64 & 109 \\
+\bottomrule
+\end{tabular}
+\caption{Sizes, as base-2 logarithms, of the circuits of \cref{thm:main}:
+for $g^T$ at every $T$ (column $\sqrt N$), and for a constant-factor
+speed-up at $T=2^{40}$ (last column).  Constant factors and the factors
+$\poly(n,s)$ in the $\sqrt N$ column are omitted; $k$ is the claimed or
+intended security level.}
+\label{tab:crypto}
+\end{table}
+
+For MinRoot, sloth, and an iterated 256-bit hash, the speed-up size exceeds
+$2^{k}$ by more than $2^{100}$.  The every-$T$ size exceeds $2^k$ by
+$2^{128}$ for MinRoot.  For sloth and the hash it equals $2^k$ up to the
+omitted polynomial factors, which is the boundary $n\approx2k$ of the
+design rule.  Moreover, the obvious way to compute the
+payloads evaluates $g$ on essentially all $N$ states, whereas MinRoot
+allows the adversary $2^{128}$ precomputation calls~\cite{KMT22}.  So no
+deployed parameter that we checked is affected.  The last row only
+illustrates the design rule: a 128-bit state would admit, in principle,
+a circuit of about $2^{109}$ gates that evaluates $2^{40}$ rounds a constant
+factor faster than unrolling, below a nominal 128-bit nonuniform level.
+
+\paragraph{Where the cryptographic literature stands.}
+Sequentiality definitions bound the preprocessing.  In the definition of
+Boneh, Bonneau, B\"unz, and Fisch~\cite[Definition~4]{BBBF18}, a
+preprocessing algorithm $A_0$ runs in time polynomial in $t$ and the
+security parameter, and an online algorithm $A_1$ has parallel time below
+$t$ on polynomially many processors.  Their iterated sequential functions
+must be sequential for $2^{o(\lambda)}$ rounds with $\lambda=O(\log|X|)$
+\cite[Definition~7]{BBBF18}, far fewer than $\sqrt{|X|}$, so
+\cref{thm:main} does not contradict these definitions.  The MinRoot
+analysis report~\cite[Chapter~4]{MinRoot23} models the cube root as a
+random permutation and bounds the oracle queries of $A_0$ and $A_1$.  Its
+Theorem~2 is a precomputation attack of the table-lookup type: $A_0$
+stores $d$-round outputs of many starting points, and a challenge in the
+stored set saves $d$ rounds; its advantage is stated as an average over
+the challenge.  The report leaves a tight lower bound in the
+bounded-advice model open.  Mahmoody, Moran, and Vadhan~\cite{MMV11}
+analyse time-lock puzzles in the random oracle model against
+query-bounded adversaries without auxiliary input.  We found no prior
+statement of the every-input, gate-counted tradeoff for forward iterates
+in these works, and no sequentiality bound for an iterated random oracle
+against adversaries with auxiliary input.  Whether the checkpoint tradeoff
+is optimal in that model is open.
+
+\paragraph{Sequential squaring.}
+For a fixed squarefree modulus $M$ of $n$ bits, the map $x\mapsto x^2\bmod M$
+has polynomial-size circuits, so \cref{thm:main} gives $2^{n/2}\poly(n)$
+gates for $x\mapsto x^{2^T}\bmod M$.  Nonuniformly much more is true.
+With the Carmichael exponent $\lambda(M)$ hardwired, $x^a\equiv x^b\pmod M$
+for all $x$ whenever $a,b\geq1$ and $a\equiv b\pmod{\lambda(M)}$, so
+$x^{2^T}\bmod M=x^e\bmod M$ with $e=1+((2^T-1)\bmod\lambda(M))$, which
+square-and-multiply computes in polynomial size.  The congruence holds
+for non-units because each prime factor $p$ of $M$ divides $x$ or has
+$x^{\lambda(M)}\equiv1\pmod p$, and the shift by one keeps $e\geq1$: when
+$\lambda(M)$ divides $2^T$, the exponent $2^T\bmod\lambda(M)=0$ would
+give $x^0=1$ at $x=0$.  Lean checks this reduction for every $T$ and
+every residue, with $1\leq e\leq\lambda(M)$; the square-and-multiply
+circuit is not mechanized.  The sequentiality of
+the time-lock puzzle of Rivest, Shamir, and Wagner~\cite{RSW96} and of
+squaring-based delay functions is therefore a statement about adversaries
+that cannot factor $M$, not about circuits that may depend on $M$.  In the
+definitions above this is enforced by the polynomial time bound on $A_0$.
+For a fixed public round function such as sloth's or MinRoot's, by
+contrast, the model of \cref{thm:main}, in which the circuit may depend on
+$g$, is the preprocessing model with an exponential rather than a
+polynomial budget.
+
+\paragraph{Stream ciphers.}
+The state update of Trivium~\cite{Trivium06} is a fixed map on $288$ bits,
+and that of Grain~\cite{Grain07} on $160$ bits; the key enters only
+through the initial state.  For every $T$, \cref{thm:main} gives circuits
+of size $2^{144}\poly(n)$ and $2^{80}\poly(n)$ that jump ahead $T$ steps.
+This is no attack.  Jumping ahead helps only for $T$ beyond what can be
+run directly, and these sizes are at least $2^k$ for the $80$-bit keys,
+in accordance with the state-size rule above.  The theorem does show that
+a generator on $n$ bits hides no forward sequentiality beyond
+$2^{n/2}\poly(n)$ nonuniform gates, however many steps are taken.
 
 \section{Minimum checkpoint sets}\label{sec:min-checkpoints}
 
@@ -4896,11 +5100,17 @@ The exported theorems have guarded axiom lists containing only
 checkpoints, enumerations, and circuit witnesses; the result is nonuniform
 existence.  The sparse chart's existence and circuit cost are checked, but
 the edit-list compiler's algorithm and runtime, sparse-transition counting
-application, and finite-field corollary remain prose results, and only
+application, and finite-field corollary remain prose results.  Only
 the combinatorial core of \cref{sec:near-landau} is checked
-(\cref{rem:near-landau-lean}).  The
-cryptographic and literature discussions are also outside the mechanized
-boundary.  Kernel checking establishes neither historical priority nor
+(\cref{rem:near-landau-lean}).  In
+\cref{sec:crypto}, Lean checks the exponent reduction for sequential
+squaring modulo a fixed squarefree modulus, with $\lambda(M)$ taken as
+the exponent of the unit group
+(\texttt{SequentialSquaring.iterate\_square\_reduced} and
+\texttt{pow\_eq\_pow\_of\_modEq}), and the exact powers of two in
+\cref{tab:crypto} (\texttt{crypto\_table\_entries}).  The other
+cryptographic statements and the literature discussions are outside the
+mechanized boundary.  Kernel checking establishes neither historical priority nor
 independent fidelity to every intended model convention.
 
 \section{Conclusion and open questions}\label{sec:scope}
@@ -5057,6 +5267,84 @@ Martin E. Hellman.
 \newblock A cryptanalytic time--memory trade-off.
 \newblock \emph{IEEE Transactions on Information Theory}, 26(4):401--406, 1980.
 \newblock \href{https://ee.stanford.edu/~hellman/publications/36.pdf}{Author-hosted full text}.
+
+\bibitem{FN99}
+Amos Fiat and Moni Naor.
+\newblock Rigorous time/space trade-offs for inverting functions.
+\newblock \emph{SIAM Journal on Computing}, 29(3):790--803, 2000.
+\newblock \href{https://doi.org/10.1137/S0097539795280512}{doi:10.1137/S0097539795280512}.
+\newblock Preliminary version in STOC 1991.
+
+\bibitem{CGK19}
+Henry Corrigan-Gibbs and Dmitry Kogan.
+\newblock The function-inversion problem: barriers and opportunities.
+\newblock In \emph{Theory of Cryptography (TCC 2019)}, Part~I, LNCS 11891,
+pages 393--421. Springer, 2019.
+\newblock \href{https://doi.org/10.1007/978-3-030-36030-6_16}{doi:10.1007/978-3-030-36030-6\_16}.
+\newblock Full version: \href{https://eprint.iacr.org/2019/1046}{Cryptology ePrint Archive, Paper 2019/1046}.
+
+\bibitem{Paul76}
+Wolfgang J. Paul.
+\newblock Realizing {Boolean} functions on disjoint sets of variables.
+\newblock \emph{Theoretical Computer Science}, 2(3):383--396, 1976.
+\newblock \href{https://doi.org/10.1016/0304-3975(76)90089-X}{doi:10.1016/0304-3975(76)90089-X}.
+
+\bibitem{BBBF18}
+Dan Boneh, Joseph Bonneau, Benedikt B\"unz, and Ben Fisch.
+\newblock Verifiable delay functions.
+\newblock In \emph{Advances in Cryptology -- CRYPTO 2018}, Part~I, LNCS 10991,
+pages 757--788. Springer, 2018.
+\newblock \href{https://doi.org/10.1007/978-3-319-96884-1_25}{doi:10.1007/978-3-319-96884-1\_25}.
+\newblock Definition numbers refer to
+\href{https://eprint.iacr.org/2018/601}{Cryptology ePrint Archive, Paper 2018/601}.
+
+\bibitem{LW15}
+Arjen K. Lenstra and Benjamin Wesolowski.
+\newblock A random zoo: sloth, unicorn, and trx.
+\newblock Cryptology ePrint Archive, Paper 2015/366, 2015.
+\newblock \url{https://eprint.iacr.org/2015/366}.
+
+\bibitem{KMT22}
+Dmitry Khovratovich, Mary Maller, and Pratyush Ranjan Tiwari.
+\newblock {MinRoot}: candidate sequential function for {Ethereum} {VDF}.
+\newblock Cryptology ePrint Archive, Paper 2022/1626, 2022.
+\newblock \url{https://eprint.iacr.org/2022/1626}.
+
+\bibitem{MinRoot23}
+Ga\"etan Leurent, Bart Mennink, Krzysztof Pietrzak, Vincent Rijmen, et al.
+\newblock Analysis of {MinRoot}: public report (requested by the {Ethereum}
+Foundation).
+\newblock Report, September 18, 2023.
+\newblock \url{https://crypto.ethereum.org/events/minrootanalysis2023.pdf}.
+
+\bibitem{MMV11}
+Mohammad Mahmoody, Tal Moran, and Salil Vadhan.
+\newblock Time-lock puzzles in the random oracle model.
+\newblock In \emph{Advances in Cryptology -- CRYPTO 2011}, LNCS 6841,
+pages 39--50. Springer, 2011.
+\newblock \href{https://doi.org/10.1007/978-3-642-22792-9_3}{doi:10.1007/978-3-642-22792-9\_3}.
+
+\bibitem{BS00}
+Alex Biryukov and Adi Shamir.
+\newblock Cryptanalytic time/memory/data tradeoffs for stream ciphers.
+\newblock In \emph{Advances in Cryptology -- ASIACRYPT 2000}, LNCS 1976,
+pages 1--13. Springer, 2000.
+\newblock \href{https://doi.org/10.1007/3-540-44448-3_1}{doi:10.1007/3-540-44448-3\_1}.
+
+\bibitem{Trivium06}
+Christophe De Canni\`ere.
+\newblock Trivium: a stream cipher construction inspired by block cipher
+design principles.
+\newblock In \emph{Information Security (ISC 2006)}, LNCS 4176, pages
+171--186. Springer, 2006.
+\newblock \href{https://doi.org/10.1007/11836810_13}{doi:10.1007/11836810\_13}.
+
+\bibitem{Grain07}
+Martin Hell, Thomas Johansson, and Willi Meier.
+\newblock Grain: a stream cipher for constrained environments.
+\newblock \emph{International Journal of Wireless and Mobile Computing},
+2(1):86--93, 2007.
+\newblock \href{https://doi.org/10.1504/IJWMC.2007.013798}{doi:10.1504/IJWMC.2007.013798}.
 
 \bibitem{MRRR12}
 J. Ian Munro, Rajeev Raman, Venkatesh Raman, and S. Srinivasa Rao.

@@ -12,6 +12,7 @@ check:
 	python3 verify_extensions.py
 	python3 verify_sparse_counter.py
 	python3 verify_checkpoint_sets.py
+	python3 verify_random_mapping_lemmas.py
 
 lean-check:
 	cd lean && lake build --wfail

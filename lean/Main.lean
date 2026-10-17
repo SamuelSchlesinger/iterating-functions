@@ -40,6 +40,8 @@ public import Proofs.CounterBatch
 
 public import Proofs.SequentialSquaring
 
+public import Proofs.PhaseIdentities
+
 /-!
 # Public results and axiom audit
 
@@ -550,5 +552,15 @@ namespace IteratedFunctions
 [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms SequentialSquaring.crypto_table_entries
+
+/-- info: 'IteratedFunctions.canonicalTime_apply' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms canonicalTime_apply
+
+/-- info: 'IteratedFunctions.iterate_eq_canonical_iff' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms iterate_eq_canonical_iff
 
 end IteratedFunctions

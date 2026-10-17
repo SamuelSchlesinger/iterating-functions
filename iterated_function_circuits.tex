@@ -1471,8 +1471,16 @@ separation against optimal circuits for a single trajectory.
 \subsection{Batched powers of the counting permutation}\label{sec:batch-Pn}
 
 For the permutation $P_n$ of \cref{sec:lower}, sharing costs much less
-than \cref{thm:batch} suggests.  The results of this subsection are not
-mechanized in the Lean development.
+than \cref{thm:batch} suggests.  Lean checks \cref{prop:batch-Pn} for
+the modulus counter in its native basis, in the theorems
+\texttt{batched\_counter\_power} and \texttt{batch\_lower\_bounds}
+of the namespace \texttt{ModulusCounter}.  The upper bound is
+$40000(k+1)^3(2^k+r)$ gates for $r\leq N$, with Batcher networks in the
+shared lookup.  One block of a batched circuit gives a circuit for $P_n^T$
+of no larger size, and a batched circuit has at least $r$ gates when
+$P_n^T$ is not the identity.  \texttt{batched\_hard\_counter\_power}
+combines both bounds for the hard exponents of \cref{thm:lower}.  The
+AKS variant and the counting discussion below are not mechanized.
 
 \begin{proposition}[Batched powers of $P_n$]\label[proposition]{prop:batch-Pn}
 Let $n=2k$ be even, $1\leq r\leq N$, and $T\geq0$.  Then

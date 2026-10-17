@@ -26,6 +26,7 @@ public import Proofs.ActivePowers
 public import Proofs.AffineController
 public import Proofs.SparseCounterTime
 public import Proofs.SparseNavigation
+public import Proofs.CounterBatch
 
 /-!
 # Public results and axiom audit
@@ -132,6 +133,21 @@ namespace IteratedFunctions
  Quot.sound] -/
 #guard_msgs in
 #print axioms ModulusCounter.hard_power_exponent_capacity
+
+/-- info: 'IteratedFunctions.ModulusCounter.batched_counter_power' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms ModulusCounter.batched_counter_power
+
+/-- info: 'IteratedFunctions.ModulusCounter.batch_lower_bounds' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms ModulusCounter.batch_lower_bounds
+
+/-- info: 'IteratedFunctions.ModulusCounter.batched_hard_counter_power' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms ModulusCounter.batched_hard_counter_power
 
 /-- info: 'IteratedFunctions.fixedPowerBound' depends on axioms:
 [propext, Classical.choice, Quot.sound] -/

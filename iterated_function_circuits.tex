@@ -2157,7 +2157,12 @@ time--memory tradeoff literature~\cite{vOW99}, give such a set when they
 are selected by a hash function of limited independence.  This section derives three
 consequences: a polynomial-factor improvement of \cref{eq:optimized},
 circuits of width $O(n+s)$, and reversible circuits with few ancillas.
-None of the results in this section is covered by the Lean development.
+The Lean development checks only the semantic correctness of the six-step
+procedure in the proof of \cref{thm:distinguished}, for an arbitrary set
+$H$ with the hitting property of \cref{lem:distinguished}
+(\texttt{distinguishedPower\_correct}; see \cref{sec:lean}).  The hash
+lemma, the gate counts and widths, and the reversible and pebbling results
+of this section are not mechanized.
 
 \subsection{Hashed checkpoints}
 
@@ -2521,8 +2526,14 @@ The exported theorems have guarded axiom lists containing only
 checkpoints, enumerations, and circuit witnesses; the result is nonuniform
 existence.  The sparse chart's existence and circuit cost are checked, but
 the edit-list compiler's algorithm and runtime, sparse-transition counting
-application, and finite-field corollary remain prose results, as do
-the distinguished-point and reversible circuits of \cref{sec:distinguished}.  The
+application, and finite-field corollary remain prose results.  For
+\cref{sec:distinguished}, Lean checks that the scan, lookup, correction,
+period, cycle-walk and output steps return $F^T(x)$ on every input whenever
+$H$ meets every prefix of $K+1$ distinct states, the payloads are
+$F^{T-K}(h)$ on $H$, and the residues are $(T-K)\bmod\lambda$; the period
+walk uses its own register, as in the text.  The hashed construction of
+$H$, its gate counts and width, and the reversible circuits remain prose
+results.  The
 cryptographic and literature discussions are also outside the mechanized
 boundary.  Kernel checking establishes neither historical priority nor
 independent fidelity to every intended model convention.

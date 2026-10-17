@@ -78,6 +78,7 @@ natural-number division in integer budgets means floor division.
 | `sparse_coordinate_variable_time` | Transferring the input-time bound to a cyclic permutation with supplied coordinates adds exactly `encode.size + decode.size` to the preceding iterator budget. |
 | `sparse_counter_hitting_time` | On two `n`-bit inputs, reachability and exact first hitting time cost at most `1200*(n+3)*(r+1)` gates. The time field has `n+1` bits, is specified only on reachable pairs, and is less than `2^n`. |
 | `sparse_counter_visit_schedule` | The same bound returns a complete visit descriptor, with all-time semantics and its exact bounded-count interpretation. The period field has `n+1` bits; no deadline-processing circuit is included. |
+| `distinguishedPower_correct` | Semantic correctness of the distinguished-point procedure (scan, lookup, correction, period walk in its own register, cycle walk, output) for any `H` that meets every prefix of `K+1` pairwise distinct states, with payloads `f^[T-K] h` on `H` and residues `(T-K) % λ` for `1 ≤ λ ≤ K`. It returns `f^[T] x` on every input. No circuit size, width, or hash construction is claimed. |
 | `sparse_coordinate_visit_schedule` | Coordinate transport of the descriptor costs `2*encode.size + 1200*(n+3)*(r+1)`. Only a forward-coordinate circuit is supplied; no decoder is required. |
 | `synchronous_coalescence_optimized` | On a pair `(x,y)`, decides whether equal-time iterates ever meet, with bound `240000*B + 6*n + 1`. |
 | `recurring_target_optimized` | Decides acceptance at arbitrarily large times; the bound is `240000*optimizedBudget n (s+p.size+4*n) N + p.size`. |
@@ -291,6 +292,13 @@ algorithm in `../sparse_counter.py`, its polynomial-time edit-list compilation,
 or extraction of an edit list from a transition circuit. The sparse-transition counting
 application and the finite-field corollary, including the use of the external
 discrete-logarithm theorem, are also outside the current Lean boundary.
+
+The distinguished-point section is checked only semantically:
+`distinguishedPower_correct` (module `Proofs.DistinguishedPoints`) proves that
+the six-step procedure returns `f^[T] x` for any set `H` with the hitting
+property. The hashed construction of `H`, the Bellare–Rompel existence
+argument, gate counts, circuit width, and the reversible and pebbling results
+are outside the Lean boundary.
 
 The AKS polynomial improvement is stated and proved in prose in the
 manuscript (Theorem `thm:aks`), but is not formalized; the mechanized

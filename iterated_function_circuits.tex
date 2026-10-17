@@ -714,7 +714,9 @@ that $g^T$ cannot be computed much faster than by $T$ sequential
 applications of $g$.  \Cref{thm:main} bounds the nonuniform complexity of
 $g^T$, so it limits what a nonuniform sequentiality claim can assert.
 This subsection records the resulting limits and checks them against
-concrete parameters.  None of its statements is mechanized.  None of them
+concrete parameters.  Lean checks only the exponent reduction for
+sequential squaring and the arithmetic of the table entries
+(\cref{sec:lean}); the remaining statements are prose.  None of them
 affects a deployed parameter set that we examined.
 
 \paragraph{Depth.}
@@ -812,8 +814,11 @@ intended security level.}
 \label{tab:crypto}
 \end{table}
 
-For MinRoot, sloth, and an iterated 256-bit hash, both sizes exceed
-$2^{k}$ by more than $2^{100}$.  Moreover, the obvious way to compute the
+For MinRoot, sloth, and an iterated 256-bit hash, the speed-up size exceeds
+$2^{k}$ by more than $2^{100}$.  The every-$T$ size exceeds $2^k$ by
+$2^{128}$ for MinRoot.  For sloth and the hash it equals $2^k$ up to the
+omitted polynomial factors, which is the boundary $n\approx2k$ of the
+design rule.  Moreover, the obvious way to compute the
 payloads evaluates $g$ on essentially all $N$ states, whereas MinRoot
 allows the adversary $2^{128}$ precomputation calls~\cite{KMT22}.  So no
 deployed parameter that we checked is affected.  The last row only
@@ -851,7 +856,13 @@ gates for $x\mapsto x^{2^T}\bmod M$.  Nonuniformly much more is true.
 With the Carmichael exponent $\lambda(M)$ hardwired, $x^a\equiv x^b\pmod M$
 for all $x$ whenever $a,b\geq1$ and $a\equiv b\pmod{\lambda(M)}$, so
 $x^{2^T}\bmod M=x^e\bmod M$ with $e=1+((2^T-1)\bmod\lambda(M))$, which
-square-and-multiply computes in polynomial size.  The sequentiality of
+square-and-multiply computes in polynomial size.  The congruence holds
+for non-units because each prime factor $p$ of $M$ divides $x$ or has
+$x^{\lambda(M)}\equiv1\pmod p$, and the shift by one keeps $e\geq1$: when
+$\lambda(M)$ divides $2^T$, the exponent $2^T\bmod\lambda(M)=0$ would
+give $x^0=1$ at $x=0$.  Lean checks this reduction for every $T$ and
+every residue, with $1\leq e\leq\lambda(M)$; the square-and-multiply
+circuit is not mechanized.  The sequentiality of
 the time-lock puzzle of Rivest, Shamir, and Wagner~\cite{RSW96} and of
 squaring-based delay functions is therefore a statement about adversaries
 that cannot factor $M$, not about circuits that may depend on $M$.  In the
@@ -2357,9 +2368,15 @@ The exported theorems have guarded axiom lists containing only
 checkpoints, enumerations, and circuit witnesses; the result is nonuniform
 existence.  The sparse chart's existence and circuit cost are checked, but
 the edit-list compiler's algorithm and runtime, sparse-transition counting
-application, and finite-field corollary remain prose results.  The
-cryptographic and literature discussions are also outside the mechanized
-boundary.  Kernel checking establishes neither historical priority nor
+application, and finite-field corollary remain prose results.  In
+\cref{sec:crypto}, Lean checks the exponent reduction for sequential
+squaring modulo a fixed squarefree modulus, with $\lambda(M)$ taken as
+the exponent of the unit group
+(\texttt{SequentialSquaring.iterate\_square\_reduced} and
+\texttt{pow\_eq\_pow\_of\_modEq}), and the exact powers of two in
+\cref{tab:crypto} (\texttt{crypto\_table\_entries}).  The other
+cryptographic statements and the literature discussions are outside the
+mechanized boundary.  Kernel checking establishes neither historical priority nor
 independent fidelity to every intended model convention.
 
 \section{Conclusion and open questions}\label{sec:scope}

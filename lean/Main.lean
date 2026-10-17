@@ -26,6 +26,7 @@ public import Proofs.ActivePowers
 public import Proofs.AffineController
 public import Proofs.SparseCounterTime
 public import Proofs.SparseNavigation
+public import Proofs.SequentialSquaring
 
 /-!
 # Public results and axiom audit
@@ -302,5 +303,30 @@ namespace IteratedFunctions
 [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms visit_count_of_first
+
+/-- info: 'IteratedFunctions.SequentialSquaring.pow_carmichael_succ' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms SequentialSquaring.pow_carmichael_succ
+
+/-- info: 'IteratedFunctions.SequentialSquaring.pow_eq_pow_of_modEq' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms SequentialSquaring.pow_eq_pow_of_modEq
+
+/-- info: 'IteratedFunctions.SequentialSquaring.iterate_square_reduced' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms SequentialSquaring.iterate_square_reduced
+
+/-- info: 'IteratedFunctions.SequentialSquaring.reducedExponent_le' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms SequentialSquaring.reducedExponent_le
+
+/-- info: 'IteratedFunctions.SequentialSquaring.crypto_table_entries' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms SequentialSquaring.crypto_table_entries
 
 end IteratedFunctions

@@ -78,6 +78,9 @@ natural-number division in integer budgets means floor division.
 | `sparse_coordinate_variable_time` | Transferring the input-time bound to a cyclic permutation with supplied coordinates adds exactly `encode.size + decode.size` to the preceding iterator budget. |
 | `sparse_counter_hitting_time` | On two `n`-bit inputs, reachability and exact first hitting time cost at most `1200*(n+3)*(r+1)` gates. The time field has `n+1` bits, is specified only on reachable pairs, and is less than `2^n`. |
 | `sparse_counter_visit_schedule` | The same bound returns a complete visit descriptor, with all-time semantics and its exact bounded-count interpretation. The period field has `n+1` bits; no deadline-processing circuit is included. |
+| `SequentialSquaring.pow_carmichael_succ`, `pow_eq_pow_of_modEq` | For squarefree `M` and every `x : ZMod M`, unit or not, `x^(λ+1) = x` with `λ = Monoid.exponent (ZMod M)ˣ`; positive exponents congruent modulo `λ` give equal powers. |
+| `SequentialSquaring.iterate_square_reduced`, `reducedExponent_le` | For squarefree `M` and every `T`, `T` squarings modulo `M` equal `x ↦ x^e` with `e = 1 + (2^T - 1) % λ`, and `1 ≤ e ≤ λ`. No circuit is constructed. |
+| `SequentialSquaring.crypto_table_entries` | The table's sizes without omitted factors: `n^3*2^n/2^40` is `2^499`, `2^240`, `2^109` and `sqrt(2^n)` is `2^256`, `2^128`, `2^64` for `n = 512, 256, 128`. |
 | `sparse_coordinate_visit_schedule` | Coordinate transport of the descriptor costs `2*encode.size + 1200*(n+3)*(r+1)`. Only a forward-coordinate circuit is supplied; no decoder is required. |
 | `synchronous_coalescence_optimized` | On a pair `(x,y)`, decides whether equal-time iterates ever meet, with bound `240000*B + 6*n + 1`. |
 | `recurring_target_optimized` | Decides acceptance at arbitrarily large times; the bound is `240000*optimizedBudget n (s+p.size+4*n) N + p.size`. |

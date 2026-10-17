@@ -32,6 +32,8 @@ public import Proofs.NumberOfPowers
 
 public import Proofs.InPlace
 
+public import Proofs.ForestDuality
+
 /-!
 # Public results and axiom audit
 
@@ -417,5 +419,10 @@ namespace IteratedFunctions
 [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms InPlace.round_bounds
+
+/-- info: 'IteratedFunctions.ForestDuality.forest_duality' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms ForestDuality.forest_duality
 
 end IteratedFunctions

@@ -429,6 +429,8 @@ It is essential that the lemma allows a short repetition instead of a
 checkpoint.  A function can have $N$ fixed points, in which case a set
 meeting every eventual cycle must contain all $N$ states.  Such cycles
 need no stored shortcut: their behavior is already visible locally.
+\Cref{sec:min-checkpoints} determines how small such sets can be and how
+hard a minimum one is to find.
 \end{remark}
 
 \section{Circuits for fixed powers}\label{sec:fixed}
@@ -681,6 +683,380 @@ by decrementing the active cycle coordinate.  The selected hard powers
 have exponential worst-case forward complexity, so cannot themselves
 form a polynomial-time one-way function.  The counting argument gives
 no average-case inversion hardness.
+
+\section{Minimum checkpoint sets}\label{sec:min-checkpoints}
+
+The constructions above only need the existence of a sparse checkpoint
+set.  This section asks how small such a set can be for a given map, and
+how hard it is to find one.  For a map given by a circuit, deciding
+whether a checkpoint set of a given size exists is
+$\mathsf{coNP}$-complete; for a map given as a table, a minimum set is
+computable in polynomial time.  The proof rests on a min--max duality for
+directed paths in in-forests.  That duality, \cref{lem:forest-duality},
+is checked in Lean as \texttt{ForestDuality.forest\_duality}, for an
+arbitrary vertex set of a finite in-forest; the component formula, the
+complexity results and the table algorithm are not mechanized.  None of
+the results in this section is used elsewhere in the paper.
+
+\begin{definition}\label[definition]{def:ckpt}
+Let $F$ be a map on a finite set $V$ of $N$ states, and let $K\geq1$.  A
+\emph{$K$-trajectory} is a list $x,F(x),\ldots,F^{K-1}(x)$ of $K$
+pairwise distinct states.  A set $H\subseteq V$ is a
+\emph{$K$-checkpoint set} if it meets every $K$-trajectory, and
+$\mathrm{opt}_K(F)$ is the least size of a $K$-checkpoint set.
+\end{definition}
+
+If $x,\ldots,F^{2L-1}(x)$ are distinct, then so are
+$x,\ldots,F^{L-1}(x)$, and the set $H$ of \cref{lem:checkpoints} contains
+some $F^d(x)$ with $d<2L$.  So that set is a $2L$-checkpoint set and
+$\mathrm{opt}_{2L}(F)\leq\floor{N/L}$.  This is tight up to a factor of
+two: on a single cycle of length $N\geq K$, each state lies in exactly
+$K$ of the $N$ $K$-trajectories, so $\mathrm{opt}_K\geq N/K$.  For other
+maps $\mathrm{opt}_K$ can be far smaller; it is $0$ for a map with only
+fixed points.
+
+\begin{lemma}[Long trajectories]\label[lemma]{lem:ckpt-long}
+If $\mathrm{opt}_K(F)\leq m$, then every list $x,F(x),\ldots,F^{R-1}(x)$
+of $R$ pairwise distinct states has $R<(m+1)K$.  In particular every
+cycle of $F$ has length less than $(m+1)K$.
+\end{lemma}
+
+\begin{proof}
+The list contains $\floor{R/K}$ disjoint consecutive blocks of $K$
+states, each a $K$-trajectory, and each needs its own point of a
+$K$-checkpoint set.  So $\floor{R/K}\leq m$.
+\end{proof}
+
+\subsection{Duality in in-forests}
+
+An \emph{in-forest} is a finite set $V$ with a partial successor map
+$\sigma:V\to V\cup\{\bot\}$ that has no cycles.  A \emph{path} is a list
+$v_1,\ldots,v_j$ with $\sigma(v_i)=v_{i+1}$ for $i<j$; it \emph{ends} at
+$v_j$ and has length $j$.  A vertex $u\neq v$ is an \emph{ancestor} of $v$
+if $\sigma^i(u)=v$ for some $i\geq1$.  Fix a requirement
+$r:V\to\{1,2,\ldots\}$.  A path is \emph{required} if its length is at
+least $r$ of its end.  Let $\tau_r$ be the least size of a set meeting
+every required path, and $\nu_r$ the largest number of pairwise
+vertex-disjoint required paths.  Write $\tau_K,\nu_K$ when $r\equiv K$.
+
+\begin{lemma}[Duality]\label[lemma]{lem:forest-duality}
+In every in-forest, $\tau_r=\nu_r$.  A minimum cover is obtained as
+follows.  Process the vertices in an order in which every vertex follows
+all of its ancestors, maintaining a set $G$.  At $v$, let
+\[
+  d(v)=1+\max\{d(u):\sigma(u)=v,\ u\notin G\},
+\]
+with the maximum of the empty set equal to $0$, and add $v$ to $G$ if
+$d(v)\geq r(v)$.
+\end{lemma}
+
+\begin{proof}
+By induction in the processing order, $d(v)$ is the largest length of a
+path ending at $v$ whose vertices other than $v$ lie outside $G$; the
+status of those vertices is final when $v$ is processed, because they
+are ancestors of $v$.
+
+$G$ is a cover.  Let $Q$ be a required path ending at $v$ and avoiding
+$G$.  Then $d(v)\geq|Q|\geq r(v)$, so $v\in G$, a contradiction.
+
+For each $v\in G$ choose a \emph{witness} $W_v$: the last $r(v)$ vertices
+of a path of length $d(v)$ realizing the definition.  It is a required
+path ending at $v$, and $W_v\cap G=\{v\}$, since its other vertices are
+ancestors of $v$ and lie outside $G$.  Witnesses are pairwise disjoint.
+Suppose $u\in W_v\cap W_w$ with $v\neq w$.  Both $v$ and $w$ lie on the
+unique forward path from $u$, say $v$ strictly before $w$.  Then $v$ lies
+on $W_w$ between $u$ and $w$, and $v\in G$, contradicting
+$W_w\cap G=\{w\}$.
+
+Hence $|G|\leq\nu_r$.  Disjoint required paths need distinct points of a
+cover, so $\nu_r\leq\tau_r\leq|G|$.
+\end{proof}
+
+\subsection{The component formula}
+
+A $K$-trajectory follows $F$, so it lies in one weakly connected
+component of the functional graph.  Hence $\mathrm{opt}_K(F)$ is the sum
+of $\mathrm{opt}_K$ over the components.  Fix a component $Q$ with cycle
+$Z$ of length $\ell$.  For a cycle vertex $c$, let $Q-c$ be the in-forest
+on $Q\setminus\{c\}$ with $\sigma(v)=F(v)$ unless $F(v)=c$, in which case
+$\sigma(v)=\bot$.  Let $Q-Z$ be the in-forest on $Q\setminus Z$ with
+$\sigma(v)=F(v)$ unless $F(v)\in Z$, in which case $\sigma(v)=\bot$, and
+give it the requirement $r_Z(v)=K-\ell$ if $F(v)\in Z$ and $r_Z(v)=K$
+otherwise.
+
+\begin{lemma}[Component formula]\label[lemma]{lem:component-formula}
+Let $\mathrm{opt}(Q)$ be the least size of a set meeting every
+$K$-trajectory in $Q$.
+\begin{enumerate}
+\item If $\ell\geq K$, let $W$ consist of any $K$ consecutive vertices of
+  $Z$.  Then $\mathrm{opt}(Q)=\min_{c\in W}\bigl(1+\nu_K(Q-c)\bigr)$.
+\item If $\ell<K$, then
+  $\mathrm{opt}(Q)=\min\bigl(\nu_{r_Z}(Q-Z),\
+  \min_{c\in Z}(1+\nu_K(Q-c))\bigr)$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+First fix a cycle vertex $c$.  Because $Q-c$ has no cycle, its paths of
+length $K$ are lists of $K$ distinct consecutive states avoiding $c$,
+that is, the $K$-trajectories of $Q$ avoiding $c$; conversely every such
+trajectory is a path of $Q-c$.  So the least size of a set containing $c$
+and meeting every $K$-trajectory of $Q$ is $1+\tau_K(Q-c)$, which equals
+$1+\nu_K(Q-c)$ by \cref{lem:forest-duality}.
+
+(1) The $K$ vertices of $W$ are distinct consecutive states, so $W$ is a
+$K$-trajectory and every feasible set contains some $c\in W$.  The
+formula is the minimum of the previous paragraph over $c\in W$.
+
+(2) A feasible set either contains a cycle vertex, which is covered by
+the first paragraph, or avoids $Z$.  Let $x$ have depth $a$, so that
+$x,\ldots,F^{a-1}(x)$ are tree vertices and $F^a(x)\in Z$.  The first
+$a+\ell$ states of the orbit are distinct and the next one repeats, so
+$x$ starts a $K$-trajectory exactly when $a+\ell\geq K$.  A set avoiding
+$Z$ meets this trajectory exactly when it meets its tree part
+$x,\ldots,F^{\min(a,K)-1}(x)$.
+
+These tree parts are required paths of $Q-Z$ under $r_Z$.  If $a\geq K$
+the part has $K$ vertices.  If $K-\ell\leq a<K$, it has $a\geq K-\ell$
+vertices and ends at a vertex $u$ with $F(u)\in Z$.
+
+Conversely, every required path of $Q-Z$ contains such a tree part.  A
+required path ending at a vertex $v$ with $F(v)\notin Z$ contains a path
+of exactly $K$ vertices ending at $v$, which is the tree part of its
+first vertex, whose depth is at least $K$.  A required path ending at
+$u$ with $F(u)\in Z$ contains the path of its last $K-\ell$ vertices,
+which is the tree part of a state of depth exactly $K-\ell$.
+
+So a set avoiding $Z$ is feasible exactly when it covers the required
+paths of $Q-Z$, and the least such size is
+$\tau_{r_Z}(Q-Z)=\nu_{r_Z}(Q-Z)$ by \cref{lem:forest-duality}.
+\end{proof}
+
+\subsection{Maps given by circuits}
+
+Let $\mathrm{CKPT}$ be the problem: given a circuit for
+$F:\bits^n\to\bits^n$ and integers $K$ and $m$ in unary, decide whether
+$\mathrm{opt}_K(F)\leq m$.  The defining formula, that some list $H$ of at
+most $m$ states meets the first $K$ states of every orbit with no
+repetition among them, places $\mathrm{CKPT}$ in $\Sigma_2^p$.  Duality
+brings it down one level.
+
+\begin{theorem}\label{thm:ckpt-conp}
+$\mathrm{CKPT}$ is $\mathsf{coNP}$-complete.  For every fixed $m\geq0$ it
+remains $\mathsf{coNP}$-complete with $m$ fixed and $K=2$.  Consequently
+$\mathrm{CKPT}$ is not $\Sigma_2^p$-hard under polynomial-time reductions
+unless $\mathsf{NP}=\mathsf{coNP}$, in which case the polynomial
+hierarchy collapses to $\mathsf{NP}$~\cite{Stockmeyer76}.
+\end{theorem}
+
+\begin{proof}
+\emph{Membership.}  We give polynomially checkable certificates for
+$\mathrm{opt}_K(F)>m$.  Put $M=(m+1)K$.  A certificate is either
+\begin{enumerate}
+\item[(i)] a list $x,F(x),\ldots,F^{M-1}(x)$ of $M$ distinct states, or
+\item[(ii)] at most $m+1$ components, each given by a state $z$, an
+  integer $\ell<M$ and an integer $b\geq1$, together with packings.
+\end{enumerate}
+In (ii), with $W=\{z,\ldots,F^{K-1}(z)\}$ when $\ell\geq K$, the
+verifier checks that $F^\ell(z)=z$ and $F^j(z)\neq z$ for
+$0<j<\ell$, so that $Z=\{z,\ldots,F^{\ell-1}(z)\}$ is a cycle of length
+$\ell$.  It checks that the cycles of different listed components are
+disjoint, and that the listed $b$ sum to at least $m+1$.  For each option
+of \cref{lem:component-formula}, the certificate lists pairwise disjoint
+required paths in the corresponding in-forest: $b-1$ of them for an
+option $c$, and $b$ of them for the option $Q-Z$.  Each path is an
+explicit list of at most $K$ states.  The verifier checks the $F$-steps,
+the avoidance of $c$ or of $Z$, the length condition, and that the
+path lies in the component: from each vertex, at most $M+\ell$
+applications of $F$ reach $Z$.  There are at most $K$ options per
+component, so everything is polynomial in the size of $F$, $K$ and $m$.
+
+Soundness.  A certificate of type (i) works by \cref{lem:ckpt-long}.
+For type (ii), the listed components are distinct, since their cycles are
+disjoint.  In each, a packing of $b-1$ paths gives
+$1+\tau_K(Q-c)\geq b$, and a packing of $b$ paths gives
+$\tau_{r_Z}(Q-Z)\geq b$.  Every feasible set falls under one of the
+options, as in the proof of \cref{lem:component-formula}, so
+$\mathrm{opt}(Q)\geq b$.  Summing over components gives
+$\mathrm{opt}_K(F)\geq m+1$.
+
+Completeness.  Suppose $\mathrm{opt}_K(F)>m$ and no certificate of type
+(i) exists.  Then every orbit has fewer than $M$ distinct states, so
+every cycle has length less than $M$ and every depth is less than $M$.
+Choose components with $\mathrm{opt}(Q)\geq1$ until their optima sum to
+at least $m+1$; at most $m+1$ are needed.  Set $b=\mathrm{opt}(Q)$,
+lowering the last value so that the sum is exactly $m+1$.  Each option of
+\cref{lem:component-formula} has value at least $\mathrm{opt}(Q)\geq b$,
+and the maximum packings of \cref{lem:forest-duality} supply the paths.
+Shortening every path to exactly $r$ of its end keeps them disjoint and
+required, with at most $K$ states each.
+
+\emph{Hardness.}  Reduce from the tautology problem for Boolean circuits
+$\varphi$ on $n'$ variables, with $K=2$.  Use states $(y,j)$ with
+$y\in\bits^{n'}$ and $j\in\{0,1,2\}$, encoded in $n'+2$ bits; the unused
+encodings are fixed points.  Put $F(y,j)=(y,j)$ if $\varphi(y)=1$ or
+$j=2$, and $F(y,j)=(y,j+1)$ otherwise.  If $\varphi(y)=0$, then
+$(y,0),(y,1)$ is a $2$-trajectory.  If $\varphi$ is a tautology, every
+state is fixed, so there is no $2$-trajectory.  Hence
+$\mathrm{opt}_2(F)=0$ exactly when $\varphi$ is a tautology.  For fixed
+$m\geq1$, add a flag bit and, on the flagged states, $m$ disjoint cycles
+of length $2$, all other flagged states being fixed.  Each new cycle is a
+$2$-trajectory and one point per cycle meets all of its trajectories, so
+$\mathrm{opt}_2$ increases by exactly $m$.  The circuit for $F$ has size
+polynomial in that of $\varphi$.
+
+If $\mathrm{CKPT}$ were $\Sigma_2^p$-hard, then
+$\Sigma_2^p\subseteq\mathsf{coNP}$, hence $\mathsf{NP}\subseteq
+\mathsf{coNP}$ and $\mathsf{NP}=\mathsf{coNP}$.
+\end{proof}
+
+\begin{corollary}\label[corollary]{cor:ckpt-approx}
+For every function $\alpha\geq1$, computing a number in
+$[\mathrm{opt}_K(F),\alpha\cdot\mathrm{opt}_K(F)]$ from a circuit for $F$
+and $K$ in unary is $\mathsf{coNP}$-hard.
+\end{corollary}
+
+\begin{proof}
+Such a number is $0$ exactly when $\mathrm{opt}_K(F)=0$, which is the
+$\mathsf{coNP}$-hard case $m=0$ of \cref{thm:ckpt-conp}.
+\end{proof}
+
+\begin{proposition}[Search]\label[proposition]{prop:ckpt-search}
+Given a circuit for $F$ and $K,m$ in unary with $\mathrm{opt}_K(F)\leq m$,
+the value $\mathrm{opt}_K(F)$ and a minimum $K$-checkpoint set are
+computable in polynomial time with an $\mathsf{NP}$ oracle.
+\end{proposition}
+
+\begin{proof}
+The value takes $m+1$ queries to the $\mathsf{coNP}$ language of
+\cref{thm:ckpt-conp}.  For the set, put $M=(m+1)K$; by
+\cref{lem:ckpt-long}, every orbit has fewer than $M$ distinct states.
+Membership of a state in the component of a known cycle is therefore
+decidable in polynomial time, and each search below is an $\mathsf{NP}$
+question whose witness is found bit by bit.
+
+Find the components that contain a $K$-trajectory one at a time: ask for
+a $K$-trajectory whose orbit reaches none of the cycles found so far, and
+iterate it to find its cycle.  Each such component has
+$\mathrm{opt}(Q)\geq1$, so there are at most $m$ of them, and the other
+components need no point.
+
+For each such component and each option of \cref{lem:component-formula},
+compute a minimum cover of the in-forest $(Y,\sigma,r)$ of that option as
+follows.  Call a vertex \emph{violated} if some required path ending at
+it avoids the current set $G$.  Repeatedly find a violated vertex, then
+move to a violated proper ancestor while one exists, and add the final
+vertex to $G$.  Each move strictly increases the depth, which stays
+below $M$, so each round makes fewer than $M$ moves.  Stop when no vertex is violated,
+or as soon as $|G|$ exceeds $m$, in which case the option is not optimal.
+Output the best option over all components.
+
+This rule produces a minimum cover.  Each added vertex $v$ has a
+witness: a required path $W_v$ ending at $v$ that avoided $G$ when $v$ was
+added.  Suppose two witnesses share a vertex $u$.  Their ends lie on the
+forward path of $u$; call the earlier one $a$ and the later one $b$, so
+$a$ is a proper ancestor of $b$ and $a\in W_b$.  If $a$ was added before
+$b$, then $W_b$ did not avoid $G$ when $b$ was added.  If $a$ was added
+after $b$, then $W_a$ avoided $G$ already when $b$ was added, since $G$
+only grows; so $a$ was a violated proper ancestor of $b$, contradicting
+the choice of $b$.  So the witnesses are disjoint, and
+$|G|\leq\nu_r=\tau_r$.
+\end{proof}
+
+\subsection{Maps given as tables}
+
+\begin{theorem}\label{thm:ckpt-table}
+Given $F$ as a table of $N$ entries and $K\geq1$, a minimum
+$K$-checkpoint set can be computed in time
+\[
+  O\Bigl(N+\sum_Z \ell_Z\min(K,\ell_Z)\Bigr)\subseteq O(NK)
+\]
+on a word RAM, where $Z$ ranges over the cycles and $\ell_Z$ is the length
+of $Z$.  On an in-forest with an arbitrary requirement, time $O(N)$
+suffices.
+\end{theorem}
+
+\begin{proof}
+For an in-forest, run the greedy rule of \cref{lem:forest-duality},
+processing the vertices by decreasing distance to their root, which is
+computed by one traversal.  Ancestors lie strictly farther from the root.
+
+For a general $F$, find the cycles and the depths of all tree vertices
+in time $O(N)$.  Let $T$ be the in-forest of tree vertices, with
+$\sigma(v)=F(v)$ unless $F(v)$ is a cycle vertex, and requirement $K$.
+
+\emph{Step 1.}  Run the greedy rule on $T$, in decreasing order of depth,
+obtaining $G$.  Put $\bar d(u)=0$ for $u\in G$ and $\bar d(u)=d(u)$
+otherwise.  So $\bar d(u)$ is the largest length of a path of $T$ ending
+at $u$ that avoids $G$, and $\bar d(u)\leq K-1$.
+
+\emph{Step 2.}  For each cycle $Z=(v_0,\ldots,v_{\ell-1})$ and each $i$,
+let $a_i$ be the maximum of $\bar d(u)$ over tree vertices $u$ with
+$F(u)=v_i$, or $0$ if there is none.  If $w_i=K-a_i\leq\ell$, record the
+arc $I_i=\{v_i,v_{i+1},\ldots,v_{i+w_i-1}\}$, indices mod $\ell$.
+
+\emph{Step 3.}  On each cycle, compute a minimum set $P_Z$ of cycle
+vertices meeting all recorded arcs.  Some arc $I_s$ of least width must
+contain a point of every feasible $P_Z$.  For each $p\in I_s$, discard
+the arcs containing $p$.  Cut the circle at $p$, which turns the
+remaining arcs into intervals on a line, and run the classical line
+greedy: scan intervals by right endpoint, choosing the right endpoint of
+each interval not yet met.  Take the best $1+(\text{greedy size})$ over
+$p\in I_s$.  With bucket sorting each cut costs $O(\ell)$, and
+$|I_s|\leq\min(K,\ell)$.
+
+Output $G\cup\bigcup_ZP_Z$.  We show that this is optimal.
+
+\emph{Feasibility.}  Every $K$-trajectory contained in $T$ is a required
+path of $T$, so it meets $G$ (\cref{lem:forest-duality}).  Any other
+$K$-trajectory avoiding $G$ starts at some $x$, runs through a tail
+$x,\ldots,F^{a-1}(x)$ of $a\leq K-1$ tree vertices avoiding $G$, enters
+the cycle at $v_i$, and continues through the $K-a\leq\ell$ distinct
+vertices $v_i,\ldots,v_{i+K-a-1}$.  If $a\geq1$ the tail ends at a tree
+vertex $u$ with $F(u)=v_i$, so $a\leq\bar d(u)\leq a_i$.  Hence the arc
+$I_i$ is recorded, lies inside the trajectory, and is met by $P_Z$.
+
+\emph{Every recorded arc forces a point.}  The arc $I_i$ is the cycle
+part of a $K$-trajectory avoiding $G$.  If $a_i\geq1$, prefix $I_i$ with
+a path of $a_i$ tree vertices that ends at a preimage of $v_i$ and avoids
+$G$.  If $a_i=0$, the trajectory starting at $v_i$ is $I_i$ itself.
+
+\emph{Some minimum set contains $G$.}  Let the picks of Step~1 be
+$g_1,g_2,\ldots$ in processing order, and suppose a minimum set $S$
+contains $g_1,\ldots,g_{j-1}$.  The witness $W$ of $g_j$ is a
+$K$-trajectory with $W\cap G=\{g_j\}$, so $S$ contains some $u\in W$.
+Replace $u$ by $g_j$.  A $K$-trajectory met by $u$ but not by $g_j$
+follows $W$ from $u$ and stops before $g_j$.  So it is a path of $T$ of
+length $K$ ending at an ancestor $e$ of $g_j$, and it contains a pick
+$g$.  Its vertices are ancestors of $e$ or $e$ itself, so $g$ was
+processed before $g_j$ and lies in $S$, and $g\neq u$ because $u\notin
+G$.  The new set is therefore still feasible.
+
+\emph{Optimality.}  Let $S\supseteq G$ be minimum.  Replace each tree
+vertex $u\in S\setminus G$ by the cycle vertex at which the orbit of $u$
+enters its cycle.  A $K$-trajectory met by $u$ either lies in $T$, and is
+met by $G$, or reaches the cycle, which it enters at that vertex.  So the
+new set is feasible, no larger, and of the form $G\cup P$ with $P$ on the
+cycles.  By the previous paragraph $P\cap Z$ meets every recorded arc of
+$Z$.  Hence $|S|\geq|G|+\sum_Z|P_Z|$.
+
+The cost is $O(N)$ for Steps~1 and~2 and $O(\ell_Z\min(K,\ell_Z))$ for
+Step~3 on each cycle.
+\end{proof}
+
+For a map given by a small circuit the components can be exponentially
+large.  In \cref{thm:ckpt-conp}, duality replaces the existential
+quantifier over $H$ by packings, which certify lower bounds.  The
+constructions of this paper need no such optimization:
+\cref{lem:checkpoints} is within a factor of two of the worst case, and
+that factor only changes constants.
+The undirected relative, the $k$-path vertex cover problem, is
+$\mathsf{NP}$-hard in general graphs and linear on
+trees~\cite{BKKS11}.  The out-degree-one structure is what makes
+duality and the polynomial table algorithm available here.
+The script \texttt{verify\_checkpoint\_sets.py} compares
+\cref{lem:forest-duality,lem:component-formula,thm:ckpt-table} with brute
+force on small random maps.
 
 \section{A matching exponent for arbitrary fixed powers}\label{sec:lower}
 
@@ -3512,7 +3888,9 @@ and the lower-bound results, including the exact number of distinct powers
 of a finite map (\cref{lem:num-powers}) and the counting step of
 \cref{prop:count-general}, as well as the semantic identities of
 \cref{sec:spectrum} (but not their gate counts).  It also covers the reachable-set bounds for in-place machines given a step
-circuit (\cref{sec:inplace}).  The semantic lemmas also support arbitrary
+circuit (\cref{sec:inplace}).  It also checks the in-forest duality
+\cref{lem:forest-duality}, a combinatorial statement without circuits.
+The semantic lemmas also support arbitrary
 state types with finite invariant subsets and supplied Boolean encodings;
 initialization and decoding costs remain additional.
 
@@ -3914,6 +4292,19 @@ Noam Mazor and Rafael Pass.
 \newblock In \emph{15th Innovations in Theoretical Computer Science
 Conference (ITCS)}, LIPIcs 287, 80:1--80:20, 2024.
 \newblock \href{https://eccc.weizmann.ac.il/report/2023/175/}{ECCC TR23-175}.
+
+\bibitem{Stockmeyer76}
+Larry J. Stockmeyer.
+\newblock The polynomial-time hierarchy.
+\newblock \emph{Theoretical Computer Science}, 3(1):1--22, 1976.
+\newblock \href{https://doi.org/10.1016/0304-3975(76)90061-X}{doi:10.1016/0304-3975(76)90061-X}.
+
+\bibitem{BKKS11}
+Bo\v{s}tjan Bre\v{s}ar, Franti\v{s}ek Kardo\v{s}, J\'an Katreni\v{c}, and
+Gabriel Semani\v{s}in.
+\newblock Minimum $k$-path vertex cover.
+\newblock \emph{Discrete Applied Mathematics}, 159(12):1189--1195, 2011.
+\newblock \href{https://doi.org/10.1016/j.dam.2011.04.008}{doi:10.1016/\allowbreak j.dam.2011.04.008}.
 
 \end{thebibliography}
 

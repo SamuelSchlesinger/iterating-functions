@@ -1098,6 +1098,191 @@ standard hypothesis.  The Lean development does not formalize uniform
 complexity classes, so the results of this subsection are outside its
 checked boundary.
 
+\subsection{Short descriptions of hard exponents}\label{sec:exponent-descriptions}
+
+Long binary expansions do not mean that hard exponents lack short
+descriptions.  This subsection separates the length of an exponent from
+the complexity of describing it, and identifies the resource that
+matters.  Its results are prose results; they are outside the Lean
+formalization of \cref{sec:lean}.
+
+Fix a universal Turing machine $U$.  For integers $T,n\geq0$, the
+conditional Kolmogorov complexity $K(T\mid n)$ is the length of a
+shortest program $p$ such that $U$, given $p$ and the binary expansion
+of $n$, halts with the binary expansion of $T$ on its output
+tape~\cite{LV19}.  A different universal machine changes $K$ by an
+additive constant only.
+
+\begin{proposition}[Hard exponents of constant description length]
+\label[proposition]{prop:kolmogorov}
+There is a constant $c_U$ such that, for all sufficiently large even $n$,
+some exponent $T_n^*<D_B$ satisfies
+\[
+  K(T_n^*\mid n)\leq c_U
+  \qquad\text{and}\qquad
+  \CC(P_n^{T_n^*})\geq c\,\frac{2^{n/2}}{n},
+\]
+where $c>0$ is the constant of \cref{thm:typical-powers}.  Consequently
+no bound of the form
+$\CC(F^T)\leq\beta(n,\CC(F),K(T\mid n))$ with $\beta$ a polynomial
+holds, and any valid bound of this form satisfies
+$\beta(n,O(n),O(1))=\Omega(2^{n/2}/n)$.  The same holds for the
+unconditional complexity, since $K(T_n^*)\leq 2\log_2n+O(1)$.
+\end{proposition}
+
+\begin{proof}
+Decreasing $c$ if necessary, take $c$ rational.  Let
+$\theta_n=\ceil{c2^{n/2}/n}$, and let $T_n^*$ be the least $T\geq0$ with
+$\CC(P_n^T)\geq\theta_n$.  By \cref{thm:typical-powers} such a $T$
+exists below $D_B$ for all sufficiently large even $n$.  The following
+fixed program computes $T_n^*$ from $n$.  For $T=0,1,2,\ldots$ in turn,
+compute the truth table of $P_n^T$ by iterating \cref{eq:permutation}
+on each of the $2^n$ states.  Then enumerate every circuit with fewer
+than $\theta_n$ gates and evaluate it on all $2^n$ inputs.  Output the
+first $T$ for which no such circuit agrees with the truth table.  Each
+stage is a finite computation, and the search stops at $T_n^*$.  Let
+$c_U$ be the length of this program.  For the unconditional bound,
+prepend a self-delimiting encoding of $n$.  Since $\CC(P_n)=O(n)$,
+these exponents defeat every polynomial $\beta$.
+\end{proof}
+
+By \cref{cor:exponent-length}, the exponent $T_n^*$ still has
+$\Omega(2^{n/2}/n^2)$ binary digits.  So hard exponents are long but can
+be simple.  The upper bound of \cref{thm:main} does not depend on $T$ at
+all, so in terms of description complexity the two results match up to
+$2^{O(\log n)}$ factors.
+
+The program in the proof is expensive.  It tries up to $D_B$ exponents,
+each against $2^{O(\theta_n\log\theta_n)}$ circuits, so it runs in time
+$2^{2^{O(n)}}$.  It uses only space $2^{O(n)}$: at any moment it stores
+one exponent below $D_B$, one candidate circuit, and one truth table.
+We do not claim that a substantially faster short program for a hard
+exponent cannot exist.  The next statements show what a cheaper program
+would imply.
+
+For a family of exponents $T_n$, a \emph{description in time $t(n)$}
+(respectively \emph{in space $S(n)$}) is a family of programs $p_n$ of
+length $\poly(n)$ such that $U$, given $p_n$ and $n$, outputs $T_n$
+within $t(n)$ steps (respectively, halts using at most $S(n)$ cells of
+work tape; the write-only output tape is not charged).  For a family of
+maps, membership in $\mathsf{PSPACE}/\poly$ or $\mathsf{EXP}/\poly$
+refers to the language of pairs $(x,i)$ such that bit $i$ of the image
+of $x$ is one, with polynomial-length advice for each $n$.
+
+\begin{definition}[Residue profile]
+For $T\geq0$ and $n\geq1$, the \emph{residue profile}
+$\rho_{T,n}:\{0,1,\ldots,2^n\}\to\{0,1,\ldots,2^n\}$ is given by
+$\rho_{T,n}(p)=T\bmod p$ for $1\leq p\leq2^n$, and
+$\rho_{T,n}(0)=\min(T,2^n)$.
+\end{definition}
+
+\begin{proposition}[Residue profiles control powers]
+\label[proposition]{prop:residue-profile}
+Let $F_n:\bits^n\to\bits^n$ have $\CC(F_n)\leq\poly(n)$, and let
+$T_n\geq0$.
+\begin{enumerate}[label=(\roman*)]
+\item If the family $\rho_{T_n,n}$ is in $\mathsf{PSPACE}/\poly$, then
+  so is the family $F_n^{T_n}$.  The same holds with $\mathsf{EXP}/\poly$
+  in place of $\mathsf{PSPACE}/\poly$.
+\item For the permutations of \cref{eq:permutation}, the family
+  $P_n^{T_n}$ is in $\mathsf{PSPACE}/\poly$ if and only if the family of
+  remainder maps $r_{T_n}$ of \cref{thm:remainders} is.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) Write $N=2^n$, $T=T_n$, $F=F_n$, and take as advice the circuit
+of $F$ together with the advice for $\rho_{T,n}$.  Given $x$, compute
+$y=F^N(x)$ by $N$ evaluations of $F$ with an $(n+1)$-bit counter.  The
+state $y$ lies on the cycle reached from $x$.  Its cycle length
+$\lambda$ is the least $j\geq1$ with $F^j(y)=y$.  The tail length
+$\mu<N$ is the least $i$ with $F^i(x)=F^{i+\lambda}(x)$.  Each of these
+searches stores $O(n)$ bits besides one evaluation of $F$.  Read
+$m=\rho_{T,n}(0)$.  If $m<\mu$, then $T=m$, and the output is $F^m(x)$.
+Otherwise $T\geq\mu$, because $\mu<N$, and
+\[
+  F^T(x)=F^{\mu+(((T\bmod\lambda)-\mu)\bmod\lambda)}(x),
+\]
+which uses the value $T\bmod\lambda=\rho_{T,n}(\lambda)$ and at most
+$\mu+\lambda\leq2N$ further evaluations.  Each query to $\rho_{T,n}$
+is answered by recomputing the requested bits in polynomial space, so
+the whole computation runs in polynomial space with polynomial advice.
+The computation also runs in time $2^{O(n)}\poly(n)$ plus the cost of
+the queries, which gives the $\mathsf{EXP}/\poly$ statement.
+
+(ii) The reductions in the proof of \cref{thm:remainders} are explicit
+polynomial-time computations in both directions: $r_T(a)$ is the second
+coordinate of $P_n^T(a,0)$, and $P_n^T(a,b)$ is obtained from $a$, $b$,
+and $r_T(a)$ by one addition, one comparison, and one selection.
+\end{proof}
+
+\begin{corollary}[Cheap descriptions give membership in a uniform class]
+\label[corollary]{cor:description-resources}
+Let $F_n$ and $T_n$ be as in \cref{prop:residue-profile}.
+\begin{enumerate}[label=(\roman*)]
+\item If $T_n$ has a description in space $\poly(n)$, then $F_n^{T_n}$
+  is in $\mathsf{PSPACE}/\poly$.  Hence, if
+  $\mathsf{PSPACE}\subseteq\mathsf{P}/\poly$, then
+  $\CC(F_n^{T_n})\leq\poly(n)$.
+\item If $T_n$ has a description in time $2^{\poly(n)}$, then
+  $F_n^{T_n}$ is in $\mathsf{EXP}/\poly$.  Hence, if
+  $\mathsf{EXP}\subseteq\mathsf{P}/\poly$, then
+  $\CC(F_n^{T_n})\leq\poly(n)$.
+\end{enumerate}
+\end{corollary}
+
+\begin{proof}
+(i) A description in space $S=\poly(n)$ halts within $2^{O(S)}$ steps,
+so it emits at most $2^{O(S)}$ output bits.  To compute $T\bmod p$ for
+$p\leq 2^n$, rerun the program and fold each output bit into a running
+remainder as it appears.  For most-significant-first output, replace
+$r$ by $2r+\text{bit}\bmod p$.  For least-significant-first output, also
+maintain $2^j\bmod p$.  A running value capped at $2^n$ gives
+$\min(T,2^n)$ in the same way: for least-significant-first output, it
+suffices to record whether a one appears at position $n$ or later.  This uses $S+O(n)$ cells, so $\rho_{T_n,n}$ is in
+$\mathsf{PSPACE}/\poly$ with the program as advice, and
+\cref{prop:residue-profile} applies.
+(ii) The same streaming computation runs in time $2^{\poly(n)}$.
+In both parts, the final implication follows by folding the polynomial
+advice into the input: the resulting language lies in $\mathsf{PSPACE}$
+(respectively $\mathsf{EXP}$), so it has polynomial-size circuits under
+the stated inclusion, and fixing the advice gives circuits for
+$F_n^{T_n}$.
+\end{proof}
+
+So among short descriptions, space rather than length or time is the
+relevant resource.  Constant-length descriptions in space $2^{O(n)}$
+reach hard exponents by \cref{prop:kolmogorov}.  Polynomial-space
+descriptions reach a hard power only if
+$\mathsf{PSPACE}\not\subseteq\mathsf{P}/\poly$.  Time-$2^{\poly(n)}$
+descriptions reach one only if
+$\mathsf{EXP}\not\subseteq\mathsf{P}/\poly$.
+
+\paragraph{Long but easy exponents.}
+Several exponents with exponentially long expansions have residue
+profiles in $\mathsf{PSPACE}$, so by \cref{prop:residue-profile} their
+powers of any polynomial-size map are in $\mathsf{PSPACE}/\poly$:
+\begin{itemize}
+\item $T=2^{2^n}$: compute $2^{2^n}\bmod p$ by $2^n$ modular squarings
+  with an $n$-bit counter.
+\item Power towers $T=2\uparrow\uparrow h$ of any height
+  $h<2^{\poly(n)}$, with $h$ given as advice: reduce exponents modulo iterated totients, using
+  $a^b\equiv a^{(b\bmod\varphi(p))+\varphi(p)}\pmod p$ for
+  $b\geq\log_2p$.  Whenever an intermediate exponent
+  $2\uparrow\uparrow j$ is below $n$, it is computed exactly and used
+  directly, so the condition is needed only where it holds.
+  The iterated totient of $p\leq2^n$ reaches $1$ after
+  $O(n)$ steps, so only $O(n)$ levels need explicit work, and each
+  totient is found by trial division in polynomial space.
+\item $T=D_B-1$: $D_B\bmod p$ is a product of the largest prime powers
+  not exceeding $B$, enumerated in polynomial space.
+\end{itemize}
+The last example is the inversion exponent of $P_n$, so
+$P_n^{D_B-1}=P_n^{-1}$.  As noted in \cref{sec:one-way}, this power even
+has a linear-size circuit.  Membership in $\mathsf{PSPACE}/\poly$ gives
+only an upper bound.  These examples show that neither the length of an
+exponent nor its numerical size forces hardness.
+
 \section{Input times and shared evaluation}
 
 \subsection{An iteration count supplied as input}\label{sec:variable}
@@ -2240,6 +2425,13 @@ Leonard Adleman.
 \newblock In \emph{Proceedings of the 19th Annual Symposium on Foundations
 of Computer Science (FOCS)}, pages 75--83, 1978.
 \newblock \href{https://doi.org/10.1109/SFCS.1978.37}{doi:10.1109/SFCS.1978.37}.
+
+\bibitem{LV19}
+Ming Li and Paul Vit\'anyi.
+\newblock \emph{An Introduction to Kolmogorov Complexity and Its
+Applications}.
+\newblock Texts in Computer Science. Springer, fourth edition, 2019.
+\newblock \href{https://doi.org/10.1007/978-3-030-11298-1}{doi:10.1007/978-3-030-11298-1}.
 
 \end{thebibliography}
 

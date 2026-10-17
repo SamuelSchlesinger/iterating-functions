@@ -2222,6 +2222,324 @@ $\widetilde O(N)$ for random-like maps, but verifying $y=F^T(x)$ costs
 about $\sqrt N$ queries, and the standard presampling and compression
 arguments do not apply directly.
 
+\subsection{A permutation near the counting ceiling}\label{sec:near-landau}
+
+The counting argument of \cref{thm:lower} is limited by the number of
+distinct powers.  For $P_n$ this number is $D_B=\lcm(1,\ldots,B)$, and
+$\log_2D_B=O(B)$ by Chebyshev's bound on $\pi(B)$, so counting cannot
+certify more than $O(2^{n/2}/n)$ for $P_n$.  This subsection gives a
+polynomial-size permutation with $2^{\Theta(2^{n/2}\sqrt n)}$ distinct
+powers whose hardest power has complexity $\Theta(2^{n/2}/\sqrt n)$,
+within a constant factor of what any counting argument over powers can
+give.  The family is nonuniform only through $O(n)$ hardwired bits.
+Lean checks only the combinatorial core; \cref{rem:near-landau-lean}
+lists what is mechanized.
+
+\paragraph{Construction.}
+Fix a constant $C\geq1$.  For a large integer $K$ put
+\[
+  g=\ceil{\log_2(CK)},\qquad m=K-1-g,\qquad n_K=m+K=2m+1+g.
+\]
+States are pairs $(r,b)$ with $r\in\bits^m$ and $b\in\bits^K$, read as
+integers.  Fix an irreducible polynomial of degree $m$ over
+$\mathrm{GF}(2)$ to represent $\mathrm{GF}(2^m)$, and for
+$\alpha,\beta\in\mathrm{GF}(2^m)$ let $f(z)=\alpha z+\beta$, where
+$z<2^g\leq2^m$ is embedded in $\mathrm{GF}(2^m)$ by its binary digits.
+Every integer $p\in[2^{K-1},2^K)$ is written uniquely as
+\[
+  p=2^{K-1}+y\,2^g+z,\qquad 0\leq y<2^m,\ 0\leq z<2^g,
+\]
+because $2^{K-1}=2^m2^g$.  Assign $p$ to the class $y\oplus f(z)$.  Class
+$r$ is therefore
+\[
+  S_r=\{\,p_r(z)=2^{K-1}+(r\oplus f(z))2^g+z:\ 0\leq z<2^g\,\},
+\]
+a set of exactly $2^g$ integers, and the classes partition
+$[2^{K-1},2^K)$.  Let $\ell_r$ be the prime $p_r(z)$ with least $z$, or
+$\ell_r=1$ if $S_r$ contains no prime.  Define
+\[
+  F(r,b)=
+  \begin{cases}
+    (r,\,b+1\bmod\ell_r),&\ell_r>1\text{ and }b<\ell_r,\\
+    (r,b),&\text{otherwise}.
+  \end{cases}
+\]
+
+\begin{lemma}[Structure]\label[lemma]{lem:nl-structure}
+$F$ is a permutation of $\bits^{n_K}$ with $\CC(F)=\poly(K)$.  It has one
+cycle of length $\ell_r$ for each $r$ with $\ell_r>1$, and every other
+state is fixed.  The lengths $\ell_r>1$ are distinct primes in
+$[2^{K-1},2^K)$, so
+\[
+  \ord(F)=\lambda:=\prod_{r:\,\ell_r>1}\ell_r,
+\]
+and the powers $F^T$, $0\leq T<\lambda$, are pairwise distinct.
+\end{lemma}
+
+\begin{proof}
+For fixed $r$ with $\ell_r>1$ the second coordinate moves around the
+cycle $0,1,\ldots,\ell_r-1$; the states with $b\geq\ell_r$, and all
+states with $\ell_r=1$, are fixed.  So $F$ is a permutation with the
+stated cycles.  Different classes are disjoint, so the primes $\ell_r$
+are distinct, and the order of $F$ is their product.  Distinct residues
+of $T$ modulo $\lambda$ give distinct powers, since some cycle length
+$\ell_r$ does not divide their difference.
+
+For the circuit, compute the $2^g\leq2CK$ candidates $p_r(z)$; each needs
+one multiplication in $\mathrm{GF}(2^m)$, $O(m^2)$ gates.  Test each for
+primality with a $\poly(K)$-size circuit, obtained from the
+Agrawal--Kayal--Saxena algorithm~\cite{AKS04} by the
+Pippenger--Fischer simulation~\cite{PF79}.  Select the first prime by a
+prefix-OR scan, compare $b$ with $\ell_r$, and update $b$ with an
+incrementer and an equality test.  The total is $\poly(K)$.
+\end{proof}
+
+Write $\nu$ for the fraction of classes $r$ with $\ell_r>1$, and
+\[
+  \mu=2^{-m}\bigl(\pi(2^K)-\pi(2^{K-1})\bigr)
+\]
+for the average number of primes per class.  By the prime number theorem,
+$\pi(2^K)-\pi(2^{K-1})=(1+o(1))2^{K-1}/(K\ln2)$, so
+\[
+  \mu=(1+o(1))\frac{2^g}{K\ln2}\geq(1-o(1))\frac{C}{\ln2}.
+\]
+The factor $1-o(1)$ is needed: only the prime number theorem, not
+Chebyshev's bound, gives the constant $1/\ln2$.
+
+\begin{lemma}[Most classes contain a prime]\label[lemma]{lem:nl-classes}
+For some $\alpha,\beta$, the fraction of classes containing a prime is at
+least $\mu/(1+\mu)$.  Hence $\nu\geq\mu/(1+\mu)\geq c_C-o(1)$ for this
+choice, where $c_C=C/(C+\ln2)$.
+\end{lemma}
+
+\begin{proof}
+Choose $\alpha,\beta$ uniformly and fix a class $r$.  Let
+$X_z=[p_r(z)\text{ is prime}]$ and $X=\sum_{z<2^g}X_z$.  For each $z$ the
+value $f(z)$ is uniform, so $p_r(z)$ is uniform among the $2^m$ integers
+of $[2^{K-1},2^K)$ with low part $z$; summing over $z$ gives
+$\mathbb EX=\mu$.  For $z_1\neq z_2$ the pair $(f(z_1),f(z_2))$ is
+uniform, so the $X_z$ are pairwise independent and
+$\operatorname{Var}X\leq\sum_z\mathbb EX_z=\mu$.  By the Cauchy--Schwarz
+inequality,
+\[
+  \Pr[X>0]\geq\frac{(\mathbb EX)^2}{\mathbb E X^2}
+  \geq\frac{\mu^2}{\mu+\mu^2}=\frac{\mu}{1+\mu}.
+\]
+The expected number of nonempty classes is therefore at least
+$\mu2^m/(1+\mu)$, and some $(\alpha,\beta)$ attains the expectation.
+The function $x\mapsto x/(1+x)$ is increasing, which gives the bound on
+$\nu$.
+\end{proof}
+
+The lower bound uses a version of \cref{lem:count} that discounts the
+relabellings of a minimum circuit.
+
+\begin{lemma}[Counting minimum circuits]\label[lemma]{lem:relabel-count}
+For $1\leq\ell\leq q$, at most
+\[
+  (q+1)\left(\frac{16e(\ell+q+2)^2}{q}\right)^{q}(\ell+q+2)^{\ell}
+  =2^{q\log_2q+O(q)+O(\ell\log q)}
+\]
+functions $\bits^\ell\to\bits^\ell$ have circuit complexity at most $q$.
+\end{lemma}
+
+\begin{proof}
+In a minimum circuit no gate computes an input bit or a constant, and no
+two gates compute the same function.  Otherwise redirect every use of the
+offending gate, including its use as an output, to the input, the
+constant, or the other gate.  For two gates computing the same function,
+redirect the one that is not an ancestor of the other; a user of it is
+then not an ancestor of the target, so the circuit stays acyclic.  The
+redirected gate is now unused and can be deleted, contradicting
+minimality.
+
+Describe a circuit with $s$ gates labelled $1,\ldots,s$ by an operation
+and two predecessors for each label, among $\ell$ inputs, two constants
+and $s$ labels, and by $\ell$ output wires.  There are at most
+$(16(\ell+s+2)^2)^s(\ell+s+2)^{\ell}$ descriptions.  A description
+determines the function at each label and the computed map.  So the
+$s!$ labellings of a fixed minimum circuit give $s!$ distinct
+descriptions, because its gate functions are distinct, and minimum
+circuits of distinct maps give distinct descriptions.  Hence at most
+$(16(\ell+s+2)^2)^s(\ell+s+2)^\ell/s!$ maps have complexity exactly $s$.
+Using $s!\geq(s/e)^s$ and the fact that $s\mapsto(a/s)^s$ increases for
+$s\leq a/e$, each of the $q+1$ terms is at most the displayed summand.
+For $q\geq\ell$ we have $\ell+q+2\leq4q$, which gives the exponent.
+\end{proof}
+
+\Cref{lem:count} counts every encoding of a circuit and so carries an
+extra factor of about $2$ in the exponent; that would halve the constant
+in the next theorem.
+
+\begin{theorem}[Hard powers near the counting ceiling]\label{thm:near-landau}
+With $\alpha,\beta$ as in \cref{lem:nl-classes},
+\[
+  \nu(1-o(1))\,2^m\leq\max_{T\geq0}\CC(F^T)\leq(1+o(1))\,2^m,
+  \qquad 2^m=\Theta\!\left(\frac{2^{n_K/2}}{\sqrt{n_K}}\right).
+\]
+Consequently, for every constant $C\geq1$ and every large $n$ there is a
+permutation $F_n$ of $\bits^n$ with $\CC(F_n)=\poly(n)$ and
+\[
+  \max_{T\geq0}\CC(F_n^T)=\Theta\!\left(\frac{2^{n/2}}{\sqrt n}\right).
+\]
+\end{theorem}
+
+\begin{proof}
+\emph{Upper bound.}  For every $T$,
+\[
+  F^T(r,b)=
+  \begin{cases}
+    \bigl(r,\,(b+(T\bmod\ell_r))\bmod\ell_r\bigr),&\ell_r>1\text{ and }b<\ell_r,\\
+    (r,b),&\text{otherwise}.
+  \end{cases}
+\]
+The table $r\mapsto T\bmod\ell_r$, with value $0$ when $\ell_r=1$, has $m$
+input bits and $K$ output bits.  By Lupanov's bound~\cite{Lupanov58},
+each output bit has a circuit of size $(1+o(1))2^m/m$.  Since
+$K=m+O(\log m)$, the $K$ bits together cost $(1+o(1))2^m$.  The circuit
+for $\ell_r$ from \cref{lem:nl-structure}, the comparison, the addition
+and the reduction modulo $\ell_r$ add $\poly(K)=o(2^m)$ gates.
+
+\emph{Lower bound.}  Let $q=\max(\max_T\CC(F^T),n_K)$.  If $q>2^{m+1}$
+there is nothing to prove.  Otherwise $\log_2q\leq m+1$, and by
+\cref{lem:nl-structure,lem:relabel-count} with $\ell=n_K$,
+\[
+  \nu2^m(K-1)\leq\log_2\lambda\leq q\log_2q+O(q)+O(n_K\log q)
+  \leq q(m+O(1))+O(m^2),
+\]
+using $\ell_r\geq2^{K-1}$ for each of the $\nu2^m$ nonempty classes.
+Since $K-1=m+g$ and $\nu$ is bounded below by \cref{lem:nl-classes},
+$q\geq\nu(1-O(1/m))2^m-O(m)=\nu(1-o(1))2^m$.  This exceeds $n_K$ for
+large $K$, so $q=\max_T\CC(F^T)$.
+
+\emph{Every length.}  We have $2^m=2^{(n_K-1-g)/2}$ and
+$CK\leq2^g<2CK$ with $K=n_K/2+O(\log n_K)$, which gives
+$2^m=\Theta(2^{n_K/2}/\sqrt{n_K})$, with constants depending on $C$.  As
+$K$ increases by one, $n_K$ increases by one or two, so every large $n$
+is $n_K$ or $n_K+1$ for some $K$.  In the second case let
+$F_n(x,e)=F(x)$ on the first $n_K$ bits and leave the last bit $e$ fixed.
+Each power of $F_n$ restricts to the same power of $F$ when $e=0$, and is
+computed by a circuit for that power of $F$ with $e$ passed through, so
+$\max_T\CC(F_n^T)=\max_T\CC(F^T)$.
+\end{proof}
+
+\begin{remark}[Mechanized part]\label[remark]{rem:near-landau-lean}
+The module \texttt{PrimeCycles.lean} checks the following for every
+function $f$ with values below $2^m$, not only for the affine maps.  The
+lengths $\ell_r>1$ are distinct primes in $[2^{K-1},2^K)$
+(\texttt{classPrime\_coprime}).  For arbitrary lengths below $2^K$, $F^T$
+is given by the formula in the proof of \cref{thm:near-landau} and depends
+on $T$ only through the table $r\mapsto T\bmod\ell_r$
+(\texttt{power\_apply\_mod}).  For pairwise coprime lengths,
+$F^S=F^T$ exactly when $S\equiv T\pmod\lambda$, so $\lambda$ is the
+order of $F$ and its number of distinct powers
+(\texttt{iterate\_eq\_iterate\_iff}, \texttt{card\_range\_iterate}).
+Finally, \texttt{near\_landau\_lower\_bound} proves that $F$ is a
+bijection with $\lambda\geq2^{(K-1)c}$, where $c=\nu2^m$ is the number
+of classes containing a prime, and that if $3q+h(2q+n_K+1)<(K-1)c$ and
+$n_K+q+1\leq2^h$, then some $F^T$ with $T<\lambda$ has no native circuit
+with at most $q$ gates.  This step counts ordered circuit descriptions
+as in \cref{lem:count}, not minimum circuits as in
+\cref{lem:relabel-count}.  With $h=m+O(1)$ it therefore gives the lower
+bound of \cref{thm:near-landau} with $\nu/2$ in place of $\nu$.  The
+circuit for $F$, the prime number theorem estimate,
+\cref{lem:nl-classes}, \cref{lem:relabel-count}, the upper bound, and
+\cref{cor:near-landau-average} remain prose results.
+\end{remark}
+
+\begin{remark}[The counting ceiling]\label[remark]{rem:landau-ceiling}
+The lower bound above, like that of \cref{thm:lower}, uses only the number
+$D(F)$ of distinct powers, and it gives $q$ with
+$q\log_2q\approx\log_2D(F)$.  For every map $F$ on $N=2^n$ points,
+$D(F)\leq N+g(N)$, where $g(N)$ is the largest order of a permutation of
+$N$ points: a map has $\mu+\lambda$ distinct powers, $\mu\leq N$, and
+$\lambda$ is the lcm of cycle lengths summing to at most $N$.  Landau's
+theorem~\cite{Landau03} gives $\ln g(N)=(1+o(1))\sqrt{N\ln N}$, so
+$\log_2\log_2D(F)=(1/2+o(1))n$ and this argument can never certify more
+than
+\[
+  (1+o(1))\frac{\log_2D(F)}{\log_2\log_2D(F)}
+  \leq\left(\frac{2}{\sqrt{\ln2}}+o(1)\right)\frac{2^{n/2}}{\sqrt n}
+  \approx2.40\cdot\frac{2^{n/2}}{\sqrt n}.
+\]
+\Cref{thm:near-landau} reaches this ceiling up to a constant factor that
+depends on $C$ and on the rounding of $g$.  The general upper bound of
+\cref{thm:main} is $2^{n/2}\poly(n)$; whether some polynomial-size map
+has $\max_T\CC(F^T)$ much larger than $2^{n/2}/\sqrt n$ is beyond
+counting.
+\end{remark}
+
+Unlike $P_n$, the cycles of $F$ all have lengths of the same order and
+carry a constant fraction of the states.  This yields constant
+average-case hardness for random powers.
+
+\begin{corollary}[Constant average-case hardness]\label[corollary]{cor:near-landau-average}
+Let $0<\delta<\nu/4$ be constant and let $T$ be uniform modulo $\lambda$.
+With probability $1-o(1)$, every circuit of size at most $\delta2^m$
+disagrees with $F^T$ on at least a $\nu/2-2\delta-o(1)$ fraction of the
+$2^{n_K}$ states.
+\end{corollary}
+
+\begin{proof}
+Put $q=\floor{\delta2^m}$ and $\varepsilon=1/\log_2K$.  Fix a map
+$G:\bits^{n_K}\to\bits^{n_K}$ and a class $r$ with $\ell=\ell_r>1$.  On
+the cycle states $(r,b)$, $b<\ell$, $G$ is correct exactly when
+$G(r,b)=(r,v)$ with $v<\ell$ and $v\equiv b+T\pmod\ell$.  So each such state
+names at most one residue of $T$ modulo $\ell$, and at most $1/\varepsilon$
+residues are named by more than $\varepsilon\ell$ states.  Call $r$
+\emph{good} for $(G,T)$ if $T\bmod\ell_r$ is one of them.  Since $T$ is
+uniform modulo $\lambda=\prod\ell_r$, the residues $T\bmod\ell_r$ are
+independent and uniform, so the classes are good independently, each
+with probability at most $1/(\varepsilon\ell_r)\leq2/(\varepsilon2^K)$.
+With at most $2^m$ nonempty classes,
+\[
+  \Pr[\text{at least $2q$ good classes}]
+  \leq\binom{2^m}{2q}\left(\frac{2}{\varepsilon2^K}\right)^{2q}
+  \leq\left(\frac{e\,2^{m-K}}{\varepsilon q}\right)^{2q}
+  \leq\left(\frac{e}{2CK\varepsilon q}\right)^{2q},
+\]
+because $2^{m-K}=2^{-1-g}\leq1/(2CK)$.  By \cref{lem:relabel-count}, at
+most $2^{q\log_2q+O(q)+O(m^2)}$ maps have circuits of size at most $q$.  A
+union bound over them gives total probability at most
+$2^{-q(\log_2q+2\log_2(K\varepsilon)-O(1))+O(m^2)}=o(1)$.
+
+So with probability $1-o(1)$, every circuit of size at most $q$ has fewer
+than $2q$ good classes, and is wrong on at least a $1-\varepsilon$
+fraction of the cycle states of each other nonempty class.  The cycle
+states of the nonempty classes number at least $\nu2^m2^{K-1}=(\nu/2)2^{n_K}$,
+and the good classes contain at most $2q\,2^K\leq2\delta2^{n_K}$ of them.
+The error fraction is therefore at least
+$(1-\varepsilon)(\nu/2-2\delta)=\nu/2-2\delta-o(1)$.
+\end{proof}
+
+For $P_n$ no such statement is expected.  Only a vanishing fraction of
+its states lie on cycles whose length has a prime factor close to $B$,
+so a circuit that stores $T$ modulo the primes up to $B/\poly(n)$ only
+answers all but a vanishing fraction of the states correctly, at a size
+a polynomial factor below the worst case.  We do not develop this here.
+
+\begin{remark}[Uniformity]\label[remark]{rem:near-landau-uniform}
+Apart from the irreducible polynomial, $F$ is determined by the $2m$ bits
+of $(\alpha,\beta)$.  The polynomial and a good pair can be found
+deterministically in time $2^{O(n)}$ by exhaustive search, after sieving
+$[2^{K-1},2^K)$ once.  A uniformly
+random pair has at most $2\cdot2^m/(1+\mu)$ empty classes with
+probability at least $1/2$, by Markov's inequality, so randomness also
+works when $\mu>1$.  A deterministic polynomial-time construction with
+the same parameters would need an efficiently computable injective map
+from about $2^K/K$ indices to $K$-bit primes that hits a constant
+fraction of all of them.  This is related to the construction of primes:
+Chen, Lu, Oliveira, Ren and Santhanam give a polynomial-time
+pseudodeterministic construction of primes for infinitely many
+lengths~\cite{CLORS23}, which is not enough here.  Replacing the hash
+classes by the intervals $[2^{K-1}+rCK,\,2^{K-1}+(r+1)CK)$ would give an
+explicit family.  Under the Hardy--Littlewood prime $k$-tuples
+conjecture, Gallagher~\cite{Gallagher76} shows that the number of primes in
+such intervals is asymptotically Poisson distributed, which yields a
+constant fraction of nonempty intervals and the same
+$\Theta(2^{n/2}/\sqrt n)$ bound.  This route is conditional.
+\end{remark}
+
 \section{Input times and shared evaluation}
 
 \subsection{An iteration count supplied as input}\label{sec:variable}
@@ -3911,7 +4229,9 @@ The exported theorems have guarded axiom lists containing only
 checkpoints, enumerations, and circuit witnesses; the result is nonuniform
 existence.  The sparse chart's existence and circuit cost are checked, but
 the edit-list compiler's algorithm and runtime, sparse-transition counting
-application, and finite-field corollary remain prose results.  The
+application, and finite-field corollary remain prose results, and only
+the combinatorial core of \cref{sec:near-landau} is checked
+(\cref{rem:near-landau-lean}).  The
 cryptographic and literature discussions are also outside the mechanized
 boundary.  Kernel checking establishes neither historical priority nor
 independent fidelity to every intended model convention.
@@ -4305,6 +4625,30 @@ Gabriel Semani\v{s}in.
 \newblock Minimum $k$-path vertex cover.
 \newblock \emph{Discrete Applied Mathematics}, 159(12):1189--1195, 2011.
 \newblock \href{https://doi.org/10.1016/j.dam.2011.04.008}{doi:10.1016/\allowbreak j.dam.2011.04.008}.
+
+\bibitem{Lupanov58}
+Oleg B. Lupanov.
+\newblock A method of circuit synthesis.
+\newblock \emph{Izvestiya VUZ, Radiofizika}, 1:120--140, 1958.
+\newblock In Russian.
+
+\bibitem{Landau03}
+Edmund Landau.
+\newblock \"Uber die Maximalordnung der Permutationen gegebenen Grades.
+\newblock \emph{Archiv der Mathematik und Physik}, 3. Reihe, 5:92--103, 1903.
+
+\bibitem{CLORS23}
+Lijie Chen, Zhenjian Lu, Igor C. Oliveira, Hanlin Ren, and Rahul Santhanam.
+\newblock Polynomial-time pseudodeterministic construction of primes.
+\newblock In \emph{64th IEEE Symposium on Foundations of Computer
+Science (FOCS)}, pages 1261--1270, 2023.
+\newblock \href{https://doi.org/10.1109/FOCS57990.2023.00074}{doi:10.1109/FOCS57990.2023.00074}.
+
+\bibitem{Gallagher76}
+Patrick X. Gallagher.
+\newblock On the distribution of primes in short intervals.
+\newblock \emph{Mathematika}, 23(1):4--9, 1976.
+\newblock \href{https://doi.org/10.1112/S0025579300016442}{doi:10.1112/S0025579300016442}.
 
 \end{thebibliography}
 

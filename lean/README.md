@@ -70,6 +70,8 @@ natural-number division in integer budgets means floor division.
 | `halting_time` | Under semantic absorption and termination, exact first halting times on valid initial states, with bound `3000000*B`. No recognizer circuit is needed. |
 | `visit_schedule_optimized` | A complete visit descriptor on pair inputs: one success flag, `n+1` first-time bits, and `n+1` period bits, with bound `360000000*B`. Period zero encodes a singleton. The theorem specifies all visit times and the number through every deadline. The deadline arithmetic is a semantic interpretation, not an additional circuit-size claim. |
 | `matching_lower_bound` | For `k ≥ 64`, a Boolean permutation circuit on `2*k` bits of size at most `50*(k+1)` has a power for which every implementing circuit has more than `2^k/(1024*(k+1))` gates. The division is integral. |
+| `PrimeCycles.power_apply_mod`, `PrimeCycles.iterate_eq_iterate_iff`, `PrimeCycles.card_range_iterate` | For the permutation of `State (m+K)` that advances the position `b` modulo the class length `ℓ r < 2^K` when `b < ℓ r`, the `T`-th power adds `T mod ℓ r`. If the lengths above one are pairwise coprime, `F^S = F^T` iff `S ≡ T` modulo their product, which is therefore the order and the exact number of distinct powers. |
+| `PrimeCycles.classPrime_coprime`, `PrimeCycles.near_landau_lower_bound` | Hash classes: class `r` has candidates `2^(m+g) + (r xor f z)*2^g + z` for `z < 2^g`, and its length is the prime candidate with least `z`, or `1`. For every `f` with values below `2^m`, the lengths above one are distinct primes in `[2^(m+g), 2^(m+g+1))`, the permutation is bijective, its order is at least `2^((m+g)*c)` for `c` nonempty classes, and if `3*q + h*(2*q + n + 1) < (m+g)*c` with `n + q + 1 ≤ 2^h`, some power below the order needs more than `q` gates. The prime density and the choice of `f` are not formalized. |
 | `almost_every_counter_power` | For `k ≥ 64`, the number of exponent residues with circuits of size at most `lowerBudget k`, times `2^(2^(k-1))`, is at most the period. Thus the easy fraction is at most `2^(-2^(k-1))`. |
 | `iterate_eq_iterate_iff`, `card_range_iterate` | For `f : α → α` on a finite type, with `μ = maxTransientDepth f` (largest transient depth) and `λ = cyclePeriod f` (lcm of cycle lengths): for `a < b`, `f^[a] = f^[b]` iff `μ ≤ a` and `λ ∣ b - a`; hence `Nat.card (Set.range fun T => f^[T]) = μ + λ`. |
 | `exists_hard_power_of_budget_lt`, `exists_hard_power` | For every `g : State n → State n`, if the ordered-syntax budget for `q` gates (or the explicit bound `2^(3*q + h*(2*q+n+1))` with `n+q+1 ≤ 2^h`) is below `μ + λ`, some `T < μ + λ` has every circuit for `g^[T]` larger than `q`. |
@@ -198,6 +200,8 @@ the Boolean ring, keeping payload vectors and Boolean wires in the same type.
    including output wires. `LowerBound.lean` combines this with Mathlib's
    least-common-multiple lower bound and the Circuit library's finite-family
    counting theorem. The final result quantifies over actual native circuits.
+   `PrimeCycles.lean` applies the same counting to the hash-class permutation
+   with prime cycles, whose order is a product of distinct primes.
 
 8. **Exploit sparse displacement.** `CommutationDefect.lean` proves the
    factor-two defect estimate and invariance of edit counts under conjugation.

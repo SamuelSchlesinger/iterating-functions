@@ -900,6 +900,204 @@ exponents; long descriptions are not merely allowed by the counting proof.
 Theorem~\ref{thm:lower} establishes sharpness for arbitrary fixed powers.
 It gives no hardness result for the bounded-bit-time problem.
 
+\subsection{Explicit hard exponents}\label{sec:explicit-exponents}
+
+By \cref{cor:exponent-length}, a hard power of $P_n$ has an exponent
+with $2^{n/2}/\poly(n)$ binary digits.  The natural notion of an explicit
+hard power therefore allows time polynomial in that length.  Call a
+sequence of exponents $(T_n)_{n\ \mathrm{even}}$ \emph{explicit} if a
+deterministic algorithm outputs the binary expansion of $T_n$ from $1^n$
+in time $2^{O(n)}$.  Write
+$\mathsf{E}=\mathsf{DTIME}(2^{O(\ell)})$ for languages of strings of
+length $\ell$, and $\mathsf{SIZE}(s(\ell))$ for languages whose length-$\ell$
+slices have circuits of size $s(\ell)$.
+
+\begin{theorem}[Explicit hard powers give circuit lower bounds for
+\texorpdfstring{$\mathsf{E}$}{E}]\label{thm:explicit-E}
+Let $\varepsilon>0$, and let $(T_n)$ be explicit exponents with
+$\CC(P_n^{T_n})\geq 2^{\varepsilon n}$ for infinitely many even $n$.
+Then for every $0<\delta<\varepsilon$ there is a language in $\mathsf{E}$
+whose length-$\ell$ slice requires circuits of size $2^{\delta\ell}$ for
+infinitely many $\ell$.
+\end{theorem}
+
+\begin{proof}
+For even $n=2k$ put $j_n=\ceil{\log_2 n}$ and $\ell_n=n+j_n$; these
+lengths are strictly increasing in $n$.  A string of length $\ell_n$ is
+read as $(a,b,i)$ with $a,b\in\bits^k$ and $i\in\bits^{j_n}$.  Let $L$
+contain $(a,b,i)$ exactly when $i<n$ and bit $i$ of $P_n^{T_n}(a,b)$ is
+one, and let $L$ contain no strings of other lengths.
+
+To decide $L$, recover $n$ from $\ell$, compute $T_n$ in time $2^{O(n)}$,
+and evaluate $P_n^{T_n}(a,b)$ by \cref{eq:easy-iterator}, returning
+$(a,b)$ on inactive states.  The remainder $T_n\bmod a$ of an integer with
+$2^{O(n)}$ digits by a $k$-bit modulus takes time $2^{O(n)}$ by long
+division.  Hence $L\in\mathsf{E}$.
+
+Conversely, hardwiring $i=0,\ldots,n-1$ into $n$ copies of a circuit for
+the slice $L_{\ell_n}$ computes all output bits of $P_n^{T_n}$.  Thus
+$\CC(L_{\ell_n})\geq \CC(P_n^{T_n})/n\geq 2^{\varepsilon n}/n$ for the
+infinitely many $n$ in the hypothesis.  Since $\ell_n\leq n+\log_2 n+1$,
+this exceeds $2^{\delta\ell_n}$ for all sufficiently large such $n$.
+\end{proof}
+
+Unconditionally exhibiting an explicit hard power of $P_n$ is therefore
+at least as hard as proving an exponential circuit lower bound for
+$\mathsf{E}$, an open problem; the hypothesis that such a lower bound holds
+is the hardness assumption of Impagliazzo and Wigderson~\cite{IW97}.  This
+complements \cref{thm:typical-powers}: almost every residue modulo
+$D_B$ is hard, but no efficient procedure is known for producing one.
+
+The amount of hardwired information is also forced.  Distinct residues of
+$T$ modulo $D_B$ give distinct powers, and \cref{thm:remainders} recovers
+the remainder table $r_T$, hence $T\bmod D_B$, from $P_n^T$.  Any
+description of $P_n^T$ from which the map can be evaluated, whether a
+circuit, a table, or a checkpoint dictionary, therefore determines
+$T\bmod D_B$.  By \cref{lem:lcm}, for some $T$ such a description has at
+least $\log_2 D_B\geq 2^{n/2}-O(n)$ bits.  The dictionary of
+\cref{sec:fixed}, with $O(n2^{n/2})$ bits at the balanced parameter,
+is within a polynomial factor of this minimum.
+
+\paragraph{The converse direction.}
+Does an exponential lower bound for $\mathsf{E}$ conversely yield an
+explicit hard power of $P_n$?  The obvious encoding gives a conditional
+form, which an index-to-prime circuit makes unconditional for lower bounds
+above $2^{\ell/2}$.  Let $q_m(z)$ denote the $(z+1)$st prime, for
+$z\in\bits^m$ read as an integer.  By the prime number theorem
+$q_m(z)<2^{m+\log_2 m+O(1)}$, and the map $q_m$ is computable in time
+$2^{O(m)}$ by a sieve.  Let $k_m$ be the least integer with
+$2^{k_m}-1\geq q_m(2^m-1)$; then $k_m=m+\log_2 m+O(1)$, and we regard
+$q_m$ as a map from $\bits^m$ to $\bits^{k_m}$.
+
+\begin{proposition}[Conditional converse]\label[proposition]{prop:explicit-converse}
+Let $L\in\mathsf{E}$ satisfy $\CC(L_m)\geq 2^{\varepsilon m}$ for
+infinitely many $m$, and suppose that $\CC(q_m)\leq 2^{\varepsilon m-1}$
+for all sufficiently large $m$.  Then there are explicit exponents $T_n$
+such that $\CC(P_n^{T_n})\geq 2^{\varepsilon m-1}$ for $n=2k_m$ and
+infinitely many $m$.  In particular, for every fixed
+$\varepsilon'<\varepsilon/2$, $\CC(P_n^{T_n})\geq 2^{\varepsilon' n}$ for
+infinitely many even $n$.
+\end{proposition}
+
+\begin{proof}
+The map $m\mapsto k_m$ is strictly increasing.  For $n=2k_m$, let $T_n$
+be the least nonnegative integer with $T_n\equiv L(z)\pmod{q_m(z)}$ for
+every $z\in\bits^m$, and put $T_n=0$ for all other even $n$.  The moduli
+are distinct primes, so the Chinese remainder theorem gives $T_n$.  It is
+computable in time $2^{O(m)}=2^{O(n)}$ from the truth table of $L_m$ and
+the $2^m$ primes, so $(T_n)$ is explicit.
+
+Given a circuit for $r_{T_n}$ on $k_m$-bit moduli, compose it with a
+circuit for $q_m$.  On input $z$ the result outputs
+$T_n\bmod q_m(z)=L(z)\in\{0,1\}$ in its low bit.  Therefore
+\[
+  \CC(P_n^{T_n})\geq\CC(r_{T_n})\geq \CC(L_m)-\CC(q_m)
+  \geq 2^{\varepsilon m-1}
+\]
+for the infinitely many large $m$ in the hypothesis, by
+\cref{thm:remainders}.  Since $n=2m+O(\log m)$, this is at least
+$2^{\varepsilon' n}$ for any fixed $\varepsilon'<\varepsilon/2$ and all
+large such $m$.
+\end{proof}
+
+Hardwiring the table of $q_m$ costs about $2^m$ gates, which exceeds the
+complexity of every $m$-input function, so the hypothesis on $q_m$ needs a
+genuine construction.  Counting primes in blocks gives one at the square
+root of the table size.  Write $\pi(x)$ for the number of primes at most
+$x$.
+
+\begin{lemma}[Index-to-prime circuits]\label[lemma]{lem:prime-index}
+For every $k\geq 2$ there is a circuit with $k$ inputs and $k$ outputs, of
+size $2^{k/2}\poly(k)$, that on every $z$ with $0\leq z<\pi(2^k-1)$
+returns the $(z+1)$st prime.  Its outputs on larger $z$ are unspecified.
+\end{lemma}
+
+\begin{proof}
+Primality of $k$-bit integers is decidable in deterministic time
+$\poly(k)$~\cite{AKS04}, and a multitape machine running in time $t$ has
+circuits of size $O(t\log t)$~\cite{PF79}.  Hence there is a circuit
+$\mathrm{PRIME}_k$ of size $\poly(k)$ deciding primality of $k$-bit
+integers.  (Alternatively, Miller--Rabin testing with bases fixed by
+Adleman's argument~\cite{Adleman78} gives the same bound nonuniformly.)
+
+Put $h=\ceil{k/2}$, $\Lambda=2^h$ and $J=2^{k-h}$, and split
+$\{0,\ldots,2^k-1\}$ into the blocks $[j\Lambda,(j+1)\Lambda)$ for
+$0\leq j<J$.  Hardwire the counts $c_j=\pi(j\Lambda-1)$ of primes below
+each block, so $c_0=0$.  Fix $z<\pi(2^k-1)$ and let $q$ be the $(z+1)$st
+prime, the unique prime with exactly $z$ primes below it.  If
+$j\Lambda\leq q$, the primes below $j\Lambda$ are among the $z$ primes below
+$q$, so $c_j\leq z$; if $j\Lambda>q$, they include $q$ and the primes below
+it, so $c_j\geq z+1$.  Thus $q$ lies in block $j^*$, the largest $j$ with
+$c_j\leq z$.
+
+The circuit computes the flags $f_j=[c_j\leq z]$ with $J$ comparisons.
+They are monotone, with $f_0=1$, so $g_j=f_j\wedge\neg f_{j+1}$ (with
+$f_J=0$) is one exactly at $j^*$.  An OR of masked words selects $j^*$ and
+$c_{j^*}$, and a subtraction gives the rank $\rho=z-c_{j^*}$: the number of
+primes in block $j^*$ below $q$.  These steps use $O(Jk)$ gates.
+
+For each offset $0\leq i<\Lambda$, a copy of $\mathrm{PRIME}_k$ evaluates
+$b_i=[j^*\Lambda+i\text{ is prime}]$; its input is $j^*$ followed by the
+constant bits of $i$.  A chain of $(h+1)$-bit incrementers computes
+$S_i=\sum_{i'<i}b_{i'}$.  The selector $e_i=b_i\wedge[S_i=\rho]$ is one
+exactly at the offset of $q$.  The output has high bits $j^*$ and low bits
+the OR of the masked offsets $e_i\wedge i$.  This part costs
+$\Lambda\poly(k)+O(\Lambda h)$ gates.  Since $J$ and $\Lambda$ are at most
+$2\cdot2^{k/2}$, the total is $2^{k/2}\poly(k)$.
+\end{proof}
+
+\begin{corollary}[Explicit hard powers above the square-root
+threshold]\label[corollary]{cor:explicit-half}
+Let $L\in\mathsf{E}$ and $\varepsilon>1/2$ satisfy
+$\CC(L_m)\geq 2^{\varepsilon m}$ for infinitely many $m$.  Then there are
+explicit exponents $T_n$ such that, for infinitely many even $n$,
+\[
+  \CC(P_n^{T_n})\geq 2^{\varepsilon n/2-\varepsilon\log_2 n-O(1)}.
+\]
+In particular $\CC(P_n^{T_n})\geq 2^{\varepsilon' n}$ infinitely often
+for every fixed $\varepsilon'<\varepsilon/2$, and $\varepsilon'$ may be
+taken above $1/4$.
+\end{corollary}
+
+\begin{proof}
+Pad the input of the circuit of \cref{lem:prime-index}, with $k=k_m$, by
+$k_m-m$ constant zero bits.  Every $z\in\bits^m$ satisfies
+$z<2^m\leq\pi(2^{k_m}-1)$ by the choice of $k_m$, so this computes $q_m$
+and
+\[
+  \CC(q_m)\leq 2^{k_m/2}\poly(k_m)=2^{m/2}\poly(m),
+\]
+using $k_m=m+\log_2 m+O(1)$.  Since $\varepsilon>1/2$, this is at most
+$2^{\varepsilon m-1}$ for all large $m$.  \Cref{prop:explicit-converse}
+then gives explicit $T_n$ with $\CC(P_n^{T_n})\geq2^{\varepsilon m-1}$ for
+$n=2k_m$ and infinitely many $m$.  For such $n$,
+$m=n/2-\log_2 m-O(1)\geq n/2-\log_2 n-O(1)$, so
+$\varepsilon m-1\geq\varepsilon n/2-\varepsilon\log_2 n-O(1)$.
+\end{proof}
+
+The full converse remains open only for $\varepsilon\leq1/2$.  The
+Impagliazzo--Wigderson hypothesis asserts some fixed $\varepsilon>0$,
+possibly small.  Reaching that range by this route needs index-to-prime
+circuits of size $2^{\varepsilon m-1}$ for every $\varepsilon>0$, that is
+$2^{o(m)}$, which is far below the $2^{m/2}$ of
+\cref{lem:prime-index}.  No such circuits are known: uniform deterministic
+generation of even one prime of a given length is open~\cite{TCH12}.  The
+choice of the $(z+1)$st prime is not the issue.  By
+\cref{thm:remainders}, the information in $P_n^T$ is $T\bmod D_B$, which is
+determined by the residues of $T$ modulo the prime powers up to $B$, each
+carrying at most $k$ bits.  An encoding that places $2^m$ independent bits
+in these residues must use about $2^m/k$ distinct prime powers.  A
+reduction that queries $r_T$ once per input must then produce suitable
+moduli from the index by a small circuit.  Primes in arithmetic
+progressions, obtained from Linnik's theorem, lead to the same
+index-to-prime problem.  Equivalently, the converse holds if some language
+in $\mathsf{E}$ remains exponentially hard when restricted to prime inputs,
+since then one may set $T\bmod p$ to that language at every prime
+$p\leq B$; but this restates the problem rather than reducing it to the
+standard hypothesis.  The Lean development does not formalize uniform
+complexity classes, so the results of this subsection are outside its
+checked boundary.
+
 \section{Input times and shared evaluation}
 
 \subsection{An iteration count supplied as input}\label{sec:variable}
@@ -2009,6 +2207,39 @@ The mathlib community.
 Samuel Schlesinger and contributors.
 \newblock Complexitylib, including the Circuit library and verified sorting networks.
 \newblock \url{https://github.com/SamuelSchlesinger/complexitylib}.
+
+\bibitem{IW97}
+Russell Impagliazzo and Avi Wigderson.
+\newblock $\mathsf{P}=\mathsf{BPP}$ if $\mathsf{E}$ requires exponential
+circuits: derandomizing the {XOR} lemma.
+\newblock In \emph{Proceedings of the 29th Annual ACM Symposium on Theory of
+Computing (STOC)}, pages 220--229, 1997.
+\newblock \href{https://doi.org/10.1145/258533.258590}{doi:10.1145/258533.258590}.
+
+\bibitem{TCH12}
+Terence Tao, Ernest Croot III, and Harald Helfgott.
+\newblock Deterministic methods to find primes.
+\newblock \emph{Mathematics of Computation}, 81(278):1233--1246, 2012.
+\newblock \href{https://doi.org/10.1090/S0025-5718-2011-02542-1}{doi:10.1090/S0025-5718-2011-02542-1}.
+
+\bibitem{AKS04}
+Manindra Agrawal, Neeraj Kayal, and Nitin Saxena.
+\newblock {PRIMES} is in {P}.
+\newblock \emph{Annals of Mathematics}, 160(2):781--793, 2004.
+\newblock \href{https://doi.org/10.4007/annals.2004.160.781}{doi:10.4007/annals.2004.160.781}.
+
+\bibitem{PF79}
+Nicholas Pippenger and Michael J. Fischer.
+\newblock Relations among complexity measures.
+\newblock \emph{Journal of the ACM}, 26(2):361--381, 1979.
+\newblock \href{https://doi.org/10.1145/322123.322138}{doi:10.1145/322123.322138}.
+
+\bibitem{Adleman78}
+Leonard Adleman.
+\newblock Two theorems on random polynomial time.
+\newblock In \emph{Proceedings of the 19th Annual Symposium on Foundations
+of Computer Science (FOCS)}, pages 75--83, 1978.
+\newblock \href{https://doi.org/10.1109/SFCS.1978.37}{doi:10.1109/SFCS.1978.37}.
 
 \end{thebibliography}
 

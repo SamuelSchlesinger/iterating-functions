@@ -551,6 +551,20 @@ arithmetic on an arbitrarily large integer.  Computing the hardwired
 information is a preprocessing task outside the asserted circuit bound.
 \end{remark}
 
+\begin{remark}[Succinct checkpoint sets]\label[remark]{rem:succinct-checkpoints}
+A checkpoint set with a small membership circuit, such as the zeros of a
+hash function, does not reduce the size in general.  It shortens the
+description of $H$, but the dependence on $T$ sits in the payloads.  For
+the permutation $P_n$ of \cref{sec:lower}, a circuit for $P_n^T$
+determines $T\bmod a$ for every $1\leq a\leq B$ by
+\cref{thm:remainders}, hence $T\bmod D_B$, which takes at least
+$B-\log(B+1)$ bits by \cref{lem:lcm}.  \Cref{thm:lower} bounds every
+circuit for some power, however its checkpoints are chosen.  Only
+compressible payloads could help, and for $P_n$ they are structured,
+being residues of $T$, yet some power still needs $\Omega(2^{n/2}/n)$
+gates.
+\end{remark}
+
 \subsection{Charging only long trajectories}
 
 Let $\delta(v)$ be the distance from $v$ to its eventual cycle, and let
@@ -1454,6 +1468,92 @@ $0\leq\alpha\leq 1$, \cref{eq:batch-variable} is at most
 This is an upper-bound sharing statement.  It is not a direct-sum
 separation against optimal circuits for a single trajectory.
 
+\subsection{Batched powers of the counting permutation}\label{sec:batch-Pn}
+
+For the permutation $P_n$ of \cref{sec:lower}, sharing costs much less
+than \cref{thm:batch} suggests.  The results of this subsection are not
+mechanized in the Lean development.
+
+\begin{proposition}[Batched powers of $P_n$]\label[proposition]{prop:batch-Pn}
+Let $n=2k$ be even, $1\leq r\leq N$, and $T\geq0$.  Then
+\[
+  \CC(B_{P_n,T,r})=O\!\left(n^3\bigl(2^{n/2}+r\bigr)\right).
+\]
+If $P_n^T$ is not the identity, then also
+\[
+  \CC(B_{P_n,T,r})\geq\max\{\CC(P_n^T),\,r\}.
+\]
+\end{proposition}
+
+\begin{proof}
+For the upper bound, use the dictionary with keys $a=1,\ldots,B$ and
+payloads $r_T(a)=T\bmod a$, in the notation of \cref{thm:remainders}.
+It has $B<2^{n/2}$ entries of $k$ bits.  The first coordinates
+$a_1,\ldots,a_r$ of the $r$ inputs are the queries.  Since $r\leq N$,
+\cref{lem:lookup} returns all $r_T(a_i)$ in $O(n^3(2^{n/2}+r))$ gates.
+The query $a_i=0$ is unmatched and receives payload $0=r_T(0)$.  Each
+input is then completed as in the proof of \cref{thm:remainders} with
+$O(n)$ further gates.
+
+For the lower bound, fixing all inputs but the first block to zero and
+keeping the first output block gives a circuit for $P_n^T$.  For the
+bound $r$, suppose that every output bit of the second coordinate of
+$P_n^T$ is a constant or an input variable.  On the inputs with $a=0$
+every state is fixed, so output bit $j$ agrees with $b_j$ there; it is
+therefore not constant, and the only input variable that agrees with
+$b_j$ on these inputs is $b_j$.  Hence $P_n^T$ is the identity.
+Otherwise, some output bit of each of the $r$ blocks is computed by a
+gate.  These $r$ output functions depend on disjoint sets of variables
+and are nonconstant, so they are pairwise distinct and need $r$
+distinct gates.
+\end{proof}
+
+With \cref{lem:lookup-aks} the factor $n^3$ becomes $n^2$.  For the
+hard exponents of \cref{thm:lower}, the batched cost of $P_n$ is
+therefore between $\Omega(2^{n/2}/n+r)$ and $O(n^2(2^{n/2}+r))$.  Each
+additional input costs $\poly(n)$ gates.  The generic bound of
+\cref{thm:batch} is $O(n^3\sqrt r\,2^{n/2})$ for $P_n$, since
+$A=\Theta(n^3)$, so the factor $\sqrt r$ is not attained here.
+
+\paragraph{Counting cannot show more.}
+As $T$ varies, the number of distinct maps $B_{F,T,r}$ equals the number
+$D(F)$ of distinct powers of $F$, since the first output block is
+$F^T$.  By \cref{thm:main}, every power has a circuit of size
+$S^*=O(A+\sqrt{n^3NA})$, so \cref{lem:count} gives
+$\log D(F)=O((S^*+n)\log(n+S^*+2))$.  For polynomial $s$ this is
+$2^{n/2}\poly(n)$.  A counting argument over exponents compares $D(F)$
+with the number of circuits on $rn$ inputs, which only grows with $r$.
+It therefore certifies at most $2^{n/2}\poly(n)$ gates for every $r$,
+and counting over all maps of polynomial size as well adds only
+$\poly(n)$ to the logarithm.  For $P_n$, counting gives
+$\Omega(2^{n/2}/n)$ while $r\leq 2^{n/2}/n^2$, which the restriction to
+one block already gives.  Once $r$ exceeds a suitable polynomial in $n$,
+no counting argument over powers of polynomial-size maps reaches the
+upper bound of \cref{thm:batch}.
+
+\paragraph{Mass production.}
+Uhlig showed that for every $f:\bits^n\to\bits$ and every
+$r=2^{o(n/\log n)}$, evaluating $f$ on $r$ independent inputs has
+circuits of size $(1+o(1))2^n/n$~\cite{Uhlig74,Uhlig92}.  Applied to each
+output bit, this gives $\CC(B_{F,T,r})\leq(1+o(1))2^n$ for every map $F$
+in that range of $r$, with no assumption on $\CC(F)$.  So Boolean circuits
+have no direct-sum behaviour for repeated evaluation even without
+structure.  For polynomial $s$, \cref{eq:batch-opt} is smaller,
+$2^{n/2+o(n)}$, throughout this range of $r$, and it remains $O(2^n)$
+for all $r\leq N/(n^3A)$.
+
+\paragraph{An open question.}
+Is there a family $F_n$ of polynomial size, a constant $0<\alpha<1$,
+and exponents $T_n$ such that, for $r=\floor{2^{\alpha n}}$,
+\[
+  \CC(B_{F_n,T_n,r})\geq 2^{(1+\alpha)n/2-o(n)}?
+\]
+By \cref{eq:batch-opt} this exponent would be the largest possible.  For
+$P_n$ the exponent is $\max\{1/2,\alpha\}$, which is smaller, and
+counting cannot answer the question.  We know no polynomial-size family
+for which any exponent strictly between $\max\{1/2,\alpha\}$ and
+$(1+\alpha)/2$ is proved.
+
 \subsection{A polynomial improvement with AKS sorting networks}
 \label{sec:aks}
 
@@ -1849,6 +1949,149 @@ circuit each obey the stated bound.  Permanent eventual acceptance is
 the complement of recurrence of the predicate $1-P$, which changes the
 bound only by a constant number of gates.
 \end{proof}
+
+\subsection{Machines with a separate work tape}\label{sec:space-bounded}
+
+\Cref{cor:halting} charges every configuration bit, including a
+read-only input.  For a space-bounded machine this gives a bound in
+terms of input length plus work space.  The results of this subsection
+are not mechanized in the Lean development.
+
+Let $M$ be a deterministic machine with a read-only input tape holding
+$x\in\bits^n$ between two endmarkers, one work tape over an alphabet
+$\Gamma$ that contains the blank, $h_1$ input heads, $h_2$ work heads,
+and a finite state set $Q$; put $h=h_1+h_2$.  Halting states are
+absorbing, and on every input of length $n$ the machine halts and uses
+only work cells $1,\ldots,S=S(n)$.  A configuration
+$(x,w,p,q)$ consists of the input, the work contents $w\in\Gamma^S$, the
+head positions $p$, and the state.  Encode it in
+\[
+  b=n+S\ceil{\log|\Gamma|}+h\ceil{\log(n+S+2)}+\ceil{\log|Q|}
+\]
+bits, and let $F_M:\bits^b\to\bits^b$ be the one-step map, with
+$\iota(x)$ the initial configuration on input $x$.  Reading the symbols
+under the heads, writing, and moving the heads cost
+$s=O(h(n+S\log|\Gamma|)+h\log(n+S))$ gates for fixed $Q$ and $\Gamma$:
+decode each head position to a one-hot vector, select the symbols by
+multiplexers, apply one circuit for the transition function, and
+update each work cell and head position locally.
+
+\begin{theorem}[Space-bounded machines]\label{thm:space-bounded}
+Let $M$ be as above, with $h$, $|Q|$ and $|\Gamma|$ fixed.  The language
+decided by $M$ has circuits on $\bits^n$ of size
+\[
+  2^{(n+S\log|\Gamma|)/2}\,(n+S)^{O(1)},
+\]
+where the $O(1)$ depends on $h$.
+\end{theorem}
+
+\begin{proof}
+Let $R$ be the set of configurations $F_M^t(\iota(x))$ with $t\geq0$ and
+$x\in\bits^n$.  It is forward invariant, and every configuration in it
+has input part $x$, work contents in $\Gamma^S$ and heads within their
+ranges, so
+\[
+  |R|\leq 2^n|\Gamma|^S(n+S+2)^h|Q|.
+\]
+Before halting, a run visits distinct configurations of $R$, so
+$F_M^{|R|}(\iota(x))$ is the final configuration.  Apply
+\cref{thm:invariant} with state width $b$, the set $R$, and $T=|R|$,
+choosing $L$ as in \cref{eq:L-choice} with $N$ replaced by $|R|$.  With
+$A=s+b^3$ the size is $O(A+\sqrt{b^3|R|A})$.  Since $b$ and $s$ are
+$O(n+S)$, this is $(n+S)^{O(1)}\sqrt{|R|}$.  Precompose with $\iota$,
+which inserts constants, and read the acceptance bit from the state.
+\end{proof}
+
+For a binary work alphabet the encoding has $b=n+S+O(\log(n+S))$ bits,
+and the theorem already follows from \cref{cor:halting}.  For other
+alphabets the reachable set matters, since $S\ceil{\log|\Gamma|}$ can
+exceed $S\log|\Gamma|$ by a constant factor.
+
+The bound is new only in a narrow range.  Every Boolean function on $n$
+bits has a circuit of size $O(2^n/n)$.  The standard simulation squares
+the configuration map for the given input about $S\log|\Gamma|$ times;
+each squaring composes two tables with $|\Gamma|^S\poly(n,S)$ entries,
+for $|\Gamma|^{2S}\poly(n,S)$ gates in total.  For a binary work tape and
+$S=\sigma n$ with a constant $\sigma>0$, the three exponents are
+$(1+\sigma)/2$, $1$ and $2\sigma$.  The first is the smallest exactly
+when $1/3<\sigma<1$.  For instance, a language decided in space $n/2$
+with a binary work tape has circuits of size $2^{3n/4}\poly(n)$.  We have
+not found this bound in the literature.  It combines checkpointing with
+locality and may be known.  At $S=n$ it gives only $2^n\poly(n)$; the
+square-root bound $2^{n/2}\poly(n)$ of \cref{cor:halting} needs the input
+to serve as the workspace.
+
+\paragraph{Improving the square-root bound for in-place computations.}
+Improving the exponent $1/2$ for computations that work in place would
+improve the generic bound for linear space.  We make this precise with
+the configuration-map setting of \cref{cor:halting}.  A \emph{nearly
+in-place computation} is a family of maps
+$G_n:\bits^{b(n)}\to\bits^{b(n)}$ with
+$n<b(n)\leq n+c\ceil{\log(n+1)}$ and $\CC(G_n)\leq n^c+c$ for a constant
+$c$.  Its acceptance predicate on $\bits^n$ is
+\[
+  \operatorname{acc}_G(x)=\text{last bit of }
+  G_n^{2^{b(n)}}\bigl(x0^{b(n)-n}\bigr).
+\]
+The time $2^{b(n)}$ is at least the number of states, so for a halting
+computation with absorbing halting states this is the last bit of the
+final state.  \Cref{thm:main} gives
+$\CC(\operatorname{acc}_G)\leq2^{n/2}\poly(n)$.  An in-place machine with
+a binary tape alphabet and a constant number of heads is an example: its
+configuration consists of the $n$ tape bits and $O(\log n)$ bits for
+heads and state.
+
+\begin{proposition}[Padding linear space]\label[proposition]{prop:space-padding}
+Fix $\varepsilon>0$.  Suppose that every nearly in-place computation
+satisfies $\CC(\operatorname{acc}_G)\leq2^{(1/2-\varepsilon)n}$ for all
+sufficiently large $n$.  Let $L$ be decided by a machine $M$ as above
+with a binary work alphabet, constant $h$, and a nondecreasing space
+bound $S(n)$ with $1\leq S(n)\leq n^{O(1)}$.  Then
+\[
+  \CC(L\cap\bits^n)\leq 2^{(1/2-\varepsilon)(n+S(n))}
+\]
+for all sufficiently large $n$.  In particular, every language decided
+in space $n$ with a binary work tape has circuits of size
+$2^{(1-2\varepsilon)n}$.
+\end{proposition}
+
+\begin{proof}
+Put $m(n)=n+S(n)$, which is strictly increasing.  For $m=m(n)$, let
+$G_m$ act on configurations of $M$ on inputs of length $n$, laid out as
+the input $x$, then the $S$ work bits, then a field $z$ that holds the
+head positions, the state, and an acceptance bit in its last position.
+Choose the encoding of $z$ so that $z=0\cdots0$ is the initial head
+positions and state, and encode the blank by $0$.  Let $G_m$ be the step
+map of $M$ that sets the acceptance bit when it enters an accepting
+halting state.  The field $z$ has $O(\log(n+S))=O(\log m)$ bits, and
+$\CC(G_m)=O(m)$ by locality, so for some constant $c$ this is a nearly
+in-place computation once $G_m$ is defined as the identity on $m+1$
+bits at the lengths $m$ outside the range of $m(\cdot)$.
+
+On $y=x0^S$, the state $y0\cdots0$ encodes the initial configuration of
+$M$ on $x$.  The machine halts within the number of states, so
+$\operatorname{acc}_G(x0^S)=1$ exactly when $M$ accepts $x$.  Fixing the
+last $S$ inputs of a circuit for $\operatorname{acc}_G$ on $\bits^m$ to
+zero gives a circuit for $L\cap\bits^n$ of size at most
+$2^{(1/2-\varepsilon)m}$.  For $S(n)=n$ the size is
+$2^{(1/2-\varepsilon)2n}$.
+\end{proof}
+
+A bound of $2^{(1-\delta)n}$ for linear space with a binary work tape
+would beat the $\Theta(2^n/n)$ worst case for $n$-bit functions by an
+exponential factor.  We are not aware of such a bound, and we do not
+know whether the hypothesis of \cref{prop:space-padding} holds for any
+$\varepsilon>0$.  We do not prove the proposition with the hypothesis
+restricted to in-place Turing machines.  That would require the padded
+machine to find the end of $x$ itself, with no symbols to spare.
+
+The hypothesis concerns one predicate per input length, at the fixed time
+$2^{b(n)}$.  For the configuration map, or for a predicate at a time chosen
+for each $n$, the analogous improvement is false.  The map $P_n$, with one
+idle extra bit, is a nearly in-place computation, and \cref{thm:lower,cor:one-output} give
+exponents $T_n$ for which $P_n^{T_n}$, and some output bit of it, need
+$2^{n/2}/\poly(n)$ gates.  Those exponents come from counting over $T$.
+Counting says nothing about a single predicate per length.
 
 \section{Structured transitions}\label{sec:structured}
 
@@ -2432,6 +2675,22 @@ Ming Li and Paul Vit\'anyi.
 Applications}.
 \newblock Texts in Computer Science. Springer, fourth edition, 2019.
 \newblock \href{https://doi.org/10.1007/978-3-030-11298-1}{doi:10.1007/978-3-030-11298-1}.
+
+\bibitem{Uhlig74}
+Dietmar Uhlig.
+\newblock On the synthesis of self-correcting schemes from functional
+elements with a small number of reliable elements.
+\newblock \emph{Mathematical Notes of the Academy of Sciences of the USSR},
+15(6):558--562, 1974.
+\newblock \href{https://doi.org/10.1007/BF01152835}{doi:10.1007/BF01152835}.
+
+\bibitem{Uhlig92}
+Dietmar Uhlig.
+\newblock Networks computing {B}oolean functions for multiple input values.
+\newblock In M. S. Paterson, editor, \emph{Boolean Function Complexity},
+London Mathematical Society Lecture Note Series, pages 165--173.
+Cambridge University Press, 1992.
+\newblock \href{https://doi.org/10.1017/CBO9780511526633.013}{doi:10.1017/CBO9780511526633.013}.
 
 \end{thebibliography}
 

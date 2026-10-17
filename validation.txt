@@ -168,9 +168,9 @@ checks, but its general correctness and running time are not Lean theorems.
 The sparse input-time circuit bound is now fully checked using a nonuniform
 interval chart. The sparse-transition counting application and finite-field
 corollary remain prose results; the latter uses the external
-Kleinjung--Wesolowski theorem. The AKS improvement and full-state-space
-effective compiler are still proposals rather than separately mechanized
-theorems.
+Kleinjung--Wesolowski theorem. The AKS improvement is a prose theorem in
+the manuscript, not mechanized; the full-state-space effective compiler
+is still a proposal rather than a mechanized theorem.
 The public theorem map is in lean/README.md; REVIEW.md tracks the continuation.
 
 These checks do not establish historical novelty or replace independent

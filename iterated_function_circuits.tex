@@ -278,7 +278,9 @@ algorithm for that iteration problem.
 
 The present construction uses the same checkpoint and batched-lookup
 principles.  Batcher's sorting networks~\cite{Batcher68} implement the
-lookup, while the shifted payload in \cref{eq:overview-identity} and the
+lookup; the asymptotically smaller networks of Ajtai, Koml\'os, and
+Szemer\'edi~\cite{AKS83} save a factor of $n$ (\cref{sec:aks}), while
+the shifted payload in \cref{eq:overview-identity} and the
 checkpoint-or-repetition lemma handle general powers and functional graphs.
 No RAM memory probe is treated as a unit-cost circuit operation.
 Checkpointing, sorting-based lookup, and square-root-size permutation
@@ -1013,8 +1015,11 @@ the upper bound.  Substituting $k=n/2$ and using \cref{thm:remainders},
 whose additive $O(n)$ is negligible, gives the statement for $P_n^T$.
 \end{proof}
 
-Only the primes in $(\sqrt B,B]$ carry independent information about
-$T$; the remaining residues are reconstructed by the Chinese remainder
+The primes in $(\sqrt B,B]$ carry the leading-order independent
+information about $T$.  The residues modulo the prime powers $d^e\leq B$
+with $d\leq\sqrt B$ are further independent data, stored separately in
+stage~(i), but they occupy only $2^{k/2}\poly(k)$ bits; every other
+residue is reconstructed from these two kinds by the Chinese remainder
 theorem.  Storing $T\bmod p$ in $k$ bits instead of $\log_2p$ bits wastes
 only a $1+O(1/k)$ factor, because most large primes lie near $B$.  This is
 why the two bounds agree in their leading constant
@@ -1116,10 +1121,12 @@ $4^k$ completes the proof.
 
 Together, \cref{prop:approx-all,thm:random-average} show that the optimal
 error at size $2^k/k^c$ is $(1+o(1))(c-1)\log_2k/(2k)$ for almost every
-power: a constant error is impossible at size $2^{n/2}/\poly(n)$.  The
-same arguments give constant error at somewhat smaller sizes.
+power: constant average-case hardness, i.e.\ a constant lower bound on
+the approximation error, is impossible at size $2^{n/2}/\poly(n)$.  The
+same arguments give constant average-case hardness at somewhat smaller
+sizes.
 
-\begin{corollary}[Constant error at size \texorpdfstring{$2^{(1-\delta)k}$}{2 to the (1-delta)k}]\label[corollary]{cor:constant-error}
+\begin{corollary}[Constant average-case hardness at size \texorpdfstring{$2^{(1-\delta)k}$}{2 to the (1-delta)k}]\label[corollary]{cor:constant-error}
 Fix $0<\delta\leq1/3$ and let $q=2^{(1-\delta)k}$.  Every power has a
 circuit of size $(1+o(1))q$ with error at most
 $\frac12\ln\frac1{1-\delta}+o(1)$, and for almost every $T$ every circuit
@@ -1192,6 +1199,389 @@ Thus the hard powers necessarily require exponentially long binary
 exponents; long descriptions are not merely allowed by the counting proof.
 Theorem~\ref{thm:lower} establishes sharpness for arbitrary fixed powers.
 It gives no hardness result for the bounded-bit-time problem.
+
+\subsection{Explicit hard exponents}\label{sec:explicit-exponents}
+
+By \cref{cor:exponent-length}, a hard power of $P_n$ has an exponent
+with $2^{n/2}/\poly(n)$ binary digits.  The natural notion of an explicit
+hard power therefore allows time polynomial in that length.  Call a
+sequence of exponents $(T_n)_{n\ \mathrm{even}}$ \emph{explicit} if a
+deterministic algorithm outputs the binary expansion of $T_n$ from $1^n$
+in time $2^{O(n)}$.  Write
+$\mathsf{E}=\mathsf{DTIME}(2^{O(\ell)})$ for languages of strings of
+length $\ell$, and $\mathsf{SIZE}(s(\ell))$ for languages whose length-$\ell$
+slices have circuits of size $s(\ell)$.
+
+\begin{theorem}[Explicit hard powers give circuit lower bounds for
+\texorpdfstring{$\mathsf{E}$}{E}]\label{thm:explicit-E}
+Let $\varepsilon>0$, and let $(T_n)$ be explicit exponents with
+$\CC(P_n^{T_n})\geq 2^{\varepsilon n}$ for infinitely many even $n$.
+Then for every $0<\delta<\varepsilon$ there is a language in $\mathsf{E}$
+whose length-$\ell$ slice requires circuits of size $2^{\delta\ell}$ for
+infinitely many $\ell$.
+\end{theorem}
+
+\begin{proof}
+For even $n=2k$ put $j_n=\ceil{\log_2 n}$ and $\ell_n=n+j_n$; these
+lengths are strictly increasing in $n$.  A string of length $\ell_n$ is
+read as $(a,b,i)$ with $a,b\in\bits^k$ and $i\in\bits^{j_n}$.  Let $L$
+contain $(a,b,i)$ exactly when $i<n$ and bit $i$ of $P_n^{T_n}(a,b)$ is
+one, and let $L$ contain no strings of other lengths.
+
+To decide $L$, recover $n$ from $\ell$, compute $T_n$ in time $2^{O(n)}$,
+and evaluate $P_n^{T_n}(a,b)$ by \cref{eq:easy-iterator}, returning
+$(a,b)$ on inactive states.  The remainder $T_n\bmod a$ of an integer with
+$2^{O(n)}$ digits by a $k$-bit modulus takes time $2^{O(n)}$ by long
+division.  Hence $L\in\mathsf{E}$.
+
+Conversely, hardwiring $i=0,\ldots,n-1$ into $n$ copies of a circuit for
+the slice $L_{\ell_n}$ computes all output bits of $P_n^{T_n}$.  Thus
+$\CC(L_{\ell_n})\geq \CC(P_n^{T_n})/n\geq 2^{\varepsilon n}/n$ for the
+infinitely many $n$ in the hypothesis.  Since $\ell_n\leq n+\log_2 n+1$,
+this exceeds $2^{\delta\ell_n}$ for all sufficiently large such $n$.
+\end{proof}
+
+Unconditionally exhibiting an explicit hard power of $P_n$ is therefore
+at least as hard as proving an exponential circuit lower bound for
+$\mathsf{E}$, an open problem; the hypothesis that such a lower bound holds
+is the hardness assumption of Impagliazzo and Wigderson~\cite{IW97}.  This
+complements \cref{thm:typical-powers}: almost every residue modulo
+$D_B$ is hard, but no efficient procedure is known for producing one.
+
+The amount of hardwired information is also forced.  Distinct residues of
+$T$ modulo $D_B$ give distinct powers, and \cref{thm:remainders} recovers
+the remainder table $r_T$, hence $T\bmod D_B$, from $P_n^T$.  Any
+description of $P_n^T$ from which the map can be evaluated, whether a
+circuit, a table, or a checkpoint dictionary, therefore determines
+$T\bmod D_B$.  By \cref{lem:lcm}, for some $T$ such a description has at
+least $\log_2 D_B\geq 2^{n/2}-O(n)$ bits.  The dictionary of
+\cref{sec:fixed}, with $O(n2^{n/2})$ bits at the balanced parameter,
+is within a polynomial factor of this minimum.
+
+\paragraph{The converse direction.}
+Does an exponential lower bound for $\mathsf{E}$ conversely yield an
+explicit hard power of $P_n$?  The obvious encoding gives a conditional
+form, which an index-to-prime circuit makes unconditional for lower bounds
+above $2^{\ell/2}$.  Let $q_m(z)$ denote the $(z+1)$st prime, for
+$z\in\bits^m$ read as an integer.  By the prime number theorem
+$q_m(z)<2^{m+\log_2 m+O(1)}$, and the map $q_m$ is computable in time
+$2^{O(m)}$ by a sieve.  Let $k_m$ be the least integer with
+$2^{k_m}-1\geq q_m(2^m-1)$; then $k_m=m+\log_2 m+O(1)$, and we regard
+$q_m$ as a map from $\bits^m$ to $\bits^{k_m}$.
+
+\begin{proposition}[Conditional converse]\label[proposition]{prop:explicit-converse}
+Let $L\in\mathsf{E}$ satisfy $\CC(L_m)\geq 2^{\varepsilon m}$ for
+infinitely many $m$, and suppose that $\CC(q_m)\leq 2^{\varepsilon m-1}$
+for all sufficiently large $m$.  Then there are explicit exponents $T_n$
+such that $\CC(P_n^{T_n})\geq 2^{\varepsilon m-1}$ for $n=2k_m$ and
+infinitely many $m$.  In particular, for every fixed
+$\varepsilon'<\varepsilon/2$, $\CC(P_n^{T_n})\geq 2^{\varepsilon' n}$ for
+infinitely many even $n$.
+\end{proposition}
+
+\begin{proof}
+The map $m\mapsto k_m$ is strictly increasing.  For $n=2k_m$, let $T_n$
+be the least nonnegative integer with $T_n\equiv L(z)\pmod{q_m(z)}$ for
+every $z\in\bits^m$, and put $T_n=0$ for all other even $n$.  The moduli
+are distinct primes, so the Chinese remainder theorem gives $T_n$.  It is
+computable in time $2^{O(m)}=2^{O(n)}$ from the truth table of $L_m$ and
+the $2^m$ primes, so $(T_n)$ is explicit.
+
+Given a circuit for $r_{T_n}$ on $k_m$-bit moduli, compose it with a
+circuit for $q_m$.  On input $z$ the result outputs
+$T_n\bmod q_m(z)=L(z)\in\{0,1\}$ in its low bit.  Therefore
+\[
+  \CC(P_n^{T_n})\geq\CC(r_{T_n})\geq \CC(L_m)-\CC(q_m)
+  \geq 2^{\varepsilon m-1}
+\]
+for the infinitely many large $m$ in the hypothesis, by
+\cref{thm:remainders}.  Since $n=2m+O(\log m)$, this is at least
+$2^{\varepsilon' n}$ for any fixed $\varepsilon'<\varepsilon/2$ and all
+large such $m$.
+\end{proof}
+
+Hardwiring the table of $q_m$ costs about $2^m$ gates, which exceeds the
+complexity of every $m$-input function, so the hypothesis on $q_m$ needs a
+genuine construction.  Counting primes in blocks gives one at the square
+root of the table size.  Write $\pi(x)$ for the number of primes at most
+$x$.
+
+\begin{lemma}[Index-to-prime circuits]\label[lemma]{lem:prime-index}
+For every $k\geq 2$ there is a circuit with $k$ inputs and $k$ outputs, of
+size $2^{k/2}\poly(k)$, that on every $z$ with $0\leq z<\pi(2^k-1)$
+returns the $(z+1)$st prime.  Its outputs on larger $z$ are unspecified.
+\end{lemma}
+
+\begin{proof}
+Primality of $k$-bit integers is decidable in deterministic time
+$\poly(k)$~\cite{AKS04}, and a multitape machine running in time $t$ has
+circuits of size $O(t\log t)$~\cite{PF79}.  Hence there is a circuit
+$\mathrm{PRIME}_k$ of size $\poly(k)$ deciding primality of $k$-bit
+integers.  (Alternatively, Miller--Rabin testing with bases fixed by
+Adleman's argument~\cite{Adleman78} gives the same bound nonuniformly.)
+
+Put $h=\ceil{k/2}$, $\Lambda=2^h$ and $J=2^{k-h}$, and split
+$\{0,\ldots,2^k-1\}$ into the blocks $[j\Lambda,(j+1)\Lambda)$ for
+$0\leq j<J$.  Hardwire the counts $c_j=\pi(j\Lambda-1)$ of primes below
+each block, so $c_0=0$.  Fix $z<\pi(2^k-1)$ and let $q$ be the $(z+1)$st
+prime, the unique prime with exactly $z$ primes below it.  If
+$j\Lambda\leq q$, the primes below $j\Lambda$ are among the $z$ primes below
+$q$, so $c_j\leq z$; if $j\Lambda>q$, they include $q$ and the primes below
+it, so $c_j\geq z+1$.  Thus $q$ lies in block $j^*$, the largest $j$ with
+$c_j\leq z$.
+
+The circuit computes the flags $f_j=[c_j\leq z]$ with $J$ comparisons.
+They are monotone, with $f_0=1$, so $g_j=f_j\wedge\neg f_{j+1}$ (with
+$f_J=0$) is one exactly at $j^*$.  An OR of masked words selects $j^*$ and
+$c_{j^*}$, and a subtraction gives the rank $\rho=z-c_{j^*}$: the number of
+primes in block $j^*$ below $q$.  These steps use $O(Jk)$ gates.
+
+For each offset $0\leq i<\Lambda$, a copy of $\mathrm{PRIME}_k$ evaluates
+$b_i=[j^*\Lambda+i\text{ is prime}]$; its input is $j^*$ followed by the
+constant bits of $i$.  A chain of $(h+1)$-bit incrementers computes
+$S_i=\sum_{i'<i}b_{i'}$.  The selector $e_i=b_i\wedge[S_i=\rho]$ is one
+exactly at the offset of $q$.  The output has high bits $j^*$ and low bits
+the OR of the masked offsets $e_i\wedge i$.  This part costs
+$\Lambda\poly(k)+O(\Lambda h)$ gates.  Since $J$ and $\Lambda$ are at most
+$2\cdot2^{k/2}$, the total is $2^{k/2}\poly(k)$.
+\end{proof}
+
+\begin{corollary}[Explicit hard powers above the square-root
+threshold]\label[corollary]{cor:explicit-half}
+Let $L\in\mathsf{E}$ and $\varepsilon>1/2$ satisfy
+$\CC(L_m)\geq 2^{\varepsilon m}$ for infinitely many $m$.  Then there are
+explicit exponents $T_n$ such that, for infinitely many even $n$,
+\[
+  \CC(P_n^{T_n})\geq 2^{\varepsilon n/2-\varepsilon\log_2 n-O(1)}.
+\]
+In particular $\CC(P_n^{T_n})\geq 2^{\varepsilon' n}$ infinitely often
+for every fixed $\varepsilon'<\varepsilon/2$, and $\varepsilon'$ may be
+taken above $1/4$.
+\end{corollary}
+
+\begin{proof}
+Pad the input of the circuit of \cref{lem:prime-index}, with $k=k_m$, by
+$k_m-m$ constant zero bits.  Every $z\in\bits^m$ satisfies
+$z<2^m\leq\pi(2^{k_m}-1)$ by the choice of $k_m$, so this computes $q_m$
+and
+\[
+  \CC(q_m)\leq 2^{k_m/2}\poly(k_m)=2^{m/2}\poly(m),
+\]
+using $k_m=m+\log_2 m+O(1)$.  Since $\varepsilon>1/2$, this is at most
+$2^{\varepsilon m-1}$ for all large $m$.  \Cref{prop:explicit-converse}
+then gives explicit $T_n$ with $\CC(P_n^{T_n})\geq2^{\varepsilon m-1}$ for
+$n=2k_m$ and infinitely many $m$.  For such $n$,
+$m=n/2-\log_2 m-O(1)\geq n/2-\log_2 n-O(1)$, so
+$\varepsilon m-1\geq\varepsilon n/2-\varepsilon\log_2 n-O(1)$.
+\end{proof}
+
+The full converse remains open only for $\varepsilon\leq1/2$.  The
+Impagliazzo--Wigderson hypothesis asserts some fixed $\varepsilon>0$,
+possibly small.  Reaching that range by this route needs index-to-prime
+circuits of size $2^{\varepsilon m-1}$ for every $\varepsilon>0$, that is
+$2^{o(m)}$, which is far below the $2^{m/2}$ of
+\cref{lem:prime-index}.  No such circuits are known: uniform deterministic
+generation of even one prime of a given length is open~\cite{TCH12}.  The
+choice of the $(z+1)$st prime is not the issue.  By
+\cref{thm:remainders}, the information in $P_n^T$ is $T\bmod D_B$, which is
+determined by the residues of $T$ modulo the prime powers up to $B$, each
+carrying at most $k$ bits.  An encoding that places $2^m$ independent bits
+in these residues must use about $2^m/k$ distinct prime powers.  A
+reduction that queries $r_T$ once per input must then produce suitable
+moduli from the index by a small circuit.  Primes in arithmetic
+progressions, obtained from Linnik's theorem, lead to the same
+index-to-prime problem.  Equivalently, the converse holds if some language
+in $\mathsf{E}$ remains exponentially hard when restricted to prime inputs,
+since then one may set $T\bmod p$ to that language at every prime
+$p\leq B$; but this restates the problem rather than reducing it to the
+standard hypothesis.  The Lean development does not formalize uniform
+complexity classes, so the results of this subsection are outside its
+checked boundary.
+
+\subsection{Short descriptions of hard exponents}\label{sec:exponent-descriptions}
+
+Long binary expansions do not mean that hard exponents lack short
+descriptions.  This subsection separates the length of an exponent from
+the complexity of describing it, and identifies the resource that
+matters.  Its results are prose results; they are outside the Lean
+formalization of \cref{sec:lean}.
+
+Fix a universal Turing machine $U$.  For integers $T,n\geq0$, the
+conditional Kolmogorov complexity $K(T\mid n)$ is the length of a
+shortest program $p$ such that $U$, given $p$ and the binary expansion
+of $n$, halts with the binary expansion of $T$ on its output
+tape~\cite{LV19}.  A different universal machine changes $K$ by an
+additive constant only.
+
+\begin{proposition}[Hard exponents of constant description length]
+\label[proposition]{prop:kolmogorov}
+There is a constant $c_U$ such that, for all sufficiently large even $n$,
+some exponent $T_n^*<D_B$ satisfies
+\[
+  K(T_n^*\mid n)\leq c_U
+  \qquad\text{and}\qquad
+  \CC(P_n^{T_n^*})\geq c\,\frac{2^{n/2}}{n},
+\]
+where $c>0$ is the constant of \cref{thm:typical-powers}.  Consequently
+no bound of the form
+$\CC(F^T)\leq\beta(n,\CC(F),K(T\mid n))$ with $\beta$ a polynomial
+holds, and any valid bound of this form satisfies
+$\beta(n,O(n),O(1))=\Omega(2^{n/2}/n)$.  The same holds for the
+unconditional complexity, since $K(T_n^*)\leq 2\log_2n+O(1)$.
+\end{proposition}
+
+\begin{proof}
+Decreasing $c$ if necessary, take $c$ rational.  Let
+$\theta_n=\ceil{c2^{n/2}/n}$, and let $T_n^*$ be the least $T\geq0$ with
+$\CC(P_n^T)\geq\theta_n$.  By \cref{thm:typical-powers} such a $T$
+exists below $D_B$ for all sufficiently large even $n$.  The following
+fixed program computes $T_n^*$ from $n$.  For $T=0,1,2,\ldots$ in turn,
+compute the truth table of $P_n^T$ by iterating \cref{eq:permutation}
+on each of the $2^n$ states.  Then enumerate every circuit with fewer
+than $\theta_n$ gates and evaluate it on all $2^n$ inputs.  Output the
+first $T$ for which no such circuit agrees with the truth table.  Each
+stage is a finite computation, and the search stops at $T_n^*$.  Let
+$c_U$ be the length of this program.  For the unconditional bound,
+prepend a self-delimiting encoding of $n$.  Since $\CC(P_n)=O(n)$,
+these exponents defeat every polynomial $\beta$.
+\end{proof}
+
+By \cref{cor:exponent-length}, the exponent $T_n^*$ still has
+$\Omega(2^{n/2}/n^2)$ binary digits.  So hard exponents are long but can
+be simple.  The upper bound of \cref{thm:main} does not depend on $T$ at
+all, so in terms of description complexity the two results match up to
+$2^{O(\log n)}$ factors.
+
+The program in the proof is expensive.  It tries up to $D_B$ exponents,
+each against $2^{O(\theta_n\log\theta_n)}$ circuits, so it runs in time
+$2^{2^{O(n)}}$.  It uses only space $2^{O(n)}$: at any moment it stores
+one exponent below $D_B$, one candidate circuit, and one truth table.
+We do not claim that a substantially faster short program for a hard
+exponent cannot exist.  The next statements show what a cheaper program
+would imply.
+
+For a family of exponents $T_n$, a \emph{description in time $t(n)$}
+(respectively \emph{in space $S(n)$}) is a family of programs $p_n$ of
+length $\poly(n)$ such that $U$, given $p_n$ and $n$, outputs $T_n$
+within $t(n)$ steps (respectively, halts using at most $S(n)$ cells of
+work tape; the write-only output tape is not charged).  For a family of
+maps, membership in $\mathsf{PSPACE}/\poly$ or $\mathsf{EXP}/\poly$
+refers to the language of pairs $(x,i)$ such that bit $i$ of the image
+of $x$ is one, with polynomial-length advice for each $n$.
+
+\begin{definition}[Residue profile]
+For $T\geq0$ and $n\geq1$, the \emph{residue profile}
+$\rho_{T,n}:\{0,1,\ldots,2^n\}\to\{0,1,\ldots,2^n\}$ is given by
+$\rho_{T,n}(p)=T\bmod p$ for $1\leq p\leq2^n$, and
+$\rho_{T,n}(0)=\min(T,2^n)$.
+\end{definition}
+
+\begin{proposition}[Residue profiles control powers]
+\label[proposition]{prop:residue-profile}
+Let $F_n:\bits^n\to\bits^n$ have $\CC(F_n)\leq\poly(n)$, and let
+$T_n\geq0$.
+\begin{enumerate}[label=(\roman*)]
+\item If the family $\rho_{T_n,n}$ is in $\mathsf{PSPACE}/\poly$, then
+  so is the family $F_n^{T_n}$.  The same holds with $\mathsf{EXP}/\poly$
+  in place of $\mathsf{PSPACE}/\poly$.
+\item For the permutations of \cref{eq:permutation}, the family
+  $P_n^{T_n}$ is in $\mathsf{PSPACE}/\poly$ if and only if the family of
+  remainder maps $r_{T_n}$ of \cref{thm:remainders} is.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) Write $N=2^n$, $T=T_n$, $F=F_n$, and take as advice the circuit
+of $F$ together with the advice for $\rho_{T,n}$.  Given $x$, compute
+$y=F^N(x)$ by $N$ evaluations of $F$ with an $(n+1)$-bit counter.  The
+state $y$ lies on the cycle reached from $x$.  Its cycle length
+$\lambda$ is the least $j\geq1$ with $F^j(y)=y$.  The tail length
+$\mu<N$ is the least $i$ with $F^i(x)=F^{i+\lambda}(x)$.  Each of these
+searches stores $O(n)$ bits besides one evaluation of $F$.  Read
+$m=\rho_{T,n}(0)$.  If $m<\mu$, then $T=m$, and the output is $F^m(x)$.
+Otherwise $T\geq\mu$, because $\mu<N$, and
+\[
+  F^T(x)=F^{\mu+(((T\bmod\lambda)-\mu)\bmod\lambda)}(x),
+\]
+which uses the value $T\bmod\lambda=\rho_{T,n}(\lambda)$ and at most
+$\mu+\lambda\leq2N$ further evaluations.  Each query to $\rho_{T,n}$
+is answered by recomputing the requested bits in polynomial space, so
+the whole computation runs in polynomial space with polynomial advice.
+The computation also runs in time $2^{O(n)}\poly(n)$ plus the cost of
+the queries, which gives the $\mathsf{EXP}/\poly$ statement.
+
+(ii) The reductions in the proof of \cref{thm:remainders} are explicit
+polynomial-time computations in both directions: $r_T(a)$ is the second
+coordinate of $P_n^T(a,0)$, and $P_n^T(a,b)$ is obtained from $a$, $b$,
+and $r_T(a)$ by one addition, one comparison, and one selection.
+\end{proof}
+
+\begin{corollary}[Cheap descriptions give membership in a uniform class]
+\label[corollary]{cor:description-resources}
+Let $F_n$ and $T_n$ be as in \cref{prop:residue-profile}.
+\begin{enumerate}[label=(\roman*)]
+\item If $T_n$ has a description in space $\poly(n)$, then $F_n^{T_n}$
+  is in $\mathsf{PSPACE}/\poly$.  Hence, if
+  $\mathsf{PSPACE}\subseteq\mathsf{P}/\poly$, then
+  $\CC(F_n^{T_n})\leq\poly(n)$.
+\item If $T_n$ has a description in time $2^{\poly(n)}$, then
+  $F_n^{T_n}$ is in $\mathsf{EXP}/\poly$.  Hence, if
+  $\mathsf{EXP}\subseteq\mathsf{P}/\poly$, then
+  $\CC(F_n^{T_n})\leq\poly(n)$.
+\end{enumerate}
+\end{corollary}
+
+\begin{proof}
+(i) A description in space $S=\poly(n)$ halts within $2^{O(S)}$ steps,
+so it emits at most $2^{O(S)}$ output bits.  To compute $T\bmod p$ for
+$p\leq 2^n$, rerun the program and fold each output bit into a running
+remainder as it appears.  For most-significant-first output, replace
+$r$ by $2r+\text{bit}\bmod p$.  For least-significant-first output, also
+maintain $2^j\bmod p$.  A running value capped at $2^n$ gives
+$\min(T,2^n)$ in the same way: for least-significant-first output, it
+suffices to record whether a one appears at position $n$ or later.  This uses $S+O(n)$ cells, so $\rho_{T_n,n}$ is in
+$\mathsf{PSPACE}/\poly$ with the program as advice, and
+\cref{prop:residue-profile} applies.
+(ii) The same streaming computation runs in time $2^{\poly(n)}$.
+In both parts, the final implication follows by folding the polynomial
+advice into the input: the resulting language lies in $\mathsf{PSPACE}$
+(respectively $\mathsf{EXP}$), so it has polynomial-size circuits under
+the stated inclusion, and fixing the advice gives circuits for
+$F_n^{T_n}$.
+\end{proof}
+
+So among short descriptions, space rather than length or time is the
+relevant resource.  Constant-length descriptions in space $2^{O(n)}$
+reach hard exponents by \cref{prop:kolmogorov}.  Polynomial-space
+descriptions reach a hard power only if
+$\mathsf{PSPACE}\not\subseteq\mathsf{P}/\poly$.  Time-$2^{\poly(n)}$
+descriptions reach one only if
+$\mathsf{EXP}\not\subseteq\mathsf{P}/\poly$.
+
+\paragraph{Long but easy exponents.}
+Several exponents with exponentially long expansions have residue
+profiles in $\mathsf{PSPACE}$, so by \cref{prop:residue-profile} their
+powers of any polynomial-size map are in $\mathsf{PSPACE}/\poly$:
+\begin{itemize}
+\item $T=2^{2^n}$: compute $2^{2^n}\bmod p$ by $2^n$ modular squarings
+  with an $n$-bit counter.
+\item Power towers $T=2\uparrow\uparrow h$ of any height
+  $h<2^{\poly(n)}$, with $h$ given as advice: reduce exponents modulo iterated totients, using
+  $a^b\equiv a^{(b\bmod\varphi(p))+\varphi(p)}\pmod p$ for
+  $b\geq\log_2p$.  Whenever an intermediate exponent
+  $2\uparrow\uparrow j$ is below $n$, it is computed exactly and used
+  directly, so the condition is needed only where it holds.
+  The iterated totient of $p\leq2^n$ reaches $1$ after
+  $O(n)$ steps, so only $O(n)$ levels need explicit work, and each
+  totient is found by trial division in polynomial space.
+\item $T=D_B-1$: $D_B\bmod p$ is a product of the largest prime powers
+  not exceeding $B$, enumerated in polynomial space.
+\end{itemize}
+The last example is the inversion exponent of $P_n$, so
+$P_n^{D_B-1}=P_n^{-1}$.  As noted in \cref{sec:one-way}, this power even
+has a linear-size circuit.  Membership in $\mathsf{PSPACE}/\poly$ gives
+only an upper bound.  These examples show that neither the length of an
+exponent nor its numerical size forces hardness.
 
 \section{Input times and shared evaluation}
 
@@ -1363,6 +1753,85 @@ $0\leq\alpha\leq 1$, \cref{eq:batch-variable} is at most
 \]
 This is an upper-bound sharing statement.  It is not a direct-sum
 separation against optimal circuits for a single trajectory.
+
+\subsection{A polynomial improvement with AKS sorting networks}
+\label{sec:aks}
+
+The factor $n^3$ in \cref{thm:main} has two sources: $O(n)$ gates per
+comparator on $O(n)$-bit records, and the $O(\log^2 R)=O(n^2)$ comparators
+per record of Batcher's networks.  Ajtai, Koml\'os, and Szemer\'edi
+constructed comparator networks sorting $R$ keys with $O(R\log R)$
+comparators~\cite{AKS83}.  Replacing Batcher's networks by theirs saves
+one factor of $n$.  Their constants are very large, so this is an
+asymptotic statement only.  The Lean development mechanizes the Batcher
+version; nothing in this subsection is mechanized.
+
+\begin{lemma}[Lookup and repetition with AKS networks]\label[lemma]{lem:lookup-aks}
+The dictionary lookup of \cref{lem:lookup} and the repeated-state detection
+of \cref{lem:repeat} have circuits of sizes
+\[
+  O\!\left((M+Q)\bigl(w+\log(M+Q+2)\bigr)\log(M+Q+2)\right)
+  \quad\text{and}\quad
+  O\!\left(Q\bigl(w+\log(Q+2)\bigr)\log(Q+2)\right),
+\]
+respectively.  In particular, for $w=O(n)$ and $\log(M+Q+2)=O(n)$ both
+costs are $O(n^2(M+Q))$.
+\end{lemma}
+
+\begin{proof}
+Repeat the proofs of \cref{lem:lookup,lem:repeat} with every sorting
+network replaced by an AKS network on the same records, padded with
+dummy records as before.  The networks use $O(R\log(R+2))$ comparators,
+each of cost $O(w+\log(R+2))$.  The scans and the selection of a
+flagged record cost $O(R(w+\log(R+2)))$ gates and are unchanged.
+\end{proof}
+
+\begin{theorem}[AKS-strengthened tradeoff]\label{thm:aks}
+Under the assumptions of \cref{thm:main}, put $A_2=s+n^2$.  For every
+integer $T\geq0$ and every integer $1\leq L\leq N$,
+\[
+  \CC(F^T)=O\!\left(Ls+n^2\left(L+\frac NL\right)\right),
+  \qquad\text{hence}\qquad
+  \CC(F^T)=O\!\left(A_2+n\sqrt{NA_2}\right).
+\]
+\end{theorem}
+
+\begin{proof}
+Use the construction of \cref{sec:fixed} unchanged, and implement its
+lookup and repeated-state detection by \cref{lem:lookup-aks}.  These now
+cost $O(n^2(N/L+L))$ and $O(n^2L)$ gates.  Every other component already
+fits this bound: the two simulations cost $O(Ls)$; the residue-table
+multiplexer, the trajectory selections, and the final output selection
+cost $O(nL)$; and the long division and modular correction of
+\cref{eq:period} cost $O(n^2)$.  For the optimized bound, choose
+$L=\max\{1,\ceil{\sqrt{n^2N/A_2}}\}$ and argue as for
+\cref{eq:L-choice}, with $n^3$ replaced by $n^2$ and $A$ by $A_2$.
+Then $L\leq\ceil{\sqrt N}\leq N$ since $A_2\geq n^2$, and
+$\sqrt{n^2NA_2}=n\sqrt{NA_2}$.
+\end{proof}
+
+The proofs of the following results use the lookup and repetition
+circuits only through the per-record cost of \cref{lem:lookup,lem:repeat},
+together with $O(Ls)$ simulation, $O(nL)$ selection, and $O(n^2)$
+arithmetic.  Each therefore holds with $n^3$ replaced by $n^2$ in its
+parameterized bound and with $A$ replaced by $A_2$ in its optimized bound:
+the long-trajectory, invariant-set and image-sensitive bounds
+(\cref{thm:active-mass,thm:invariant,cor:image}), exact permutation
+inversion (\cref{cor:inverse}), variable-time iteration
+(\cref{thm:variable}, by $m$ applications of \cref{thm:aks}), and batched
+fixed powers and independent input times
+(\cref{thm:batch,cor:batch-variable}).  For the batched bound, the shared
+lookup costs $O(n^2(N/L+rL))$ and the $r$ separate repetition tests cost
+$O(rn^2L)$, giving
+\[
+  \CC(B_{F,T,r})=O\!\left(rA_2+n\sqrt{rNA_2}\right).
+\]
+For the permutation of \cref{sec:lower}, $\CC(P_n)=O(n)$ gives $A_2=O(n^2)$
+and $\max_T\CC(P_n^T)=O(n^22^{n/2})$, within a factor $O(n^3)$ of the
+lower bound in \cref{thm:lower}.  We do not claim the improvement for the
+navigation and target results of \cref{sec:structure} or for
+\cref{thm:long-time}, whose proofs contain further $n^3$ terms that we
+have not re-examined.
 
 \section{Functional-graph navigation}\label{sec:structure}
 
@@ -2142,6 +2611,13 @@ Computer Conference}, AFIPS Conference Proceedings, volume 32,
 pages 307--314, 1968.
 \newblock \href{https://doi.org/10.1145/1468075.1468121}{doi:10.1145/1468075.1468121}.
 
+\bibitem{AKS83}
+Mikl\'os Ajtai, J\'anos Koml\'os, and Endre Szemer\'edi.
+\newblock An $O(n\log n)$ sorting network.
+\newblock In \emph{Proceedings of the 15th Annual ACM Symposium on Theory
+of Computing (STOC)}, pages 1--9, 1983.
+\newblock \href{https://doi.org/10.1145/800061.808726}{doi:10.1145/800061.808726}.
+
 \bibitem{Hellman80}
 Martin E. Hellman.
 \newblock A cryptanalytic time--memory trade-off.
@@ -2235,9 +2711,23 @@ Stasys Jukna.
 \newblock Algorithms and Combinatorics 27, Springer, 2012.
 \newblock \href{https://doi.org/10.1007/978-3-642-24508-4}{doi:10.1007/978-3-642-24508-4}.
 
+\bibitem{IW97}
+Russell Impagliazzo and Avi Wigderson.
+\newblock $\mathsf{P}=\mathsf{BPP}$ if $\mathsf{E}$ requires exponential
+circuits: derandomizing the {XOR} lemma.
+\newblock In \emph{Proceedings of the 29th Annual ACM Symposium on Theory of
+Computing (STOC)}, pages 220--229, 1997.
+\newblock \href{https://doi.org/10.1145/258533.258590}{doi:10.1145/258533.258590}.
+
+\bibitem{TCH12}
+Terence Tao, Ernest Croot III, and Harald Helfgott.
+\newblock Deterministic methods to find primes.
+\newblock \emph{Mathematics of Computation}, 81(278):1233--1246, 2012.
+\newblock \href{https://doi.org/10.1090/S0025-5718-2011-02542-1}{doi:10.1090/S0025-5718-2011-02542-1}.
+
 \bibitem{AKS04}
 Manindra Agrawal, Neeraj Kayal, and Nitin Saxena.
-\newblock PRIMES is in P.
+\newblock {PRIMES} is in {P}.
 \newblock \emph{Annals of Mathematics}, 160(2):781--793, 2004.
 \newblock \href{https://doi.org/10.4007/annals.2004.160.781}{doi:10.4007/annals.2004.160.781}.
 
@@ -2259,6 +2749,13 @@ Hugh L. Montgomery and Robert C. Vaughan.
 \newblock \emph{Multiplicative Number Theory I: Classical Theory}.
 \newblock Cambridge Studies in Advanced Mathematics 97, Cambridge
 University Press, 2007.
+
+\bibitem{LV19}
+Ming Li and Paul Vit\'anyi.
+\newblock \emph{An Introduction to Kolmogorov Complexity and Its
+Applications}.
+\newblock Texts in Computer Science. Springer, fourth edition, 2019.
+\newblock \href{https://doi.org/10.1007/978-3-030-11298-1}{doi:10.1007/978-3-030-11298-1}.
 
 \end{thebibliography}
 

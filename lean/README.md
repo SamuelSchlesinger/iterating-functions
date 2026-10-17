@@ -81,6 +81,7 @@ natural-number division in integer budgets means floor division.
 | `exists_hard_power_of_budget_lt`, `exists_hard_power` | For every `g : State n → State n`, if the ordered-syntax budget for `q` gates (or the explicit bound `2^(3*q + h*(2*q+n+1))` with `n+q+1 ≤ 2^h`) is below `μ + λ`, some `T < μ + λ` has every circuit for `g^[T]` larger than `q`. |
 | `ModulusCounter.remainder_of_power` / `power_of_remainder` | Convert a power circuit to `a ↦ T mod a` (zero at modulus zero) with one extra gate, or convert a remainder circuit to a power with at most `100*(k+1)` extra gates. |
 | `ModulusCounter.hard_power_exponent_capacity` | If `T < 2^m` and its power exceeds `lowerBudget k`, then `2^k < 112640*(m+1)*(k+1)^2`. The proof constructs a power circuit of size at most `110*(m+1)*(k+1)`. |
+| `ModulusCounter.batched_counter_power`, `batch_lower_bounds`, `batched_hard_counter_power` | For `r ≤ 2^(2k)`, the `r`-fold batched counter power has a circuit of size at most `40000*(k+1)^3*(2^k+r)`, sharing one dictionary `a ↦ T mod a`. Every batched circuit yields a single-power circuit of no larger size, and has at least `r` gates unless the power is the identity. For the hard exponents both lower bounds hold. |
 | `sparse_counter_centralizer` | If an injective word map `H` commutes with `F`, and `F` differs from increment at `r` inputs, a circuit for `H` has at most `100*(n+1)*(r+1)` gates. `F` need not be a permutation. |
 | `sparse_counter_power` | The same bound for every integer power of a permutation, including negative powers. |
 | `sparse_coordinate_power` | If a permutation `G` becomes increment under a bijection `e`, every fixed signed power of an `r`-edited `G` costs at most `encode.size + decode.size + 100*(n+1)*(r+1)`. Both coordinate circuits and their semantics are supplied and charged. |
@@ -249,6 +250,9 @@ the Boolean ring, keeping payload vectors and Boolean wires in the same type.
     division-free count is equivalent to the finite uniform probability bound.
     `CounterRemainders.lean` constructs both directions of the remainder
     comparison, preserving carry and charging the restriction's shared zero.
+    `CounterBatch.lean` reuses the shared lookup of `BatchLookup.lean` with
+    the residue dictionary and the same residue addition for each member;
+    copying one input state to every block gives the restriction lower bound.
     `ExponentLength.lean` combines the linear arithmetic with the gate lower
     bound to force exponential description length for hard exponents.
 14. **Charge only long trajectories.** `ActiveCheckpoints.lean` packs paths

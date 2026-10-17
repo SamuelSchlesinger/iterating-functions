@@ -861,6 +861,306 @@ largest coordinate complexity and is an upper bound on the complexity
 of the whole map.
 \end{proof}
 
+\subsection{The exact constant and average-case behaviour}\label{sec:exact-constant}
+
+\Cref{thm:lower,thm:typical-powers} determine $\max_T\CC(P_n^T)$ up to a
+polynomial factor.  This subsection determines its leading constant and
+describes how well a fixed power can be approximated on most states.
+The results refine the mechanized statements above but are proved here
+in prose only; they are not covered by the Lean formalization.  Throughout,
+$n=2k$, $B=2^k-1$, and $\pi(x)$ is the number of primes at most $x$.
+
+Two classical estimates replace \cref{lem:lcm,lem:count}.  First,
+$\ln D_B=\psi(B)=\sum_{p^j\leq B}\ln p$ is Chebyshev's function, so the
+prime number theorem with the de la Vall\'ee Poussin error
+term~\cite{MV07} gives
+\begin{equation}\label{eq:lcm-pnt}
+  \log_2 D_B=\frac{B}{\ln 2}\bigl(1+O(e^{-c\sqrt k})\bigr)
+\end{equation}
+for an absolute $c>0$; similarly $\pi(x)=(1+O(1/\ln x))\,x/\ln x$ and,
+by Mertens' second theorem,
+$\sum_{p\leq x}1/p=\ln\ln x+M+O(1/\ln x)$ for a constant $M$.
+Second, the circuit count of \cref{lem:count} can be sharpened by the
+classical symmetry argument~\cite{Shannon49,Jukna12}.
+
+\begin{lemma}[Sharp circuit count]\label[lemma]{lem:sharp-count}
+For $q\geq1$, the number of functions $\bits^\ell\to\bits^m$ with circuit
+complexity at most $q$ is at most
+\[
+  (q+1)\left(\frac{16e(\ell+q+2)^2}{q}\right)^{q}(\ell+q+2)^m.
+\]
+In particular, for $q\geq\ell$ its base-two logarithm is
+$q\log_2q+O(q)+O(m\log_2 q)$.
+\end{lemma}
+
+\begin{proof}
+Let $\CC(f)=s$ and fix a circuit for $f$ with exactly $s$ gates.  Its gates
+compute pairwise distinct functions, none equal to an input variable or a
+constant.  Indeed, if a gate $g$ computes the same function as an input or
+constant wire, redirect every use of $g$, including output designations,
+to that wire and delete $g$.  If two gates $g,h$ compute the same
+function and $h$ is not an ancestor of $g$, redirect every use of $h$ to
+$g$ and delete $h$; since $g$ does not depend on $h$, the result is still
+acyclic.  Either operation contradicts minimality.
+
+A \emph{description} with $s$ labelled gates lists, for each label, one of
+$16$ operations and two predecessors among the $\ell$ inputs, two
+constants, and $s$ labels, and then lists $m$ output wires from the same
+$\ell+s+2$ possibilities.  There are at most
+$(16(\ell+s+2)^2)^s(\ell+s+2)^m$ descriptions.  Each of the $s!$ ways to
+label a minimum circuit for $f$ gives a description of a circuit computing
+$f$.  These descriptions are distinct: the description determines the
+function computed at each label, and because gate functions are pairwise
+distinct this determines the labelling.  Descriptions of circuits for
+different functions are different.  Hence the number of $f$ with
+$\CC(f)=s$ is at most $(16(\ell+s+2)^2)^s(\ell+s+2)^m/s!$.  Use
+$s!\geq(s/e)^s$, bound $\ell+s+2\leq\ell+q+2$, and note that
+$s\mapsto(c/s)^s$ increases on $1\leq s\leq c/e$, where here
+$c=16e(\ell+q+2)^2>eq$.  Summing over $0\leq s\leq q$ gives the bound.
+For $q\geq\ell$, $(\ell+q+2)^2/q\leq 16q$, which gives the logarithmic
+form.
+\end{proof}
+
+\Cref{lem:count} omits the factor $1/s!$ and therefore charges about
+$2q\log_2q$ bits to a size-$q$ circuit instead of $q\log_2 q$, and
+\cref{lem:lcm} gives $\log_2D_B\geq B-O(k)$ instead of $(1+o(1))B/\ln2$.
+Each loss costs a constant factor in \cref{thm:lower}.  With both
+estimates sharpened, the counting bound meets a matching construction.
+
+\begin{theorem}[Exact constant for powers of $P_n$]\label{thm:exact-constant}
+For every $T\geq0$,
+\[
+  \CC(r_T)\leq\Bigl(1+O\bigl(\tfrac{\log k}{k}\bigr)\Bigr)\frac{2^k}{k\ln2}.
+\]
+For all but a $2^{-\Omega(2^k/k)}$ fraction of $T\in\{0,\ldots,D_B-1\}$,
+\[
+  \CC(r_T)\geq\Bigl(1-O\bigl(\tfrac1k\bigr)\Bigr)\frac{2^k}{k\ln2}.
+\]
+Consequently, by \cref{thm:remainders},
+\[
+  \max_{T\geq0}\CC(P_n^T)
+   =\Bigl(\frac{2}{\ln2}+O\bigl(\tfrac{\log n}{n}\bigr)\Bigr)\frac{2^{n/2}}{n},
+\]
+and the lower bound holds for almost every $T$ in the same sense.
+\end{theorem}
+
+\begin{proof}
+\emph{Lower bound.}  The maps $r_T$ for $0\leq T<D_B$ are pairwise
+distinct, since $r_T$ determines $T\bmod a$ for every $a\leq B$ and hence
+$T\bmod D_B$.  Put $\Lambda=\log_2D_B$ and
+$q=\floor{(1-C/k)\Lambda/k}$ for an absolute constant $C$.  By
+\cref{eq:lcm-pnt}, $\log_2 q\leq k+1$ for large $k$, so by
+\cref{lem:sharp-count} with $\ell=m=k$ the number of maps of complexity at
+most $q$ is at most
+\[
+  2^{q(k+1)+c_1q+c_2k^2}
+  \leq 2^{\Lambda(1-C/k)(1+(1+c_1)/k)+c_2k^2}
+  \leq 2^{\Lambda-\Lambda/k}
+\]
+once $C\geq c_1+3$ and $k$ is large, because $\Lambda/k$ grows like
+$2^k/k$.  Thus at most a $2^{-\Lambda/k}$ fraction of the $D_B$ residues
+$T$ have $\CC(r_T)\leq q$.  Finally
+$q=(1-O(1/k))2^k/(k\ln2)$ by \cref{eq:lcm-pnt}.
+
+\emph{Upper bound.}  Let $s_0=\floor{\sqrt B}$ and call a prime
+\emph{large} if it exceeds $s_0$.  Every $1\leq a\leq B$ factors uniquely as
+$a=a_sp$, where $a_s$ has no large prime factor and $p$ is either $1$ or a
+large prime: two large prime factors would give $a\geq(s_0+1)^2>B$.
+Then $\gcd(a_s,p)=1$.  The circuit has four stages.
+
+\emph{(i) Smooth part.}  Start with $(A,r)=(1,0)$.  For each prime
+$d\leq s_0$ in turn, compute $e=\nu_d(a)$ by testing $d^j\mid a$ for
+$j\leq\floor{\log_dB}$, select the hardwired constants $d^e$ and
+$T\bmod d^e$ with a multiplexer over at most $k+1$ entries, and replace
+$(A,r)$ by $(Ad^e,\rho)$, where $\rho<Ad^e$ satisfies $\rho\equiv r\pmod A$
+and $\rho\equiv T\pmod{d^e}$.  The Chinese remainder step uses an inverse
+of $A$ modulo $d^e$, computed by an extended-Euclid circuit.  All numbers
+are below $2^k$, so each prime costs $\poly(k)$ gates, and there are
+$\pi(s_0)\leq2^{k/2}$ primes.  At the end $A=a_s$ and $r=T\bmod a_s$.
+One division gives $p=a/A$.
+
+\emph{(ii) Index of the large prime.}  Let $L=2^{\ceil{k/2}}$ and
+$h=\floor{p/L}$, the top $\floor{k/2}$ bits of $p$.  Read
+$\pi(hL-1)$ from a hardwired table with $\floor{k/2}$ input bits, using
+$O(k2^{k/2})$ gates.  Add the number of primes in $[hL,p)$ using $L$
+primality circuits of size $\poly(k)$ and a running counter.  Such
+circuits exist by the AKS algorithm~\cite{AKS04} and the Pippenger--Fischer
+simulation~\cite{PF79}, or nonuniformly by Miller--Rabin with
+$O(k)$ hardwired bases chosen by Adleman's argument~\cite{Adleman78}.
+Subtracting $\pi(s_0)$ yields the index $\iota(p)\in[0,M)$ of $p$ among
+the large primes, where $M=\pi(B)-\pi(s_0)$.  This stage costs
+$2^{k/2}\poly(k)$ gates.
+
+\emph{(iii) Residue table.}  Let $G(i)=T\bmod p_i$, where $p_i$ is the
+large prime of index $i$.  Write $M=\sum_{t\in S}2^t$ in binary; this
+partitions $[0,M)$ into aligned dyadic blocks $I_t$ of length $2^t$, one
+for each $t\in S$, and membership of $i$ in $I_t$ is an equality test on
+the bits of $i$ above position $t$.  On $I_t$, each of the $k$ output bits
+of $G$ is a total function of the low $t$ bits of $i$.  Compute it with
+Lupanov's bound $\CC\leq(1+\alpha_t)2^t/t$, where
+$\alpha_t=O(\log t/t)$~\cite{Lupanov58,Jukna12}, and with an $O(2^t/t)$
+bound for small $t$.  An AND--OR selection combines the blocks with
+$O(k^2)$ gates.  Let $j=\floor{\log_2M}$ and $t_0=j-\ceil{\log_2 j}$.
+Blocks with $t\geq t_0$ cost at most
+$k(1+\sup_{t\geq t_0}\alpha_t)M/t_0$, and blocks with $t<t_0$ cost
+$O(k2^{t_0}/t_0)=O(kM/j^2)$.  By the prime number theorem,
+$M=(1+O(1/k))2^k/(k\ln2)$, so $j=k-\log_2k+O(1)$,
+$t_0=k-O(\log k)$, and this stage costs $(1+O(\log k/k))M$ gates.
+
+\emph{(iv) Combination.}  If $a=0$, output $0$.  If $p=1$, output $r$.
+Otherwise output the $\rho<a$ with $\rho\equiv r\pmod{a_s}$ and
+$\rho\equiv G(\iota(p))\pmod p$, again by a $\poly(k)$-size
+Chinese remainder circuit.  On $a=1$ stage (i) gives $a_s=1$, $p=1$ and
+$r=0$, as required.  Values computed on discarded branches are ignored.
+
+The total is $(1+O(\log k/k))2^k/(k\ln2)+2^{k/2}\poly(k)$, which proves
+the upper bound.  Substituting $k=n/2$ and using \cref{thm:remainders},
+whose additive $O(n)$ is negligible, gives the statement for $P_n^T$.
+\end{proof}
+
+The primes in $(\sqrt B,B]$ carry the leading-order independent
+information about $T$.  The residues modulo the prime powers $d^e\leq B$
+with $d\leq\sqrt B$ are further independent data, stored separately in
+stage~(i), but they occupy only $2^{k/2}\poly(k)$ bits; every other
+residue is reconstructed from these two kinds by the Chinese remainder
+theorem.  Storing $T\bmod p$ in $k$ bits instead of $\log_2p$ bits wastes
+only a $1+O(1/k)$ factor, because most large primes lie near $B$.  This is
+why the two bounds agree in their leading constant
+$2/\ln2\approx2.885$.  The construction improves the general bound of
+\cref{thm:main}, which gives $O(n^32^{n/2})$ for this family, by a
+factor of order $n^4$.
+
+\paragraph{Approximation on most states.}
+For a map $g$ on $\bits^n$, let $\operatorname{err}_T(g)$ be the fraction of
+states $x\in\bits^n$ with $g(x)\neq P_n^T(x)$.  Hardness of $P_n^T$
+does not survive this relaxation by much: every power can be approximated
+by circuits a polynomial factor below the worst case, with error
+$\Theta(\log n/n)$, and this is sharp for random powers.
+
+\begin{proposition}[Every power is approximable]\label[proposition]{prop:approx-all}
+Fix $c>1$.  For every $T$ there is a circuit of size
+$(1+o(1))2^k/k^c$ with
+\[
+  \operatorname{err}_T\leq(1+o(1))\frac{(c-1)\log_2k}{2k}.
+\]
+\end{proposition}
+
+\begin{proof}
+Let $y$ be the least integer with $\pi(y)-\pi(s_0)\geq2^k/k^c$; by the
+prime number theorem, $\log_2y=k-(c-1)\log_2k+O(1)$, and $y>\sqrt B$ for
+large $k$.  Run the circuit of \cref{thm:exact-constant}, but place in
+stage (iii) only the large primes at most $y$.  Its cost is
+$(1+O(\log k/k))2^k/k^c+2^{k/2}\poly(k)$.  Wrap it as in
+\cref{thm:remainders}, and output the input unchanged whenever $p>y$.
+The result is correct on every inactive state and on every active state
+$(a,b)$ whose $a$ has no prime factor in $(y,B]$.  Since $y\geq\sqrt B$,
+such an $a$ has exactly one such factor $p$, and $a=pu$ with
+$u\leq\floor{B/p}$.  The number of wrong states is therefore at most
+\[
+  \sum_{y<p\leq B}\ \sum_{u\leq\floor{B/p}}pu
+  \leq\frac{B^2}2\sum_{y<p\leq B}\frac1p+\frac{B\pi(B)}2.
+\]
+By Mertens' theorem the sum of reciprocals is
+$\ln(\ln B/\ln y)+O(1/k)=(1+o(1))(c-1)\log_2k/k$, and
+$B\pi(B)=O(4^k/k)$.  Dividing by $2^n=4^k$ gives the claim.
+\end{proof}
+
+\begin{theorem}[Random powers are hard on average]\label{thm:random-average}
+Fix $c>1$ and let $q=\floor{2^k/k^c}$.  For $T$ uniform in
+$\{0,\ldots,D_B-1\}$, with probability $1-2^{-\Omega(qk)}$ every map $g$
+with $\CC(g)\leq q$ satisfies
+\[
+  \operatorname{err}_T(g)\geq(1-o(1))\frac{(c-1)\log_2k}{2k}.
+\]
+\end{theorem}
+
+\begin{proof}
+Put $K=k^{c-1}$, $y=B/K$, and let $\mathcal P$ be the set of primes in
+$(y,B]$.  For $p\in\mathcal P$ let $C_p$ be the set of active states
+$(a,b)$ with $p\mid a$, and $W_p=|C_p|$.  Since $y\geq\sqrt B$ for large
+$k$, the sets $C_p$ are disjoint, and $W_p\leq B(K+1)/2$ because
+$\floor{B/p}<K$.
+
+Fix $g$.  At an active state $(a,b)$, $P_n^T(a,b)=(a,(b+T)\bmod a)$.  If
+$g(a,b)=(a,v)$ with $v<a$, correctness at $(a,b)$ forces
+$T\equiv v-b\pmod a$, and in particular fixes $T\bmod p$ for $p\mid a$;
+otherwise $g$ is wrong at $(a,b)$.  So for each $p\in\mathcal P$ and each
+residue $\rho$ modulo $p$, let $Y_p(\rho)$ be the number of states in $C_p$
+whose forced residue modulo $p$ is $\rho$.  The number of correct states
+in $C_p$ is at most $Y_p(T\bmod p)$, and $\sum_\rho Y_p(\rho)\leq W_p$.
+Call $p$ \emph{good} if $Y_p(T\bmod p)>\varepsilon W_p$.  Fewer than
+$1/\varepsilon$ residues are good, and the residues $T\bmod p$ for
+$p\in\mathcal P$ are independent and uniform, since each such $p$ divides
+$D_B$ exactly once.  Hence the events ``$p$ good'' are independent, each
+of probability at most $1/(\varepsilon y)=K/(\varepsilon B)$.  If fewer
+than $2q$ primes are good, then $g$ errs on at least
+$(1-\varepsilon)(W(\mathcal P)-2q\max_pW_p)$ states, where
+$W(\mathcal P)=\sum_{p\in\mathcal P}W_p$.
+
+Using $|\mathcal P|\leq\pi(B)\leq 2B/k$ for large $k$, the probability that
+at least $2q$ primes are good is at most
+\[
+  \binom{|\mathcal P|}{2q}\Bigl(\frac{K}{\varepsilon B}\Bigr)^{2q}
+  \leq\Bigl(\frac{eK}{\varepsilon kq}\Bigr)^{2q}
+  =2^{-2q(k-O(\log k)-\log_2(1/\varepsilon))}.
+\]
+By \cref{lem:sharp-count} with $\ell=m=n$, at most
+$2^{q(k-c\log_2k)+O(q)}$ maps have $\CC(g)\leq q$.  Take
+$\varepsilon=1/\log_2k$.  A union bound shows that, with probability
+$1-2^{-\Omega(qk)}$, fewer than $2q$ primes are good for every such $g$.
+
+On that event every such $g$ errs on at least
+$(1-\varepsilon)(W(\mathcal P)-qB(K+1))$ states.  Since
+$\floor{B/p}\geq B/p-1$, we have $W_p\geq(B^2/p-B)/2$, so by Mertens'
+theorem
+\[
+  W(\mathcal P)\geq\frac{B^2}2\Bigl(\ln\frac{\ln B}{\ln y}-O\bigl(\tfrac1k\bigr)\Bigr)
+     -\frac{B\pi(B)}2
+   =(1-o(1))\frac{B^2}2\cdot\frac{(c-1)\log_2k}{k}.
+\]
+Moreover $qB(K+1)=O(B^2/k)$, which is of smaller order.  Dividing by
+$4^k$ completes the proof.
+\end{proof}
+
+Together, \cref{prop:approx-all,thm:random-average} show that the optimal
+error at size $2^k/k^c$ is $(1+o(1))(c-1)\log_2k/(2k)$ for almost every
+power: constant average-case hardness, i.e.\ a constant lower bound on
+the approximation error, is impossible at size $2^{n/2}/\poly(n)$.  The
+same arguments give constant average-case hardness at somewhat smaller
+sizes.
+
+\begin{corollary}[Constant average-case hardness at size \texorpdfstring{$2^{(1-\delta)k}$}{2 to the (1-delta)k}]\label[corollary]{cor:constant-error}
+Fix $0<\delta\leq1/3$ and let $q=2^{(1-\delta)k}$.  Every power has a
+circuit of size $(1+o(1))q$ with error at most
+$\frac12\ln\frac1{1-\delta}+o(1)$, and for almost every $T$ every circuit
+of size at most $q$ has error at least $\frac12\ln\frac1{1-\delta}-o(1)$,
+with probability $1-o(1)$ over uniform $T\in\{0,\ldots,D_B-1\}$.
+\end{corollary}
+
+\begin{proof}
+For the upper bound, repeat the proof of \cref{prop:approx-all} with $y$
+the least integer such that $\pi(y)-\pi(s_0)\geq(1-\delta)q$.  Stage (iii)
+then has $t_0=(1-\delta)k-O(\log k)$, so its $k$ output bits cost
+$(1+o(1))k(1-\delta)q/t_0=(1+o(1))q$ gates; stages (i) and (ii) cost
+$2^{k/2}\poly(k)=o(q)$ because $\delta<1/2$.  Moreover
+$\ln y=(1-\delta)k\ln2+O(\log k)$ and $y\geq\sqrt B$.  For the lower bound, repeat the proof of
+\cref{thm:random-average} with $\log_2K=\delta k-\sqrt k$ and fixed
+small $\varepsilon$.  The union bound requires
+$2(\log_2q-\log_2K)>(1+o(1))\log_2q$, that is,
+$\log_2K<(1-\delta)k/2-\omega(\log k)$, which holds because
+$\delta\leq(1-\delta)/2$.  The subtracted term $qBK$ is
+$o(B^2)$ because $\log_2K<\delta k-\omega(1)$, and $y=B/K\geq\sqrt B$.
+In both bounds the error is $\frac12\ln(\ln B/\ln y)+o(1)$ by Mertens'
+theorem; letting $\varepsilon\to0$ slowly gives the statement.
+\end{proof}
+
+For $\delta>1/3$ the two arguments no longer meet, and for $\delta>1/2$
+the moduli may have two prime factors above $y$; we do not pursue these
+ranges.  The hardness of a typical power of $P_n$ is spread thinly over
+the cycles whose length has a prime factor near $B$.  A permutation whose
+cycles all have comparable prime lengths would avoid this dilution; we
+leave such constructions to future work.
+
 \subsection{Why the lower bound does not apply to short input times}
 \label{sec:lower-limits}
 
@@ -2660,6 +2960,24 @@ Samuel Schlesinger and contributors.
 \newblock Complexitylib, including the Circuit library and verified sorting networks.
 \newblock \url{https://github.com/SamuelSchlesinger/complexitylib}.
 
+\bibitem{Shannon49}
+Claude E. Shannon.
+\newblock The synthesis of two-terminal switching circuits.
+\newblock \emph{Bell System Technical Journal}, 28(1):59--98, 1949.
+\newblock \href{https://doi.org/10.1002/j.1538-7305.1949.tb03624.x}{doi:10.1002/j.1538-7305.1949.tb03624.x}.
+
+\bibitem{Lupanov58}
+Oleg B. Lupanov.
+\newblock A method of circuit synthesis.
+\newblock \emph{Izvestiya VUZ, Radiofizika}, 1:120--140, 1958.
+\newblock In Russian.
+
+\bibitem{Jukna12}
+Stasys Jukna.
+\newblock \emph{Boolean Function Complexity: Advances and Frontiers}.
+\newblock Algorithms and Combinatorics 27, Springer, 2012.
+\newblock \href{https://doi.org/10.1007/978-3-642-24508-4}{doi:10.1007/978-3-642-24508-4}.
+
 \bibitem{IW97}
 Russell Impagliazzo and Avi Wigderson.
 \newblock $\mathsf{P}=\mathsf{BPP}$ if $\mathsf{E}$ requires exponential
@@ -2693,6 +3011,12 @@ Leonard Adleman.
 \newblock In \emph{Proceedings of the 19th Annual Symposium on Foundations
 of Computer Science (FOCS)}, pages 75--83, 1978.
 \newblock \href{https://doi.org/10.1109/SFCS.1978.37}{doi:10.1109/SFCS.1978.37}.
+
+\bibitem{MV07}
+Hugh L. Montgomery and Robert C. Vaughan.
+\newblock \emph{Multiplicative Number Theory I: Classical Theory}.
+\newblock Cambridge Studies in Advanced Mathematics 97, Cambridge
+University Press, 2007.
 
 \bibitem{LV19}
 Ming Li and Paul Vit\'anyi.

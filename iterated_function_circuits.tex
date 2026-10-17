@@ -1816,8 +1816,24 @@ exist.  Combining a locality bound for the step map with
 \cref{thm:invariant} on the reachable configurations gives bounds in
 terms of the number of reachable configurations, also for machines that
 need not halt, and the exponent is attained by an explicit two-head
-binary machine.  The results of this subsection are not mechanized in
-the Lean development.
+binary machine.  The Lean module \texttt{Proofs/InPlace.lean} defines the
+configurations and the step map $F_M$ of the model below and checks the
+counts of configurations and of reachable configurations used in
+\cref{thm:inplace} (\texttt{InPlace.card\_config},
+\texttt{reach\_card\_le\_configs}, \texttt{reach\_card\_le\_time}), the
+stabilization argument of \cref{cor:inplace-decide}
+(\texttt{iterate\_card\_halting}), and the application of
+\cref{thm:invariant} to the reachable set, precomposed with an
+initialization circuit (\texttt{inplace\_fixed\_power\_optimized},
+\texttt{inplace\_halting}).  These circuit theorems take as hypotheses a
+Boolean encoding of configurations, injective on the reachable set, a
+circuit for $F_M$ on that encoding, and a circuit for $x\mapsto\iota(x)$;
+\cref{lem:inplace-step}, the width \cref{eq:config-bits} and the
+asymptotic simplifications are not mechanized.  For
+\cref{prop:inplace-hard}, Lean checks items~2 and~3 for every machine
+that satisfies item~1 and whose encoding exposes the tape of an initial
+configuration by wiring (\texttt{reach\_card\_le\_round},
+\texttt{round\_bounds}); the machine $M^*$ and item~1 are prose.
 
 \subsubsection{Model and step circuit}
 
@@ -2408,7 +2424,8 @@ The accompanying \texttt{lean/} project proves existence of actual Boolean
 circuits with evaluation semantics and gate bounds.  It covers
 \cref{tab:results}, the invariant-set, image-sensitive and active-mass
 refinements, permutation inversion, complete-configuration simulation,
-and the lower-bound results.  The semantic lemmas also support arbitrary
+the lower-bound results, and the reachable-set bounds for in-place
+machines given a step circuit (\cref{sec:inplace}).  The semantic lemmas also support arbitrary
 state types with finite invariant subsets and supplied Boolean encodings;
 initialization and decoding costs remain additional.
 

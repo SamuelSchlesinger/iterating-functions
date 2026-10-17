@@ -26,6 +26,7 @@ public import Proofs.ActivePowers
 public import Proofs.AffineController
 public import Proofs.SparseCounterTime
 public import Proofs.SparseNavigation
+public import Proofs.InPlace
 
 /-!
 # Public results and axiom audit
@@ -302,5 +303,65 @@ namespace IteratedFunctions
 [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms visit_count_of_first
+
+/-- info: 'IteratedFunctions.InPlace.card_config' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms InPlace.card_config
+
+/-- info: 'IteratedFunctions.InPlace.reach_card_le_configs' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms InPlace.reach_card_le_configs
+
+/-- info: 'IteratedFunctions.InPlace.reach_card_le_time' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms InPlace.reach_card_le_time
+
+/-- info: 'IteratedFunctions.InPlace.reach_card_le_round' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms InPlace.reach_card_le_round
+
+/-- info: 'IteratedFunctions.InPlace.iterate_card_halting' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms InPlace.iterate_card_halting
+
+/-- info: 'IteratedFunctions.InPlace.inplace_fixed_power' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms InPlace.inplace_fixed_power
+
+/-- info: 'IteratedFunctions.InPlace.inplace_fixed_power_optimized' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms InPlace.inplace_fixed_power_optimized
+
+/-- info: 'IteratedFunctions.InPlace.inplace_configs_optimized' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms InPlace.inplace_configs_optimized
+
+/-- info: 'IteratedFunctions.InPlace.inplace_time_optimized' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms InPlace.inplace_time_optimized
+
+/-- info: 'IteratedFunctions.InPlace.inplace_halting' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms InPlace.inplace_halting
+
+/-- info: 'IteratedFunctions.InPlace.round_lower_bound' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms InPlace.round_lower_bound
+
+/-- info: 'IteratedFunctions.InPlace.round_bounds' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms InPlace.round_bounds
 
 end IteratedFunctions

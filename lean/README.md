@@ -94,6 +94,7 @@ natural-number division in integer budgets means floor division.
 | `SequentialSquaring.pow_carmichael_succ`, `pow_eq_pow_of_modEq` | For squarefree `M` and every `x : ZMod M`, unit or not, `x^(λ+1) = x` with `λ = Monoid.exponent (ZMod M)ˣ`; positive exponents congruent modulo `λ` give equal powers. |
 | `SequentialSquaring.iterate_square_reduced`, `reducedExponent_le` | For squarefree `M` and every `T`, `T` squarings modulo `M` equal `x ↦ x^e` with `e = 1 + (2^T - 1) % λ`, and `1 ≤ e ≤ λ`. No circuit is constructed. |
 | `SequentialSquaring.crypto_table_entries` | The table's sizes without omitted factors: `n^3*2^n/2^40` is `2^499`, `2^240`, `2^109` and `sqrt(2^n)` is `2^256`, `2^128`, `2^64` for `n = 512, 256, 128`. |
+| `distinguishedPower_correct` | Semantic correctness of the distinguished-point procedure (scan, lookup, correction, period walk in its own register, cycle walk, output) for any `H` that meets every prefix of `K+1` pairwise distinct states, with payloads `f^[T-K] h` on `H` and residues `(T-K) % λ` for `1 ≤ λ ≤ K`. It returns `f^[T] x` on every input. No circuit size, width, or hash construction is claimed. |
 | `sparse_coordinate_visit_schedule` | Coordinate transport of the descriptor costs `2*encode.size + 1200*(n+3)*(r+1)`. Only a forward-coordinate circuit is supplied; no decoder is required. |
 | `synchronous_coalescence_optimized` | On a pair `(x,y)`, decides whether equal-time iterates ever meet, with bound `240000*B + 6*n + 1`. |
 | `recurring_target_optimized` | Decides acceptance at arbitrarily large times; the bound is `240000*optimizedBudget n (s+p.size+4*n) N + p.size`. |
@@ -319,6 +320,13 @@ algorithm in `../sparse_counter.py`, its polynomial-time edit-list compilation,
 or extraction of an edit list from a transition circuit. The sparse-transition counting
 application and the finite-field corollary, including the use of the external
 discrete-logarithm theorem, are also outside the current Lean boundary.
+
+The distinguished-point section is checked only semantically:
+`distinguishedPower_correct` (module `Proofs.DistinguishedPoints`) proves that
+the six-step procedure returns `f^[T] x` for any set `H` with the hitting
+property. The hashed construction of `H`, the Bellare–Rompel existence
+argument, gate counts, circuit width, and the reversible and pebbling results
+are outside the Lean boundary.
 
 The AKS polynomial improvement is stated and proved in prose in the
 manuscript (Theorem `thm:aks`), but is not formalized; the mechanized

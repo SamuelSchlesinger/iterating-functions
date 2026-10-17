@@ -44,6 +44,15 @@ python3 verify_sparse_counter.py
 The sparse counts include the one-state identity. Restricting to sizes 2--8
 gives 46,232 permutations and 334,381 distinct powers. The 100 huge-universe
 cases check algebraic identities, not an independent enumerative oracle.
+python3 verify_distinguished_points.py
+distinguished-point checks passed: 168 fixed powers
+Seed: 20261017.  For n = 6, 8, 10, three maps each (a single N-cycle, a
+uniform random map, a tail of length N/2 into an N/2-cycle) and every power
+of two L with 16nL <= 2N, the first sampled 2n-wise independent hash met the
+size bound |H| <= 2N/L and the hit-or-repeat condition.  The scan, lookup,
+correction, period and cycle-walk phases then matched direct iteration on
+all inputs for seven exponents, including 10^30 + 7.  These checks do not
+bound gate counts, width, or reversible costs.
 
 python3 verify_checkpoint_sets.py
 PASS: minimum-checkpoint-set checks succeeded.

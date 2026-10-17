@@ -42,6 +42,8 @@ public import Proofs.SequentialSquaring
 
 public import Proofs.PhaseIdentities
 
+public import Proofs.DistinguishedPoints
+
 /-!
 # Public results and axiom audit
 
@@ -562,5 +564,10 @@ namespace IteratedFunctions
 [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms iterate_eq_canonical_iff
+
+/-- info: 'IteratedFunctions.distinguishedPower_correct' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms distinguishedPower_correct
 
 end IteratedFunctions

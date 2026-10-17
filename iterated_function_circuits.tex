@@ -212,6 +212,13 @@ their encoding and decoding circuits.  Choosing $T=\ord(P)-1$ also recovers
 the earlier square-root permutation-inversion bound, compatible with
 polynomial-size one-wayness; see \cref{sec:one-way}.
 
+\Cref{sec:distinguished} replaces the sorting-based lookup by hashed
+distinguished points, so that only the first checkpoint on a trajectory is
+looked up.  This gives $O(n\sqrt{NA})$ gates by circuits of width
+$O(n+s)$, and reversible circuits for every fixed power with
+$N^{1/2+O(1/\log n)}A^{1/2}$ gates and $O(n^3/\log n+s)$ ancillas.
+These results are not formalized.
+
 \begin{table}[htbp]
 \centering
 \small
@@ -5688,6 +5695,362 @@ The bounds above leave four questions.
   challenges all succeed, then convert with $k$ of order $S$.
 \end{enumerate}
 
+
+\section{Distinguished points: small width and reversible circuits}
+\label{sec:distinguished}
+
+The batched lookup of \cref{lem:lookup} is needed because membership in the
+packed checkpoint set of \cref{lem:checkpoints} has no cheap test: every
+state of the initial trajectory must be looked up.  If membership in $H$
+can be decided by a small circuit, only the \emph{first} checkpoint on the
+trajectory needs a payload, and one linear scan over the dictionary
+suffices.  Distinguished points, an idea attributed to Rivest in the
+time--memory tradeoff literature~\cite{vOW99}, give such a set when they
+are selected by a hash function of limited independence.  This section derives three
+consequences: a polynomial-factor improvement of \cref{eq:optimized},
+circuits of width $O(n+s)$, and reversible circuits with few ancillas.
+The Lean development checks only the semantic correctness of the six-step
+procedure in the proof of \cref{thm:distinguished}, for an arbitrary set
+$H$ with the hitting property of \cref{lem:distinguished}
+(\texttt{distinguishedPower\_correct}; see \cref{sec:lean}).  The hash
+lemma, the gate counts and widths, and the reversible and pebbling results
+of this section are not mechanized.
+
+\subsection{Hashed checkpoints}
+
+Identify $\bits^n$ with the field $\mathbb F_{2^n}$ through a fixed
+irreducible polynomial of degree $n$ over $\mathbb F_2$.  Put $t=2n$.  For
+coefficients $a=(a_0,\ldots,a_{t-1})\in\mathbb F_{2^n}^t$ and
+$0\leq l\leq n$, let
+\[
+  g_a(x)=\sum_{j<t}a_jx^j,\qquad
+  H_{a,l}=\{x:\text{the first $l$ coordinates of $g_a(x)$ vanish}\}.
+\]
+
+\begin{lemma}[Hashed checkpoint or repetition]\label[lemma]{lem:distinguished}
+Let $n\geq3$, let $F$ be any function on $\bits^n$, and let $L=2^l$ with
+$0\leq l\leq n-1$.  Put $K=16nL-1$.  There are coefficients $a$ such that
+$H=H_{a,l}$ satisfies $|H|\leq 2N/L$ and, for every $x$, either two of
+$x,F(x),\ldots,F^K(x)$ are equal or $F^i(x)\in H$ for some $i\leq K$.
+Membership in $H_{a,l}$ has a circuit with $O(n^3)$ gates and width $O(n)$.
+\end{lemma}
+
+\begin{proof}
+Choose $a$ uniformly.  For distinct $x_1,\ldots,x_t$ the vector
+$(g_a(x_1),\ldots,g_a(x_t))$ is uniform on $\mathbb F_{2^n}^t$, since the
+Vandermonde matrix of distinct points is invertible; here $t\leq N$.
+Hence the indicators $Y_x=[x\in H_{a,l}]$ are $t$-wise independent
+Bernoulli variables with mean $1/L$.
+
+\emph{Size.}  The indicators are in particular pairwise independent, so
+$|H|=\sum_xY_x$ has mean $N/L$ and variance at most $N/L$.  By Chebyshev's
+inequality, $\Pr[|H|>2N/L]\leq L/N\leq1/2$.
+
+\emph{Hitting.}  Fix $x$ and suppose that $x_i=F^i(x)$, $0\leq i\leq K$,
+are distinct.  The trajectory is determined by $F$ alone, before $a$ is
+drawn.  Then $X=\sum_{i\leq K}Y_{x_i}$ is a sum of $K+1=16nL$
+$t$-wise independent indicators with mean $\mu=16n$.  Bellare and Rompel's
+tail bound for even $t\geq4$~\cite{BR94},
+\[
+  \Pr[|X-\mu|\geq\Delta]\leq
+  8\left(\frac{t\mu+t^2}{\Delta^2}\right)^{t/2},
+\]
+applies with $\Delta=15n$, because $X=0$ forces $|X-\mu|=16n\geq\Delta$.
+Here $(t\mu+t^2)/\Delta^2=(32n^2+4n^2)/(225n^2)=0.16$, so
+$\Pr[X=0]\leq8\cdot0.16^{\,n}$.  If the first $K+1$ states are not
+distinct there is nothing to prove.  A union bound over the $N$ starting
+states therefore bounds the failure probability of the hitting condition
+by $8\cdot0.32^{\,n}\leq0.27$ for $n\geq3$.  Since $0.27+1/2<1$, some
+$a$ satisfies both conditions.
+
+\emph{Membership.}  Evaluate $g_a(x)$ by Horner's rule: $t-1$ products of
+two variable field elements and $t$ additions of hardwired constants.  A
+product is a schoolbook polynomial product followed by reduction modulo the
+fixed irreducible polynomial.  Both are $\mathbb F_2$-bilinear or linear
+maps with $O(n^2)$ gates.  Producing one product coefficient at a time and
+adding its fixed reduction vector into an $n$-bit accumulator keeps only
+$O(n)$ wires live.  Finally test $l$ bits for zero.  The total is
+$O(tn^2)=O(n^3)$ gates and width $O(n)$.
+\end{proof}
+
+The coefficients are found nonuniformly, as are all tables in this paper.
+No attempt is made to reduce the $O(n^3)$ membership cost, for instance by
+fast field multiplication.
+
+\subsection{One lookup per input}
+
+The \emph{width} of a circuit is the minimum, over topological orders of
+its gates, of the largest number of inputs and gate values that have
+already been produced and are still needed by a later gate or as an
+output.  It is the number of registers of a straight-line program
+evaluating the circuit.  Every circuit of size $s$ for $F$ has width at
+most $s+n$.
+
+\begin{theorem}[Distinguished-point fixed powers]\label{thm:distinguished}
+Let $n\geq3$, let $F$ have a circuit with $s$ gates and width $w$, and put
+$A=s+n^3$.  For every $T\geq0$ and every power of two $1\leq L\leq N/2$,
+\begin{equation}\label{eq:dp-tradeoff}
+  \CC(F^T)=O\!\left(nLA+\frac{nN}{L}\right),
+\end{equation}
+by a circuit of width $O(n+w)$.  Consequently, every fixed power satisfies
+\begin{equation}\label{eq:dp-optimized}
+  \CC(F^T)=O\!\left(n\sqrt{NA}\right),
+\end{equation}
+again by circuits of width $O(n+w)\leq O(n+s)$.
+\end{theorem}
+
+\begin{proof}
+Take $H$, $K=16nL-1$, and $x_i=F^i(x)$ as in \cref{lem:distinguished}.  If
+$T<K$, unroll $T$ copies of $F$, using $Ts\leq16nLs$ gates and width
+$O(n+w)$.  Assume $T\geq K$ and hardwire the payloads $z_h=F^{T-K}(h)$ for
+$h\in H$ and the residues $R(\lambda)=(T-K)\bmod\lambda$ for
+$1\leq\lambda\leq K$.  Each phase below is a straight-line program on an
+$O(n)$-bit configuration; stage indices are hardwired, so no counter is
+needed.  All index fields have $O(n)$ bits, since $K<8nN$.
+\begin{enumerate}
+\item \emph{Scan.}  The configuration is $(u,\phi,d,c)$, initially
+  $(x,0,0,0)$.  At stage $i=0,1,\ldots,K$: if $\phi=0$ and $u\in H$, set
+  $\phi=1$, $d=i$ and $c=u$; then, if $i<K$, replace $u$ by $F(u)$.
+  Finally $u=x_K$, and if $\phi=1$, then $d$ is the first index with
+  $x_d\in H$ and $c=x_d$.  Each stage costs $s+O(n^3)=O(A)$ gates.
+\item \emph{Lookup.}  Put $z=\bigvee_{h\in H}[c=h]\cdot z_h$, bitwise.
+  For each key this is an $n$-bit equality test and $O(n)$ further
+  gates, $O(n|H|)=O(nN/L)$ in total, in one pass over the keys.
+\item \emph{Correction.}  Starting from $v=z$, at stage $i=0,\ldots,K-1$
+  replace $v$ by $F(v)$ exactly when $i\geq d$.  This applies $F$ exactly
+  $K-d$ times, so if $\phi=1$, then as in \cref{eq:identity},
+  $v=F^{K-d}(F^{T-K}(x_d))=F^T(x)$.
+\item \emph{Period.}  In a separate register, starting from $w=x_K$, at
+  stage $j=1,\ldots,K$ replace $w$ by $F(w)$, and record $\lambda=j$ the
+  first time $w=x_K$; use the dummy value $\lambda=1$ if this never
+  happens.  The register $v$ from the correction step is left unchanged.
+\item \emph{Residue and cycle walk.}  Read $r=R(\lambda)$ by a linear scan
+  of the $K$ table entries, $O(nK)$ gates.  Starting from $v'=x_K$, at
+  stage $i=0,\ldots,K-1$ replace $v'$ by $F(v')$ exactly when $i<r$.
+\item \emph{Output.}  Return $v$ if $\phi=1$ and $v'$ otherwise.
+\end{enumerate}
+If $\phi=1$ the output is correct by step~3.  If $\phi=0$, then by
+\cref{lem:distinguished} two of $x_0,\ldots,x_K$ coincide.  The orbit of
+$x$ then has tail length $\mu$ and cycle length $\lambda^*$ with
+$\mu+\lambda^*\leq K$.  Hence $x_K$ lies on the cycle, step~4 returns
+$\lambda=\lambda^*$, and step~5 gives $v'=F^{K+r}(x)$ with
+$K+r\equiv T\pmod{\lambda^*}$ and $K+r,T\geq\mu$, so $v'=F^T(x)$.  As in
+\cref{sec:fixed}, both branches are evaluated on every input, with dummy
+values where needed.  No division is performed.
+
+The four walks cost $O(KA)=O(nLA)$ gates, the lookup $O(nN/L)$, and the
+residue scan and selections $O(nK)=O(n^2L)$, which is absorbed.  This
+proves \cref{eq:dp-tradeoff}.  Only $O(1)$ configurations, the
+$O(n)$-bit Horner state of \cref{lem:distinguished}, and one evaluation of
+$F$ are live at any time, which gives width $O(n+w)$.
+
+For \cref{eq:dp-optimized}, if $A\leq N$ let $L$ be the largest power of
+two with $L\leq\sqrt{N/A}$.  Then $L\leq\sqrt{N/n^3}\leq N/2$, so
+$nLA\leq n\sqrt{NA}$ and $nN/L<2n\sqrt{NA}$.  If $A>N$, scan a complete
+truth table of $F^T$: for each state $x'$ an $n$-bit equality test with
+the input and $O(n)$ gates to OR in the stored value.  This uses
+$O(nN)\leq O(n\sqrt{NA})$ gates and width $O(n)$.
+\end{proof}
+
+\begin{remark}[Comparison with sorting-based lookup]\label[remark]{rem:dp-compare}
+For $A\leq N$, \cref{eq:dp-optimized} improves \cref{eq:optimized} by a
+factor of order $\sqrt n$, with the same $A=s+n^3$.  The saving comes from
+replacing a sort of $\Theta(N/L+L)$ records, at $O(n^3)$ gates per record,
+by one comparison per key at $O(n)$ gates; the price is a walk of length
+$16nL$ in place of $2L$.  This is not the best known gate count.  An
+$O(R\log R)$-comparator network~\cite{AKS83} in \cref{lem:lookup,lem:repeat}
+reduces the sorting cost to $O(n^2R)$ and gives
+$O(A_2+n\sqrt{NA_2})$ with $A_2=s+n^2$ (\cref{thm:aks}), which is smaller than
+\cref{eq:dp-optimized} by up to a factor $\sqrt n$ when $s<n^3$.  The
+$n^3$ term here is the cost of the hash, not of lookup.  The advantage of
+distinguished points is structural: no sorting network is used, and the
+width is $O(n+s)$.  The sorting network on $\Theta(N/L+L)$ records used
+in \cref{sec:fixed} manipulates that many records together; we do not know how
+to evaluate it in width much below $\sqrt N$ at the balanced choice of $L$.
+Equivalently, \cref{thm:distinguished} describes a machine with $O(n+s)$
+bits of read/write memory and a read-only data stream that it reads in one
+left-to-right pass, performing $O(n\sqrt{NA})$ bit operations.  The
+stream must repeat the data that the machine cannot retain: each of the
+$O(K)$ membership tests needs the $2n$ hash coefficients, which occupy
+$\Theta(n^2)$ bits, and each of the $O(K)$ evaluations of $F$ needs a gate
+list of $O(s\log s)$ bits.  The stream therefore consists of one block of
+coefficients and one copy of the gate list of $F$ in front of every stage
+of the walks, followed at the appropriate point by the key--payload pairs
+and the residue table.  Its length is
+$O(nN/L+nL(n^2+s\log s))$, which is $O(n\sqrt{NA}\log s)$ at the balanced
+choice of $L$.  If the machine may instead reread a fixed region of its
+input, one copy of the coefficients and of the gate list suffices, and the
+stream has length $O(nN/L+n^2+s\log s)$.  The circuit-width statement
+needs neither variant, since its constants are hardwired.
+\end{remark}
+
+\subsection{Reversible circuits with few ancillas}
+
+A reversible circuit uses NOT, CNOT and Toffoli gates on a fixed set of
+wires.  A circuit \emph{computes} $G:\bits^n\to\bits^q$ with $a$ ancillas
+if it maps $(x,y,0^a)$ to $(x,y\oplus G(x),0^a)$ for all $x$ and $y$.
+Any Boolean circuit with $g$ gates gives such a circuit with $O(g+q)$
+gates and $g$ ancillas: compute every gate into a fresh zero wire, copy
+the outputs with CNOTs, and run the first part backwards.
+A fan-in-two gate into a fresh wire needs $O(1)$ reversible gates, since
+every Boolean function of two bits is a polynomial of degree at most two
+over $\mathbb F_2$.  Applied to \cref{thm:distinguished} directly, this
+gives as many ancillas as gates.  Bennett's pebbling of the four walks
+removes almost all of them.
+
+A walk with $K$ stages is a sequence of configurations $c_0,\ldots,c_K$
+with $c_{i+1}=\mathrm{step}_i(c_i)$.  A \emph{move} XORs
+$\mathrm{step}_i(c_i)$ into a register, which either creates $c_{i+1}$
+from zeros or clears it.  Let $k\geq2$ and $m=\ceil{\log_kK}$, and pad the
+walk to $k^m$ stages with identity steps.  To advance $k^j$ stages from a
+held configuration, advance $k$ times by $k^{j-1}$ stages, and then undo
+the first $k-1$ of these advances in reverse order.  If $M(j)$ moves
+suffice for level $j$, then $M(j)=(2k-1)M(j-1)$ and $M(0)=1$, so
+$M(m)=(2k-1)^m$.  At most $(k-1)m+1$ configurations besides $c_0$ are
+held at once~\cite{Bennett89,LS90}.  Put
+\[
+  \varepsilon_k=\log_k(2k-1)-1=\log_k\!\left(2-\tfrac1k\right)
+  \in\left(0,\tfrac1{\log k}\right].
+\]
+Since $k^{m-1}<K$,
+\[
+  (2k-1)^m=(k^m)^{1+\varepsilon_k}<(kK)^{1+\varepsilon_k}\leq k^2K^{1+\varepsilon_k}.
+\]
+For example, $\varepsilon_2=\log3-1\approx0.585$, $\varepsilon_4\approx0.404$
+and $\varepsilon_{16}\approx0.238$.
+
+\begin{theorem}[Reversible fixed powers]\label{thm:reversible}
+Let $n\geq3$, $\CC(F)\leq s$, $A=s+n^3$, and let $k\geq2$ be an integer.
+For every $T\geq0$ and every power of two $1\leq L\leq N/2$, a reversible
+circuit computes $F^T$ with
+\[
+  O\!\left(\frac{nN}{L}+k^2(nL)^{1+\varepsilon_k}A\right)
+  \text{ gates and }
+  O\!\left(kn\ceil{\frac{n}{\log k}}+s\right)\text{ ancillas.}
+\]
+\end{theorem}
+
+\begin{proof}
+Use the phases of \cref{thm:distinguished}.  Each of the four walks has
+at most $K+1=16nL$ stages on configurations of $b=O(n)$ bits.
+
+\emph{One move.}  For the scan, a move XORs $\mathrm{step}_i(c)$ into a
+register $c'$.  Compute the membership bit of $u$ by Horner's rule,
+keeping all $t=2n$ intermediate field elements; each product is formed
+by $n^2$ Toffoli gates into a $(2n-1)$-bit coefficient register, reduced
+by $O(n^2)$ CNOTs, after which the coefficient register is cleared by the
+same Toffoli gates.  This costs $O(n^3)$ gates and $O(n^2)$ ancillas, all
+cleared after the bit is copied.  Then XOR $F(u)$ into the $u$-field of
+$c'$, with $O(s)$ gates and $s$ ancillas, and XOR the $O(n)$-gate updates
+of $\phi$, $d$ and $c$ into $c'$.  Finally clear the membership bit.  A
+move therefore costs $O(A)$ gates with $O(s+n^2)$ reusable ancillas.
+Moves of the other walks cost $O(s+n)$ gates and $O(s+n)$ ancillas; a
+conditional application of $F$ is computed into a temporary register,
+selected bitwise into $c'$, and then uncomputed.
+
+\emph{Walks.}  By the pebbling count, each walk uses
+$(2k-1)^m\leq k^2(16nL)^{1+\varepsilon_k}$ moves, hence
+$O(k^2(nL)^{1+\varepsilon_k}A)$ gates, and at most $(k-1)m+2$
+configuration registers.  Since $K<8nN$,
+$m=\ceil{\log_kK}=O(\ceil{n/\log k})$, so the registers use
+$O(kn\ceil{n/\log k})$ wires.  Afterwards only $c_0$ and $c_K$ are held.
+
+\emph{Assembly.}  Run the scan, keeping its final configuration.  For the
+lookup, for each key $h$ compute $[c=h]$ into one ancilla with $O(n)$
+gates and $O(n)$ ancillas, CNOT it into the positions of the one bits of
+$z_h$ in a fresh register, and clear it.  Copy the needed fields with
+CNOTs and run the correction and period walks.  Read the residue by the
+same comparison scan over the $K$ table entries, using $O(nK)$ gates, and
+run the cycle walk.  For each output bit, two Toffoli gates XOR the bit
+selected by $\phi$ into $y$.  Finally run everything except the output
+step backwards, which clears every ancilla.  If $T<K$, pebble the walk
+of $T$ applications of $F$ instead.
+
+The lookups cost $O(nN/L)$ gates.  The residue scans and copies cost
+$O(nK)=O(n^2L)$, which is absorbed by the walks because $A\geq n^3$.
+Besides the pebbling registers, $O(1)$ configurations and $O(s+n^2)$
+workspace ancillas are used.
+\end{proof}
+
+\begin{corollary}[Ancilla--gate tradeoffs]\label[corollary]{cor:reversible}
+Under the assumptions of \cref{thm:reversible}, write $\varepsilon=\varepsilon_k$
+and assume $A\leq N/(k^2n)$.  A reversible circuit computes every fixed
+power $F^T$ with
+\[
+  O\!\left(k\,n^{1+\varepsilon/2}A^{1/2}N^{(1+\varepsilon)/(2+\varepsilon)}\right)
+\]
+gates and $O(kn\ceil{n/\log k}+s)$ ancillas.  In particular:
+\begin{enumerate}
+\item for $k=2$, with $O(n^2+s)$ ancillas, the gate count is
+  $N^{\log3/(1+\log3)}\poly(n)A^{1/2}$, where
+  $\log3/(1+\log3)\approx0.6131$;
+\item for fixed $k$, the exponent of $N$ is
+  $\tfrac12+\varepsilon_k/(2(2+\varepsilon_k))<\tfrac12+1/(4\log k)$, with
+  $O_k(n^2+s)$ ancillas;
+\item for $k=n$, with $O(n^3/\log n+s)$ ancillas, the gate count is
+  $N^{1/2}\,2^{n/(4\log n)}\poly(n)A^{1/2}=N^{1/2+O(1/\log n)}A^{1/2}$.
+\end{enumerate}
+A reversible circuit with $O(nN)$ gates and $O(n)$ ancillas computes
+$F^T$ for every $F$, which covers larger $A$.
+\end{corollary}
+
+\begin{proof}
+Let $L$ be the largest power of two with
+$L\leq\Lambda:=(N/(k^2n^{\varepsilon}A))^{1/(2+\varepsilon)}$.  The
+assumption on $A$ gives $\Lambda\geq1$, and $\Lambda\leq\sqrt N\leq N/2$.
+At $L=\Lambda$ the two terms of \cref{thm:reversible} agree up to a
+constant, and halving $L$ changes them by constant factors.  So the gate
+count is
+\[
+  O\!\left(\frac{nN}{\Lambda}\right)
+  =O\!\left(nN^{(1+\varepsilon)/(2+\varepsilon)}
+     (k^2n^\varepsilon A)^{1/(2+\varepsilon)}\right),
+\]
+which is at most the displayed bound because $k^2n^{\varepsilon}A\geq1$
+and $1/(2+\varepsilon)\leq1/2$.  The exponent of $N$ equals
+$\tfrac12+\varepsilon/(2(2+\varepsilon))$, and
+$\varepsilon_k\leq1/\log k$.  For $k=2$,
+$(1+\varepsilon_2)/(2+\varepsilon_2)=\log3/(1+\log3)$.  For $k=n$,
+$N^{\varepsilon/(2(2+\varepsilon))}\leq N^{\varepsilon/4}\leq2^{n/(4\log n)}$
+and $kn\ceil{n/\log k}=O(n^3/\log n)$.  For the last claim, scan the
+truth table of $F^T$: for each state $x'$, compute $[x=x']$ into an
+ancilla with $O(n)$ gates and $O(n)$ ancillas, CNOT it into the one bits
+of $F^T(x')$ in $y$, and clear it.
+\end{proof}
+
+\begin{corollary}[In-place permutations]\label[corollary]{cor:in-place}
+Let $P$ be a permutation of $\bits^n$ with $\CC(P)\leq s$.  For each
+integer $k\geq2$ satisfying the hypothesis of \cref{cor:reversible},
+there is a reversible circuit mapping $(x,0^{n+a})$ to $(P(x),0^{n+a})$,
+after a fixed relabelling of wires, with $a=O(kn\ceil{n/\log k}+s)$ and
+the gate count of \cref{cor:reversible} plus $O(s+n)$.
+\end{corollary}
+
+\begin{proof}
+First XOR $P(x)$ into a zero register with $O(s+n)$ gates and $s$
+temporary ancillas.  Then apply the circuit of \cref{cor:reversible} for
+$P^{-1}=P^{\ord(P)-1}$ from the new register into the input register.  It
+XORs $P^{-1}(P(x))=x$ into $x$ and leaves zero there.  Relabel the two
+$n$-wire registers.
+\end{proof}
+
+\begin{remark}[Lower bounds and the pebbling overhead]\label[remark]{rem:pebbling}
+A reversible circuit with $g$ gates yields a Boolean circuit with $O(g)$
+gates, whatever the number of ancillas: each reversible gate changes one
+wire by a fan-in-at-most-three function.  So \cref{thm:lower} applies
+to reversible circuits with any number of ancillas, and the exponent
+$1/2$ cannot be lowered for them either.  Whether $N^{1/2}\poly(n,s)$
+gates are possible with $\poly(n,s)$ ancillas is open.  The overhead
+$N^{\Theta(\varepsilon_k)}$ comes only from pebbling the four walks.
+Bennett's pebble game on a path, which models any construction storing
+only whole configurations of a walk, was analyzed exactly by
+Knill~\cite{Knill95}, and Li, Tromp, and Vit\'anyi~\cite{LTV98} show that
+Bennett's strategy reaches the greatest distance for a given number of
+pebbles.  Such results limit this strategy class only.  They give no
+circuit lower bound, since a reversible circuit need not simulate a walk
+configuration by configuration.
+\end{remark}
+
 \section{Lean formalization}\label{sec:lean}
 
 The accompanying \texttt{lean/} project proves existence of actual Boolean
@@ -5733,7 +6096,11 @@ the exponent of the unit group
 \texttt{pow\_eq\_pow\_of\_modEq}), and the exact powers of two in
 \cref{tab:crypto} (\texttt{crypto\_table\_entries}).  The other
 cryptographic statements and the literature discussions are outside the
-mechanized boundary.  Kernel checking establishes neither historical priority nor
+mechanized boundary.  For \cref{sec:distinguished}, Lean checks the scan, lookup, correction,
+period walk, cycle walk and output semantics under the checkpoint-hitting
+hypothesis.  The period walk uses its own register.  The hash construction,
+gate counts, width and reversible circuits remain prose results.
+Kernel checking establishes neither historical priority nor
 independent fidelity to every intended model convention.
 
 \section{Conclusion and open questions}\label{sec:scope}
@@ -6072,6 +6439,44 @@ Stasys Jukna.
 \newblock \emph{Boolean Function Complexity: Advances and Frontiers}.
 \newblock Algorithms and Combinatorics 27, Springer, 2012.
 \newblock \href{https://doi.org/10.1007/978-3-642-24508-4}{doi:10.1007/978-3-642-24508-4}.
+
+\bibitem{BR94}
+Mihir Bellare and John Rompel.
+\newblock Randomness-efficient oblivious sampling.
+\newblock In \emph{Proceedings of the 35th Annual Symposium on Foundations of
+Computer Science (FOCS)}, pages 276--287, 1994.
+\newblock \href{https://doi.org/10.1109/SFCS.1994.365687}{doi:10.1109/SFCS.1994.365687}.
+
+\bibitem{Bennett89}
+Charles H. Bennett.
+\newblock Time/space trade-offs for reversible computation.
+\newblock \emph{SIAM Journal on Computing}, 18(4):766--776, 1989.
+\newblock \href{https://doi.org/10.1137/0218053}{doi:10.1137/0218053}.
+
+\bibitem{LS90}
+Robert Y. Levine and Alan T. Sherman.
+\newblock A note on Bennett's time-space tradeoff for reversible computation.
+\newblock \emph{SIAM Journal on Computing}, 19(4):673--677, 1990.
+\newblock \href{https://doi.org/10.1137/0219046}{doi:10.1137/0219046}.
+
+\bibitem{Knill95}
+Emanuel Knill.
+\newblock An analysis of Bennett's pebble game.
+\newblock Preprint, 1995.
+\newblock \href{https://arxiv.org/abs/math/9508218}{arXiv:math/9508218}.
+
+\bibitem{LTV98}
+Ming Li, John Tromp, and Paul Vit\'anyi.
+\newblock Reversible simulation of irreversible computation.
+\newblock \emph{Physica D}, 120(1--2):168--176, 1998.
+\newblock \href{https://doi.org/10.1016/S0167-2789(98)00052-9}{doi:10.1016/S0167-2789(98)00052-9}.
+\newblock Preprint: \href{https://arxiv.org/abs/quant-ph/9703009}{arXiv:quant-ph/9703009}.
+
+\bibitem{vOW99}
+Paul C. van Oorschot and Michael J. Wiener.
+\newblock Parallel collision search with cryptanalytic applications.
+\newblock \emph{Journal of Cryptology}, 12(1):1--28, 1999.
+\newblock \href{https://doi.org/10.1007/PL00003816}{doi:10.1007/PL00003816}.
 
 \bibitem{IW97}
 Russell Impagliazzo and Avi Wigderson.

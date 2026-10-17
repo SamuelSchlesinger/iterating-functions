@@ -1802,6 +1802,271 @@ information, control, and workspace; these bits are counted even when an
 abstract machine model calls part of its storage read-only.  A general
 polynomial-space machine can have far more than $n+O(\log n)$ configuration
 bits, so the corollary gives no such input-length bound for all of PSPACE.
+For machines whose only storage is the input tape,
+\cref{sec:inplace} replaces the width $b$ by the number of reachable
+configurations.
+
+\subsection{In-place Turing machines}\label{sec:inplace}
+
+\Cref{cor:halting} charges the complete configuration width $b$.  For a
+Turing machine whose only storage is its input tape, the configurations
+actually visited can be far fewer than $2^b$: a ternary tape alphabet
+already needs $b\geq2n$ bits, while only $3^n\poly(n)$ configurations
+exist.  Combining a locality bound for the step map with
+\cref{thm:invariant} on the reachable configurations gives bounds in
+terms of the number of reachable configurations, also for machines that
+need not halt, and the exponent is attained by an explicit two-head
+binary machine.  The results of this subsection are not mechanized in
+the Lean development.
+
+\subsubsection{Model and step circuit}
+
+An \emph{in-place machine} $M=(Q,\Gamma,h,\delta,q_0,Q_{\mathrm{halt}})$
+has one tape whose cells are exactly the $n$ input cells, a finite tape
+alphabet $\Gamma\supseteq\bits$, and $h\geq1$ heads on that tape.  In
+one step the control reads the state $q$, the $h$ symbols under the
+heads, and for each head whether it is on cell~$1$ and whether it is on
+cell~$n$.  The transition function $\delta$ returns a new state, a
+symbol to write under each head, and a move in $\{-1,0,+1\}$ for each
+head; a move past either end leaves the head in place.  When several
+heads are on the same cell, the head with the largest index determines
+the written symbol.  Halting states are absorbing: on them $\delta$
+writes the symbols read and does not move or change state.  Nothing is
+assumed about running time.
+
+A configuration is $(w,p_1,\ldots,p_h,q)$ with $w\in\Gamma^n$,
+$p_j\in[n]$, and $q\in Q$.  Encode it cell by cell in
+\begin{equation}\label{eq:config-bits}
+  c=c_M(n)=n\ceil{\log|\Gamma|}+h\ceil{\log n}+\ceil{\log|Q|}
+\end{equation}
+bits, so that there are $|\Gamma|^n\,n^h\,|Q|$ valid encodings.  Let
+$F_M:\bits^c\to\bits^c$ be the one-step map, extended to invalid
+encodings by the circuit below; valid encodings are mapped to valid
+encodings.  An input $x\in\bits^n$ is identified with the initial
+configuration $\iota(x)=(x,1,\ldots,1,q_0)$; the map $\iota$ only
+inserts constants.  Let
+$\operatorname{Reach}_M(n)$ be the number of configurations
+$F_M^t(\iota(x))$ with $t\geq0$ and $x\in\bits^n$.  Write $\CC(\delta)$
+for the circuit size of $\delta$ on its
+$O(\log|Q|+h\log|\Gamma|+h)$ input bits.
+
+\begin{lemma}[Step circuit]\label[lemma]{lem:inplace-step}
+$\CC(F_M)=O(hn+\CC(\delta))$, where the constant depends only on
+$|\Gamma|$.
+\end{lemma}
+\begin{proof}
+Decode each head position into a one-hot vector $e^{(j)}_1,\ldots,
+e^{(j)}_n$ with $O(n)$ gates.  The symbol under head $j$ is
+$\bigvee_i(e^{(j)}_i\wedge w_i)$, computed bitwise in $O(n)$ gates, and
+the two end flags are $e^{(j)}_1$ and $e^{(j)}_n$.  One copy of a circuit
+for $\delta$ produces the new state, the written symbols
+$\sigma'_1,\ldots,\sigma'_h$, and the moves.  The new content of cell $i$
+is obtained from $w_i$ by $h$ successive multiplexers, the $j$th
+selecting $\sigma'_j$ when $e^{(j)}_i=1$, so that the largest index
+wins; this costs $O(h)$ gates per cell.  Each head update is a clamped
+increment or decrement of a $\ceil{\log n}$-bit word, $O(\log n)$ gates.
+\end{proof}
+
+This is the only place where the structure of Turing machines is used.
+A cell changes only if a head is on it, which is why the step map is
+small even though it acts on $\Theta(n)$ bits.
+
+\subsubsection{Circuit bounds}
+
+\begin{theorem}[In-place machines]\label{thm:inplace}
+Let $M$ be an in-place machine, let $c$ be as in
+\cref{eq:config-bits}, and put $A_M=hn+\CC(\delta)+c^3$ and
+$R=\operatorname{Reach}_M(n)$.  For every $T\geq0$ the map
+$x\mapsto F_M^T(\iota(x))$ on $\bits^n$ has a circuit of size
+\[
+  O\!\left(A_M+c^{3/2}\sqrt{R\,A_M}\right).
+\]
+Always $R\leq|\Gamma|^n n^h|Q|$.  If $M$ halts within $t(n)$ steps on
+every input in $\bits^n$, then also $R\leq2^n(t(n)+1)$.
+\end{theorem}
+\begin{proof}
+The set $S$ of configurations reachable from $\iota(\bits^n)$ is
+forward invariant under $F_M$ and has $|S|=R$.  Apply
+\cref{thm:invariant} to $F_M$ on $c$ bits, with $s=O(hn+\CC(\delta))$ by
+\cref{lem:inplace-step}, and choose
+$L=\max\{1,\ceil{\sqrt{c^3R/A_M}}\}$ as in \cref{eq:L-choice}, with $N$
+replaced by $R$; then $1\leq L\leq\ceil{\sqrt R}\leq 2^c$.  Precompose
+with $\iota$.  Every valid configuration is counted in the first bound
+on $R$.  Under the time bound, each trajectory from $\iota(x)$ visits
+at most $t(n)+1$ configurations, because halting configurations are
+absorbing.
+\end{proof}
+
+For constant $h$, $|Q|$ and $|\Gamma|$ we have $c=O(n)$ and $A_M=O(n^3)$,
+so the two bounds on $R$ give
+\begin{equation}\label{eq:inplace-bounds}
+  O\!\left(n^{3+h/2}\,|\Gamma|^{n/2}\right)
+  \qquad\text{and}\qquad
+  O\!\left(n^3\,2^{n/2}\sqrt{t(n)+1}\right).
+\end{equation}
+The circuit depends on $M$, $n$ and $T$; the bound does not depend on $T$.
+
+\begin{corollary}[Predicates decided in place]
+\label[corollary]{cor:inplace-decide}
+Let $M$ be an in-place machine with constant $h$, $|Q|$ and $|\Gamma|$,
+not necessarily halting.  Whether $M$ halts on $x$, whether it accepts
+$x$, and its final tape when it halts (arbitrary otherwise) all have
+circuits of size $O(n^{3+h/2}|\Gamma|^{n/2})$.  In particular, over a
+binary tape alphabet these functions have circuits of size
+$2^{n/2+O(\log n)}$, and over a ternary alphabet of size
+$2^{0.7925n+O(\log n)}$.
+\end{corollary}
+\begin{proof}
+Let $T^*=|\Gamma|^n n^h|Q|$, the number of valid configurations.  A run
+that halts does so within $T^*-1$ steps, since the configurations
+before halting are distinct.  A run that has not halted after $T^*$
+steps has repeated a configuration; it then cycles forever, and the
+cycle contains no halting configuration, because a halting configuration
+on a cycle is a fixed point.  So $F_M^{T^*}(\iota(x))$ is a halting
+configuration exactly when $M$ halts on $x$, and it is then the final
+configuration.  Apply \cref{thm:inplace} with $T=T^*$ and read off the
+state and the tape.  Finally $3^{1/2}=2^{0.7925\ldots}$.
+\end{proof}
+
+Unlike \cref{cor:halting}, the bound is governed by the reachable
+configurations rather than by the encoding width: for a ternary
+alphabet $c\geq2n$, so the width bound would give nothing below the
+truth table.  For $|\Gamma|\geq4$ the alphabet bound is no better than
+the $O(2^n/n)$ truth-table bound, and the reachable-set bound is the one
+to use.  The time bound in \cref{eq:inplace-bounds} beats direct
+unrolling, which costs $O(n\,t(n))$ gates, only when
+$t(n)\geq2^n\poly(n)$.  A machine with a separate read-only input and
+$S$ work cells has circuits of size $2^{O(S)}\poly(n)$ by repeated
+squaring of its configuration graph; this is better than the present
+bounds whenever $S=o(n)$, and the bounds here are specific to the regime
+in which the input tape is the work space.
+
+\paragraph{Several heads.}
+The heads cost the factor $n^{h/2}$ in the alphabet bound.  For a binary
+alphabet, $2^{n/2}n^{h/2}\poly(n)$ is below the truth-table bound
+$2^n/n$ exactly when $h\log n\leq n(1-o(1))$, that is, for
+$h=o(n/\log n)$ heads.  With $h=\Theta(n)$ heads the bound is vacuous,
+as it should be: $n$ heads can hold $n$ bits of information outside
+the tape.  The model is in-place in the tape, not in the heads.
+
+\subsubsection{Sharpness}
+
+The permutation $P_n$ of \cref{eq:permutation} can be run in place, and
+the counting lower bound of \cref{thm:lower} then transfers to the
+machine.
+
+\begin{proposition}[A two-head binary machine with a hard power]
+\label[proposition]{prop:inplace-hard}
+There is an in-place machine $M^*$ with two heads, tape alphabet $\bits$
+and a constant number of states, and for each even $n\geq2$ an integer
+$\tau=\tau(n)=\Theta(n)$, such that:
+\begin{enumerate}
+\item for every $x\in\bits^n$, $F_{M^*}^{\tau}(\iota(x))=\iota(P_n(x))$;
+\item $\operatorname{Reach}_{M^*}(n)\leq2^n\tau$;
+\item for all sufficiently large even $n$,
+\[
+  \Omega\!\left(\frac{2^{n/2}}{n}\right)
+  \leq\max_{T\geq0}\CC\bigl(x\mapsto F_{M^*}^T(\iota(x))\bigr)
+  \leq O\!\left(n^{7/2}2^{n/2}\right).
+\]
+\end{enumerate}
+\end{proposition}
+\begin{proof}
+Let $n=2k$.  The input is $x=(a,b)$ with $a$ in cells $1,\ldots,k$ and
+$b$ in cells $k+1,\ldots,2k$, most significant bit first.  The state
+consists of a phase, a parity bit, and three flags $\mathit{lt}$,
+$\mathit{diff}$ and $\mathit{carry}$.  We design $\delta$ so that the
+moves of both heads and the changes of phase and parity depend only on
+the phase, the parity, and the end flags, never on symbols or flags;
+symbols and flags influence only what is written and how the flags are
+updated.  Consequently the sequence of head positions, phases and
+parities is the same for every input, and a round has an
+input-independent length $\tau$.  Head~2 never changes a symbol (it
+always writes what it reads), and head~1 changes symbols only in phases
+3 and~5, during which it is on cells $k+1,\ldots,2k$ and head~2 is on
+cells $1,\ldots,k$; so the write-conflict rule never matters.  Each
+phase below processes the cells under the heads in every step, and
+moves on to the next phase in the step in which its stopping condition
+is read.
+\begin{enumerate}
+\item \emph{Midpoint.}  Both heads start on cell $1$.  In each step
+  head~2 moves right and head~1 moves right when the parity bit is $0$;
+  the parity bit flips.  Stop when head~2 is on cell $2k$.  This takes
+  $2k-1$ moves of head~2, during which head~1 moves $k$ times, so it
+  stops on cell $k+1$.
+\item \emph{Rewind head~2.}  Move head~2 left until it is on cell $1$,
+  in $2k-1$ moves.  Set $\mathit{lt}=\mathit{diff}=0$.
+\item \emph{Compare.}  Heads~2 and~1 start on cells $1$ and $k+1$ and
+  move right in lockstep, stopping when head~1 is on cell $2k$, so that
+  they read the pairs $(a_i,b_i)$ for $i=1,\ldots,k$.  If
+  $\mathit{diff}=0$ and $a_i\neq b_i$, set $\mathit{diff}=1$ and
+  $\mathit{lt}=a_i$.  At the end, $\mathit{lt}=1$ exactly when $b<a$,
+  since the first differing bit decides the comparison.  Set
+  $\mathit{carry}=1$ and $\mathit{diff}=0$.
+\item \emph{Increment.}  Move both heads left in lockstep from cells
+  $(k,2k)$, stopping when head~2 is on cell $1$, so that head~1 visits
+  cells $2k,2k-1,\ldots,k+1$.  At each cell head~1 writes
+  $b_i\oplus\mathit{carry}$ if $\mathit{lt}=1$ and $b_i$ otherwise, and
+  $\mathit{carry}$ becomes $b_i\wedge\mathit{carry}$.  If $\mathit{lt}=1$
+  the block now holds $b+1$; there is no overflow because
+  $b+1\leq a\leq2^k-1$.
+\item \emph{Compare again.}  As in phase~3, the heads move right from
+  cells $1$ and $k+1$ to cells $k$ and $2k$; set $\mathit{diff}=1$ at the
+  first $i$ with $a_i\neq b'_i$, where $b'$ is the current second block,
+  and leave $\mathit{lt}$ unchanged.  At the end, $\mathit{diff}=0$
+  exactly when $b'=a$.
+\item \emph{Zero.}  As in phase~4, head~1 visits cells
+  $2k,\ldots,k+1$ and writes $0$ if $\mathit{lt}=1$ and
+  $\mathit{diff}=0$, and rewrites the symbol read otherwise.
+\item \emph{Return.}  Move head~1 left until it is on cell $1$, in $k$
+  moves; head~2 is already there.  Clear the flags and enter $q_0$.
+\end{enumerate}
+Counting the stopping step of each phase, the round takes
+$\tau=9k+O(1)=\Theta(n)$ steps, the same for every input.  If $b\geq a$, which
+includes every state with $a=0$, then $\mathit{lt}=0$ and nothing is
+changed.  If $b<a$, the second block becomes $b+1$, and then $0$ exactly
+when $b+1=a$; that is, it becomes $(b+1)\bmod a$.  The first block is
+never changed.  Comparing with \cref{eq:permutation}, the tape after one
+round is $P_n(x)$, both heads are on cell $1$, and the state is $q_0$,
+which is item~1.
+
+For item~2, item~1 shows that every configuration reachable from
+$\iota(x)$ has the form $F_{M^*}^j(\iota(y))$ with $y=P_n^i(x)$ and
+$0\leq j<\tau$.  There are at most $2^n\tau$ such configurations.
+
+For item~3, item~1 gives $F_{M^*}^{\tau T}(\iota(x))=\iota(P_n^T(x))$.
+The tape bits of this configuration are $P_n^T(x)$, so a circuit for
+$x\mapsto F_{M^*}^{\tau T}(\iota(x))$ computes $P_n^T$ as a projection,
+and \cref{thm:lower} supplies $T$ with
+$\CC(P_n^T)=\Omega(2^{n/2}/n)$.  For the upper bound apply
+\cref{thm:inplace} with $h=2$, $|\Gamma|=2$, $\CC(\delta)=O(1)$,
+$c=n+O(\log n)$ and $R\leq2^n\tau=O(n2^n)$:
+$O(c^{3/2}\sqrt{RA_M})=O(n^{3/2}\cdot n^{1/2}2^{n/2}\cdot n^{3/2})
+=O(n^{7/2}2^{n/2})$.
+\end{proof}
+
+The alphabet bound of \cref{thm:inplace} gives $O(n^4 2^{n/2})$ here;
+the reachable-set bound is slightly better.  Both match the lower bound
+in the exponent.  With a single head the same permutation can be run in
+place using a second marker track, that is, with $\Gamma=\bits^2$ and
+$\tau=\Theta(n^2)$; we omit the details.  The alphabet bound is then
+$2^n\poly(n)$, and only the reachable-set bound
+$\sqrt{2^n\tau}\,\poly(n)=2^{n/2}\poly(n)$ matches the lower bound.
+
+As for $P_n$ itself, the hard exponents of $M^*$ are long, and its
+iterator with a short time input is easy.  For an $m$-bit $t$ write
+$t=\tau T+\rho$ with $0\leq\rho<\tau$; dividing by the fixed integer
+$\tau$ costs $O(m\log n)$ gates.  Then
+$F_{M^*}^t(\iota(x))=F_{M^*}^{\rho}(\iota(P_n^T(x)))$: compute
+$P_n^T(x)$ with the iterator of \cref{eq:easy-iterator}, generate the
+$\tau$ configurations of the next round with $\tau$ copies of
+$F_{M^*}$, and select entry $\rho$.  This costs $\poly(n,m)$ gates, so
+every $T$ witnessing the lower bound in item~3 has
+$2^{\Omega(n)}$ bits, exactly as in \cref{cor:exponent-length}.
+
+Everything in this subsection is nonuniform.  The checkpoint payloads
+$F_M^{T-K}(h)$ may take time proportional to $T$ to compute, and no
+bound for a specific, efficiently described $T$ is obtained.
 
 \subsection{Synchronous and recurring queries}\label{sec:eventual-queries}
 

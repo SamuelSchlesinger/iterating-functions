@@ -20,6 +20,16 @@ The small-controller development checks fixed and variable-time powering
 for affine payloads, and for general composition-closed payload families
 with uniformly bounded circuit cost.
 
+The October 17 extensions also check the semantic core of distinguished-point
+evaluation, cycle-spectrum identities, the number of distinct powers, in-place
+machine bounds, forest duality, prime-cycle permutations, universal-map
+simulation, batched counter powers, sequential-squaring arithmetic, and the
+deterministic phase identities used in the black-box section. The table below
+distinguishes circuit constructions from semantic results and hypotheses.
+The manuscript's local distance-certificate characterization, SAT-based
+analyses, and SETH compiler obstruction are not formalized. Their underlying
+target and pairwise first-hit circuits are already checked.
+
 ```sh
 cd lean
 lake exe cache get
@@ -328,12 +338,14 @@ property. The hashed construction of `H`, the Bellare–Rompel existence
 argument, gate counts, circuit width, and the reversible and pebbling results
 are outside the Lean boundary.
 
-The AKS polynomial improvement is stated and proved in prose in the
-manuscript (Theorem `thm:aks`), but is not formalized; the mechanized
-bounds use Batcher networks. The full-state-space effective compiler is
-still a proposal in `REVIEW.md`, not formalized or asserted as a theorem
-in the manuscript. The paper's cryptographic discussion
-and literature comparisons remain prose arguments.
+The AKS polynomial improvement and depth-size tradeoff are proved in prose;
+the mechanized size bounds use Batcher networks. The preprocessing algorithm
+and its runtime are now a manuscript proposition (`prop:preprocessing`),
+but are not formalized. The sharp asymptotic constant, approximation bounds,
+and equivalences with E and PSPACE circuit lower bounds also remain prose.
+The cryptographic discussion is outside Lean except for the sequential-squaring
+arithmetic and numerical table entries listed above. Literature comparisons
+remain prose arguments.
 
 Pinned dependencies, also recorded in the Lake manifest:
 

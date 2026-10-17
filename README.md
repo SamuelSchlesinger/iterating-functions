@@ -1,6 +1,6 @@
 # Square-Root Circuit Bounds for Iterated Functions
 
-Preliminary research draft, October 16, 2026.
+Preliminary research draft, October 17, 2026.
 
 How large a Boolean circuit is needed to evaluate an arbitrarily distant
 iterate of a simple transition? For an n-bit map F with circuit size s, put
@@ -13,6 +13,9 @@ The paper also gives:
 
 - **Graph navigation:** cycle labels, transient depth, pair-input reachability,
   exact first hitting times, and complete visit descriptors in O(B) gates.
+- **Program analysis:** exact target-distance summaries, largest safe invariants,
+  and termination ranks at the same square-root scale. A successor equation
+  characterizes each summary, with a coNP-complete correctness check.
 - **Input times and batches:** an m-bit exponent costs O(min(m B, n B + n m));
   r independent starting states with a common fixed exponent cost
   O(r A + sqrt(r n^3 N A)), for 1 <= r <= N.
@@ -26,12 +29,22 @@ Omega(2^(n/2)/n), for exponents uniform modulo its order. This matches the
 upper bound's exponential scale. The counting argument identifies no explicit
 hard exponent; hard exponents for this family have exponentially many binary digits.
 
+Further extensions treat sharp constants and approximation, explicit exponent
+complexity, a permutation near the counting ceiling, AKS sorting, depth and
+width, reversible implementations, minimum checkpoint sets, and space-bounded
+machines. The black-box lower bounds specify their algorithm restrictions;
+the random-map results retain two unproved probabilistic hypotheses.
+
 These are nonuniform bounded-fan-in Boolean circuits, with every lookup,
 selection, and arithmetic gate charged. The general theorem bounds circuit
-size, not the preprocessing needed to find the hardwired tables. The sparse
+size. A separate construction analyzes preprocessing near the full state-space
+scale. Under SETH, no general deterministic uniform analyzer or exact summary
+compiler runs in 2^((1-epsilon)n) poly time for a fixed epsilon > 0, even on
+instances whose requested power has a tiny circuit. The sparse
 case additionally has a polynomial-time chart compiler from an explicit edit
-list. Lean checks the circuit bounds; the Python compiler's correctness and
-runtime and the finite-field application remain outside its checked boundary.
+list. Lean checks the core circuit bounds and selected extensions or semantic
+components; the [Lean guide](lean/README.md) states each boundary. The new
+certificate characterization and SETH reduction are prose proofs.
 
 ## Read and use
 
@@ -63,6 +76,7 @@ formulation remains unresolved. The recovered exponential-size permutation
 inverter is compatible with polynomial-size one-wayness.
 
 The paper's related-work sections credit the underlying constructions, and its
-provenance note describes AI assistance. Authorship and final attribution remain
-provisional; no submission has been made. Submission preparation notes are kept
-in the review record.
+provenance note credits Christian Reitwiessner's contributed extensions and
+formalizations and describes AI assistance. Authorship and final attribution
+remain provisional; no submission has been made. The review record identifies
+the integrated PRs and the combined validation.

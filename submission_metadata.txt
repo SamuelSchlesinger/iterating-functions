@@ -13,8 +13,8 @@ $A=s+n^3$ and $B=A+\sqrt{n^3 2^nA}$.  Every fixed iterate $F^T$ has a
 bounded-fan-in circuit of size $O(B)$, independently of the magnitude of
 $T\geq0$, without assuming injectivity.  The construction uses sparse
 checkpoints and sorting-based lookup, with every access and arithmetic gate
-charged.  It is nonuniform and gives no efficient preprocessing algorithm
-from a transition circuit.
+charged.  The circuit-size bound is nonuniform; constructing its hardwired
+data can require work exponential in the state width.
 
 For even $n$, an explicit linear-size permutation has almost all powers of
 complexity $\Omega(2^{n/2}/n)$ under a uniform exponent modulo its order.
@@ -22,17 +22,22 @@ This matches the upper bound's exponential scale, but identifies no explicit
 hard power; hard exponents necessarily have exponentially many binary digits.
 The upper-bound construction also gives $O(B)$-gate cycle labels, transient
 depth, pair-input reachability, exact first hitting times, and complete visit
-descriptors, together with input-time and shared batched versions.
+descriptors, together with input-time and shared batched versions.  Exact
+target-distance summaries have a local correctness equation, yielding
+compact safety invariants and termination ranks with coNP verification.
+Under SETH, general deterministic uniform analysis cannot save a fixed fraction of the
+state-width exponent, even when the requested powered map has a tiny circuit.
 
 Structured transitions admit stronger bounds.  A permutation differing from
 a counter at $r$ states has $O(n(r+1))$-gate signed fixed powers and navigation,
 and $O(n(r+m+1))$-gate iteration for an $m$-bit input time.  Its orbit chart
 can be constructed in polynomial time from an explicit edit list.  An
 autonomous $q$-bit controller with a $p$-bit affine payload gives
-$O(2^q(q+p^2))$-gate fixed powers.  Lean checks the circuit bounds; the
-edit-list compiler remains outside that boundary.  The checkpoint and block
+$O(2^q(q+p^2))$-gate fixed powers.  Lean checks these core circuit bounds;
+further extensions state their individual formalization boundaries.
+The checkpoint and block
 methods have established antecedents, and historical priority of these
 circuit formulations remains unresolved.
 
 STATUS
-Preliminary draft, October 16, 2026. Historical priority and final attribution require author review. See the provenance note and README.
+Preliminary draft, October 17, 2026. Historical priority and final attribution require author review. See the provenance note and README.

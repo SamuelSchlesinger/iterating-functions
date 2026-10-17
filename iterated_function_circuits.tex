@@ -51,7 +51,7 @@
 \title{Square-Root Circuit Bounds\\for Iterated Functions}
 % Author field is provisional and editable; no affiliation is assumed.
 \author{Samuel Schlesinger}
-\date{October 16, 2026\\[3pt]\small Preliminary draft}
+\date{October 17, 2026\\[3pt]\small Preliminary draft}
 
 \begin{document}
 \maketitle
@@ -62,8 +62,8 @@ $A=s+n^3$ and $B=A+\sqrt{n^3 2^nA}$.  Every fixed iterate $F^T$ has a
 bounded-fan-in circuit of size $O(B)$, independently of the magnitude of
 $T\geq0$, without assuming injectivity.  The construction uses sparse
 checkpoints and sorting-based lookup, with every access and arithmetic gate
-charged.  It is nonuniform and gives no efficient preprocessing algorithm
-from a transition circuit.
+charged.  The circuit-size bound is nonuniform; constructing its hardwired
+data can require work exponential in the state width.
 
 For even $n$, an explicit linear-size permutation has almost all powers of
 complexity $\Omega(2^{n/2}/n)$ under a uniform exponent modulo its order.
@@ -71,15 +71,20 @@ This matches the upper bound's exponential scale, but identifies no explicit
 hard power; hard exponents necessarily have exponentially many binary digits.
 The upper-bound construction also gives $O(B)$-gate cycle labels, transient
 depth, pair-input reachability, exact first hitting times, and complete visit
-descriptors, together with input-time and shared batched versions.
+descriptors, together with input-time and shared batched versions.  Exact
+target-distance summaries have a local correctness equation, yielding
+compact safety invariants and termination ranks with coNP verification.
+Under SETH, general deterministic uniform analysis cannot save a fixed fraction of the
+state-width exponent, even when the requested powered map has a tiny circuit.
 
 Structured transitions admit stronger bounds.  A permutation differing from
 a counter at $r$ states has $O(n(r+1))$-gate signed fixed powers and navigation,
 and $O(n(r+m+1))$-gate iteration for an $m$-bit input time.  Its orbit chart
 can be constructed in polynomial time from an explicit edit list.  An
 autonomous $q$-bit controller with a $p$-bit affine payload gives
-$O(2^q(q+p^2))$-gate fixed powers.  Lean checks the circuit bounds; the
-edit-list compiler remains outside that boundary.  The checkpoint and block
+$O(2^q(q+p^2))$-gate fixed powers.  Lean checks these core circuit bounds;
+further extensions state their individual formalization boundaries.
+The checkpoint and block
 methods have established antecedents, and historical priority of these
 circuit formulations remains unresolved.
 \end{abstract}
@@ -212,12 +217,17 @@ their encoding and decoding circuits.  Choosing $T=\ord(P)-1$ also recovers
 the earlier square-root permutation-inversion bound, compatible with
 polynomial-size one-wayness; see \cref{sec:one-way}.
 
-\Cref{sec:distinguished} replaces the sorting-based lookup by hashed
-distinguished points, so that only the first checkpoint on a trajectory is
-looked up.  This gives $O(n\sqrt{NA})$ gates by circuits of width
-$O(n+s)$, and reversible circuits for every fixed power with
-$N^{1/2+O(1/\log n)}A^{1/2}$ gates and $O(n^3/\log n+s)$ ancillas.
-These results are not formalized.
+The further extensions separate several questions that the size bound
+does not settle.  \Cref{sec:exact-constant,sec:explicit-exponents,sec:near-landau}
+refine counting, approximation, and the complexity of specifying hard
+exponents.  \Cref{sec:aks,sec:depth-size,sec:distinguished} study smaller
+polynomial factors, depth, width, and reversible implementations;
+the distinguished-point procedure has checked semantics, while its
+resource bounds remain prose.  \Cref{sec:min-checkpoints} studies optimal
+checkpoint sets.  \Cref{sec:program-analysis,sec:preprocessing} connect
+compact summaries to certification and the cost of construction, and
+\cref{sec:blackbox} states its oracle-model restrictions and probabilistic
+hypotheses explicitly.
 
 \begin{table}[htbp]
 \centering
@@ -746,21 +756,11 @@ sequential squaring and the arithmetic of the table entries
 affects a deployed parameter set that we examined.
 
 \paragraph{Depth.}
-Sequentiality concerns depth, while \cref{thm:main} counts gates.  Let $g$
-have a circuit of size $s$ and depth $d$.  For $T<K=2L$ the construction
-of \cref{sec:fixed} is $T$ copies of $g$ in series, of depth $Td<2Ld$.
-Otherwise its only long sequential parts are the two trajectories of $K$
-steps, of total depth $4Ld$.  The remaining components can be made shallow
-at a constant-factor increase in size: Batcher's networks~\cite{Batcher68}
-have $O(\log^2R)$ comparator layers for $R$ records, comparisons and
-additions of $O(n)$-bit words have depth $O(\log n)$ by parallel prefix
-computation~\cite{LF80}, the sequential scans in \cref{lem:lookup} and in
-the selections become prefix computations of logarithmic depth, and the
-long division in \cref{eq:period} has depth $O(n\log n)$.  With
-$\log R=O(n)$ this gives, for every $T\geq0$ and $1\leq L\leq N$, a circuit
-for $g^T$ of size $O(Ls+n^3(L+N/L))$ and depth $4Ld+O(n^2\log n)$.  We
-state this accounting as a sketch; the size bound is that of
-\cref{thm:main}.
+Sequentiality concerns depth, while \cref{thm:main} counts gates.
+For a round circuit $g$ of size $s$ and depth $d$, the construction in
+\cref{thm:depth-size} has size $O(Ls+n^3(L+N/L))$ and depth
+$4Ld+O(n^2\log n)$: the two trajectories contribute at most $4Ld$,
+and parallel prefix operations and sorting bound the remaining depth.
 
 \paragraph{Speed-up and size.}
 Unrolling $g^T$ has depth $Td$.  For $T\leq\sqrt N$, choose $L$ of order
@@ -2556,41 +2556,8 @@ The function $x\mapsto x/(1+x)$ is increasing, which gives the bound on
 $\nu$.
 \end{proof}
 
-The lower bound uses a version of \cref{lem:count} that discounts the
-relabellings of a minimum circuit.
-
-\begin{lemma}[Counting minimum circuits]\label[lemma]{lem:relabel-count}
-For $1\leq\ell\leq q$, at most
-\[
-  (q+1)\left(\frac{16e(\ell+q+2)^2}{q}\right)^{q}(\ell+q+2)^{\ell}
-  =2^{q\log_2q+O(q)+O(\ell\log q)}
-\]
-functions $\bits^\ell\to\bits^\ell$ have circuit complexity at most $q$.
-\end{lemma}
-
-\begin{proof}
-In a minimum circuit no gate computes an input bit or a constant, and no
-two gates compute the same function.  Otherwise redirect every use of the
-offending gate, including its use as an output, to the input, the
-constant, or the other gate.  For two gates computing the same function,
-redirect the one that is not an ancestor of the other; a user of it is
-then not an ancestor of the target, so the circuit stays acyclic.  The
-redirected gate is now unused and can be deleted, contradicting
-minimality.
-
-Describe a circuit with $s$ gates labelled $1,\ldots,s$ by an operation
-and two predecessors for each label, among $\ell$ inputs, two constants
-and $s$ labels, and by $\ell$ output wires.  There are at most
-$(16(\ell+s+2)^2)^s(\ell+s+2)^{\ell}$ descriptions.  A description
-determines the function at each label and the computed map.  So the
-$s!$ labellings of a fixed minimum circuit give $s!$ distinct
-descriptions, because its gate functions are distinct, and minimum
-circuits of distinct maps give distinct descriptions.  Hence at most
-$(16(\ell+s+2)^2)^s(\ell+s+2)^\ell/s!$ maps have complexity exactly $s$.
-Using $s!\geq(s/e)^s$ and the fact that $s\mapsto(a/s)^s$ increases for
-$s\leq a/e$, each of the $q+1$ terms is at most the displayed summand.
-For $q\geq\ell$ we have $\ell+q+2\leq4q$, which gives the exponent.
-\end{proof}
+The lower bound uses the sharp circuit count of \cref{lem:sharp-count},
+which discounts relabellings of minimum circuits.
 
 \Cref{lem:count} counts every encoding of a circuit and so carries an
 extra factor of about $2$ in the exponent; that would halve the constant
@@ -2627,7 +2594,7 @@ and the reduction modulo $\ell_r$ add $\poly(K)=o(2^m)$ gates.
 
 \emph{Lower bound.}  Let $q=\max(\max_T\CC(F^T),n_K)$.  If $q>2^{m+1}$
 there is nothing to prove.  Otherwise $\log_2q\leq m+1$, and by
-\cref{lem:nl-structure,lem:relabel-count} with $\ell=n_K$,
+\cref{lem:nl-structure,lem:sharp-count} with both input and output width $n_K$,
 \[
   \nu2^m(K-1)\leq\log_2\lambda\leq q\log_2q+O(q)+O(n_K\log q)
   \leq q(m+O(1))+O(m^2),
@@ -2665,10 +2632,10 @@ of classes containing a prime, and that if $3q+h(2q+n_K+1)<(K-1)c$ and
 $n_K+q+1\leq2^h$, then some $F^T$ with $T<\lambda$ has no native circuit
 with at most $q$ gates.  This step counts ordered circuit descriptions
 as in \cref{lem:count}, not minimum circuits as in
-\cref{lem:relabel-count}.  With $h=m+O(1)$ it therefore gives the lower
+\cref{lem:sharp-count}.  With $h=m+O(1)$ it therefore gives the lower
 bound of \cref{thm:near-landau} with $\nu/2$ in place of $\nu$.  The
 circuit for $F$, the prime number theorem estimate,
-\cref{lem:nl-classes}, \cref{lem:relabel-count}, the upper bound, and
+\cref{lem:nl-classes}, \cref{lem:sharp-count}, the upper bound, and
 \cref{cor:near-landau-average} remain prose results.
 \end{remark}
 
@@ -2723,7 +2690,7 @@ With at most $2^m$ nonempty classes,
   \leq\left(\frac{e\,2^{m-K}}{\varepsilon q}\right)^{2q}
   \leq\left(\frac{e}{2CK\varepsilon q}\right)^{2q},
 \]
-because $2^{m-K}=2^{-1-g}\leq1/(2CK)$.  By \cref{lem:relabel-count}, at
+because $2^{m-K}=2^{-1-g}\leq1/(2CK)$.  By \cref{lem:sharp-count}, at
 most $2^{q\log_2q+O(q)+O(m^2)}$ maps have circuits of size at most $q$.  A
 union bound over them gives total probability at most
 $2^{-q(\log_2q+2\log_2(K\varepsilon)-O(1))+O(m^2)}=o(1)$.
@@ -2737,11 +2704,10 @@ The error fraction is therefore at least
 $(1-\varepsilon)(\nu/2-2\delta)=\nu/2-2\delta-o(1)$.
 \end{proof}
 
-For $P_n$ no such statement is expected.  Only a vanishing fraction of
-its states lie on cycles whose length has a prime factor close to $B$,
-so a circuit that stores $T$ modulo the primes up to $B/\poly(n)$ only
-answers all but a vanishing fraction of the states correctly, at a size
-a polynomial factor below the worst case.  We do not develop this here.
+For $P_n$, \cref{prop:approx-all,thm:random-average} instead show that
+at size $2^{n/2}/\poly(n)$ the optimal approximation error tends to zero.
+Thus the near-ceiling construction also changes the average-case behavior,
+not only the polynomial factor in worst-case complexity.
 
 \begin{remark}[Uniformity]\label[remark]{rem:near-landau-uniform}
 Apart from the irreducible polynomial, $F$ is determined by the $2m$ bits
@@ -4658,16 +4624,495 @@ and no inverse-coordinate circuit is required.
 A finite-field application, including the cost of discrete-logarithm
 coordinates, is given in \cref{app:binary-field}.
 
+\section{Distinguished points: small width and reversible circuits}
+\label{sec:distinguished}
+
+The batched lookup of \cref{lem:lookup} is needed because membership in the
+packed checkpoint set of \cref{lem:checkpoints} has no cheap test: every
+state of the initial trajectory must be looked up.  If membership in $H$
+can be decided by a small circuit, only the \emph{first} checkpoint on the
+trajectory needs a payload, and one linear scan over the dictionary
+suffices.  Distinguished points, an idea attributed to Rivest in the
+time--memory tradeoff literature~\cite{vOW99}, give such a set when they
+are selected by a hash function of limited independence.  This section derives three
+consequences: a polynomial-factor improvement of \cref{eq:optimized},
+circuits of width $O(n+s)$, and reversible circuits with few ancillas.
+The Lean development checks only the semantic correctness of the six-step
+procedure in the proof of \cref{thm:distinguished}, for an arbitrary set
+$H$ with the hitting property of \cref{lem:distinguished}
+(\texttt{distinguishedPower\_correct}; see \cref{sec:lean}).  The hash
+lemma, the gate counts and widths, and the reversible and pebbling results
+of this section are not mechanized.
+
+\subsection{Hashed checkpoints}
+
+Identify $\bits^n$ with the field $\mathbb F_{2^n}$ through a fixed
+irreducible polynomial of degree $n$ over $\mathbb F_2$.  Put $t=2n$.  For
+coefficients $a=(a_0,\ldots,a_{t-1})\in\mathbb F_{2^n}^t$ and
+$0\leq l\leq n$, let
+\[
+  g_a(x)=\sum_{j<t}a_jx^j,\qquad
+  H_{a,l}=\{x:\text{the first $l$ coordinates of $g_a(x)$ vanish}\}.
+\]
+
+\begin{lemma}[Hashed checkpoint or repetition]\label[lemma]{lem:distinguished}
+Let $n\geq3$, let $F$ be any function on $\bits^n$, and let $L=2^l$ with
+$0\leq l\leq n-1$.  Put $K=16nL-1$.  There are coefficients $a$ such that
+$H=H_{a,l}$ satisfies $|H|\leq 2N/L$ and, for every $x$, either two of
+$x,F(x),\ldots,F^K(x)$ are equal or $F^i(x)\in H$ for some $i\leq K$.
+Membership in $H_{a,l}$ has a circuit with $O(n^3)$ gates and width $O(n)$.
+\end{lemma}
+
+\begin{proof}
+Choose $a$ uniformly.  For distinct $x_1,\ldots,x_t$ the vector
+$(g_a(x_1),\ldots,g_a(x_t))$ is uniform on $\mathbb F_{2^n}^t$, since the
+Vandermonde matrix of distinct points is invertible; here $t\leq N$.
+Hence the indicators $Y_x=[x\in H_{a,l}]$ are $t$-wise independent
+Bernoulli variables with mean $1/L$.
+
+\emph{Size.}  The indicators are in particular pairwise independent, so
+$|H|=\sum_xY_x$ has mean $N/L$ and variance at most $N/L$.  By Chebyshev's
+inequality, $\Pr[|H|>2N/L]\leq L/N\leq1/2$.
+
+\emph{Hitting.}  Fix $x$ and suppose that $x_i=F^i(x)$, $0\leq i\leq K$,
+are distinct.  The trajectory is determined by $F$ alone, before $a$ is
+drawn.  Then $X=\sum_{i\leq K}Y_{x_i}$ is a sum of $K+1=16nL$
+$t$-wise independent indicators with mean $\mu=16n$.  Bellare and Rompel's
+tail bound for even $t\geq4$~\cite{BR94},
+\[
+  \Pr[|X-\mu|\geq\Delta]\leq
+  8\left(\frac{t\mu+t^2}{\Delta^2}\right)^{t/2},
+\]
+applies with $\Delta=15n$, because $X=0$ forces $|X-\mu|=16n\geq\Delta$.
+Here $(t\mu+t^2)/\Delta^2=(32n^2+4n^2)/(225n^2)=0.16$, so
+$\Pr[X=0]\leq8\cdot0.16^{\,n}$.  If the first $K+1$ states are not
+distinct there is nothing to prove.  A union bound over the $N$ starting
+states therefore bounds the failure probability of the hitting condition
+by $8\cdot0.32^{\,n}\leq0.27$ for $n\geq3$.  Since $0.27+1/2<1$, some
+$a$ satisfies both conditions.
+
+\emph{Membership.}  Evaluate $g_a(x)$ by Horner's rule: $t-1$ products of
+two variable field elements and $t$ additions of hardwired constants.  A
+product is a schoolbook polynomial product followed by reduction modulo the
+fixed irreducible polynomial.  Both are $\mathbb F_2$-bilinear or linear
+maps with $O(n^2)$ gates.  Producing one product coefficient at a time and
+adding its fixed reduction vector into an $n$-bit accumulator keeps only
+$O(n)$ wires live.  Finally test $l$ bits for zero.  The total is
+$O(tn^2)=O(n^3)$ gates and width $O(n)$.
+\end{proof}
+
+The coefficients are found nonuniformly, as are all tables in this paper.
+No attempt is made to reduce the $O(n^3)$ membership cost, for instance by
+fast field multiplication.
+
+\subsection{One lookup per input}
+
+The \emph{width} of a circuit is the minimum, over topological orders of
+its gates, of the largest number of inputs and gate values that have
+already been produced and are still needed by a later gate or as an
+output.  It is the number of registers of a straight-line program
+evaluating the circuit.  Every circuit of size $s$ for $F$ has width at
+most $s+n$.
+
+\begin{theorem}[Distinguished-point fixed powers]\label{thm:distinguished}
+Let $n\geq3$, let $F$ have a circuit with $s$ gates and width $w$, and put
+$A=s+n^3$.  For every $T\geq0$ and every power of two $1\leq L\leq N/2$,
+\begin{equation}\label{eq:dp-tradeoff}
+  \CC(F^T)=O\!\left(nLA+\frac{nN}{L}\right),
+\end{equation}
+by a circuit of width $O(n+w)$.  Consequently, every fixed power satisfies
+\begin{equation}\label{eq:dp-optimized}
+  \CC(F^T)=O\!\left(n\sqrt{NA}\right),
+\end{equation}
+again by circuits of width $O(n+w)\leq O(n+s)$.
+\end{theorem}
+
+\begin{proof}
+Take $H$, $K=16nL-1$, and $x_i=F^i(x)$ as in \cref{lem:distinguished}.  If
+$T<K$, unroll $T$ copies of $F$, using $Ts\leq16nLs$ gates and width
+$O(n+w)$.  Assume $T\geq K$ and hardwire the payloads $z_h=F^{T-K}(h)$ for
+$h\in H$ and the residues $R(\lambda)=(T-K)\bmod\lambda$ for
+$1\leq\lambda\leq K$.  Each phase below is a straight-line program on an
+$O(n)$-bit configuration; stage indices are hardwired, so no counter is
+needed.  All index fields have $O(n)$ bits, since $K<8nN$.
+\begin{enumerate}
+\item \emph{Scan.}  The configuration is $(u,\phi,d,c)$, initially
+  $(x,0,0,0)$.  At stage $i=0,1,\ldots,K$: if $\phi=0$ and $u\in H$, set
+  $\phi=1$, $d=i$ and $c=u$; then, if $i<K$, replace $u$ by $F(u)$.
+  Finally $u=x_K$, and if $\phi=1$, then $d$ is the first index with
+  $x_d\in H$ and $c=x_d$.  Each stage costs $s+O(n^3)=O(A)$ gates.
+\item \emph{Lookup.}  Put $z=\bigvee_{h\in H}[c=h]\cdot z_h$, bitwise.
+  For each key this is an $n$-bit equality test and $O(n)$ further
+  gates, $O(n|H|)=O(nN/L)$ in total, in one pass over the keys.
+\item \emph{Correction.}  Starting from $v=z$, at stage $i=0,\ldots,K-1$
+  replace $v$ by $F(v)$ exactly when $i\geq d$.  This applies $F$ exactly
+  $K-d$ times, so if $\phi=1$, then as in \cref{eq:identity},
+  $v=F^{K-d}(F^{T-K}(x_d))=F^T(x)$.
+\item \emph{Period.}  In a separate register, starting from $w=x_K$, at
+  stage $j=1,\ldots,K$ replace $w$ by $F(w)$, and record $\lambda=j$ the
+  first time $w=x_K$; use the dummy value $\lambda=1$ if this never
+  happens.  The register $v$ from the correction step is left unchanged.
+\item \emph{Residue and cycle walk.}  Read $r=R(\lambda)$ by a linear scan
+  of the $K$ table entries, $O(nK)$ gates.  Starting from $v'=x_K$, at
+  stage $i=0,\ldots,K-1$ replace $v'$ by $F(v')$ exactly when $i<r$.
+\item \emph{Output.}  Return $v$ if $\phi=1$ and $v'$ otherwise.
+\end{enumerate}
+If $\phi=1$ the output is correct by step~3.  If $\phi=0$, then by
+\cref{lem:distinguished} two of $x_0,\ldots,x_K$ coincide.  The orbit of
+$x$ then has tail length $\mu$ and cycle length $\lambda^*$ with
+$\mu+\lambda^*\leq K$.  Hence $x_K$ lies on the cycle, step~4 returns
+$\lambda=\lambda^*$, and step~5 gives $v'=F^{K+r}(x)$ with
+$K+r\equiv T\pmod{\lambda^*}$ and $K+r,T\geq\mu$, so $v'=F^T(x)$.  As in
+\cref{sec:fixed}, both branches are evaluated on every input, with dummy
+values where needed.  No division is performed.
+
+The four walks cost $O(KA)=O(nLA)$ gates, the lookup $O(nN/L)$, and the
+residue scan and selections $O(nK)=O(n^2L)$, which is absorbed.  This
+proves \cref{eq:dp-tradeoff}.  Only $O(1)$ configurations, the
+$O(n)$-bit Horner state of \cref{lem:distinguished}, and one evaluation of
+$F$ are live at any time, which gives width $O(n+w)$.
+
+For \cref{eq:dp-optimized}, if $A\leq N$ let $L$ be the largest power of
+two with $L\leq\sqrt{N/A}$.  Then $L\leq\sqrt{N/n^3}\leq N/2$, so
+$nLA\leq n\sqrt{NA}$ and $nN/L<2n\sqrt{NA}$.  If $A>N$, scan a complete
+truth table of $F^T$: for each state $x'$ an $n$-bit equality test with
+the input and $O(n)$ gates to OR in the stored value.  This uses
+$O(nN)\leq O(n\sqrt{NA})$ gates and width $O(n)$.
+\end{proof}
+
+\begin{remark}[Comparison with sorting-based lookup]\label[remark]{rem:dp-compare}
+For $A\leq N$, \cref{eq:dp-optimized} improves \cref{eq:optimized} by a
+factor of order $\sqrt n$, with the same $A=s+n^3$.  The saving comes from
+replacing a sort of $\Theta(N/L+L)$ records, at $O(n^3)$ gates per record,
+by one comparison per key at $O(n)$ gates; the price is a walk of length
+$16nL$ in place of $2L$.  This is not the best known gate count.  An
+$O(R\log R)$-comparator network~\cite{AKS83} in \cref{lem:lookup,lem:repeat}
+reduces the sorting cost to $O(n^2R)$ and gives
+$O(A_2+n\sqrt{NA_2})$ with $A_2=s+n^2$ (\cref{thm:aks}), which is smaller than
+\cref{eq:dp-optimized} by up to a factor $\sqrt n$ when $s<n^3$.  The
+$n^3$ term here is the cost of the hash, not of lookup.  The advantage of
+distinguished points is structural: no sorting network is used, and the
+width is $O(n+s)$.  The sorting network on $\Theta(N/L+L)$ records used
+in \cref{sec:fixed} manipulates that many records together; we do not know how
+to evaluate it in width much below $\sqrt N$ at the balanced choice of $L$.
+Equivalently, \cref{thm:distinguished} describes a machine with $O(n+s)$
+bits of read/write memory and a read-only data stream that it reads in one
+left-to-right pass, performing $O(n\sqrt{NA})$ bit operations.  The
+stream must repeat the data that the machine cannot retain: each of the
+$O(K)$ membership tests needs the $2n$ hash coefficients, which occupy
+$\Theta(n^2)$ bits, and each of the $O(K)$ evaluations of $F$ needs a gate
+list of $O(s\log s)$ bits.  The stream therefore consists of one block of
+coefficients and one copy of the gate list of $F$ in front of every stage
+of the walks, followed at the appropriate point by the key--payload pairs
+and the residue table.  Its length is
+$O(nN/L+nL(n^2+s\log s))$, which is $O(n\sqrt{NA}\log s)$ at the balanced
+choice of $L$.  If the machine may instead reread a fixed region of its
+input, one copy of the coefficients and of the gate list suffices, and the
+stream has length $O(nN/L+n^2+s\log s)$.  The circuit-width statement
+needs neither variant, since its constants are hardwired.
+\end{remark}
+
+\subsection{Reversible circuits with few ancillas}
+
+A reversible circuit uses NOT, CNOT and Toffoli gates on a fixed set of
+wires.  A circuit \emph{computes} $G:\bits^n\to\bits^q$ with $a$ ancillas
+if it maps $(x,y,0^a)$ to $(x,y\oplus G(x),0^a)$ for all $x$ and $y$.
+Any Boolean circuit with $g$ gates gives such a circuit with $O(g+q)$
+gates and $g$ ancillas: compute every gate into a fresh zero wire, copy
+the outputs with CNOTs, and run the first part backwards.
+A fan-in-two gate into a fresh wire needs $O(1)$ reversible gates, since
+every Boolean function of two bits is a polynomial of degree at most two
+over $\mathbb F_2$.  Applied to \cref{thm:distinguished} directly, this
+gives as many ancillas as gates.  Bennett's pebbling of the four walks
+removes almost all of them.
+
+A walk with $K$ stages is a sequence of configurations $c_0,\ldots,c_K$
+with $c_{i+1}=\mathrm{step}_i(c_i)$.  A \emph{move} XORs
+$\mathrm{step}_i(c_i)$ into a register, which either creates $c_{i+1}$
+from zeros or clears it.  Let $k\geq2$ and $m=\ceil{\log_kK}$, and pad the
+walk to $k^m$ stages with identity steps.  To advance $k^j$ stages from a
+held configuration, advance $k$ times by $k^{j-1}$ stages, and then undo
+the first $k-1$ of these advances in reverse order.  If $M(j)$ moves
+suffice for level $j$, then $M(j)=(2k-1)M(j-1)$ and $M(0)=1$, so
+$M(m)=(2k-1)^m$.  At most $(k-1)m+1$ configurations besides $c_0$ are
+held at once~\cite{Bennett89,LS90}.  Put
+\[
+  \varepsilon_k=\log_k(2k-1)-1=\log_k\!\left(2-\tfrac1k\right)
+  \in\left(0,\tfrac1{\log k}\right].
+\]
+Since $k^{m-1}<K$,
+\[
+  (2k-1)^m=(k^m)^{1+\varepsilon_k}<(kK)^{1+\varepsilon_k}\leq k^2K^{1+\varepsilon_k}.
+\]
+For example, $\varepsilon_2=\log3-1\approx0.585$, $\varepsilon_4\approx0.404$
+and $\varepsilon_{16}\approx0.238$.
+
+\begin{theorem}[Reversible fixed powers]\label{thm:reversible}
+Let $n\geq3$, $\CC(F)\leq s$, $A=s+n^3$, and let $k\geq2$ be an integer.
+For every $T\geq0$ and every power of two $1\leq L\leq N/2$, a reversible
+circuit computes $F^T$ with
+\[
+  O\!\left(\frac{nN}{L}+k^2(nL)^{1+\varepsilon_k}A\right)
+  \text{ gates and }
+  O\!\left(kn\ceil{\frac{n}{\log k}}+s\right)\text{ ancillas.}
+\]
+\end{theorem}
+
+\begin{proof}
+Use the phases of \cref{thm:distinguished}.  Each of the four walks has
+at most $K+1=16nL$ stages on configurations of $b=O(n)$ bits.
+
+\emph{One move.}  For the scan, a move XORs $\mathrm{step}_i(c)$ into a
+register $c'$.  Compute the membership bit of $u$ by Horner's rule,
+keeping all $t=2n$ intermediate field elements; each product is formed
+by $n^2$ Toffoli gates into a $(2n-1)$-bit coefficient register, reduced
+by $O(n^2)$ CNOTs, after which the coefficient register is cleared by the
+same Toffoli gates.  This costs $O(n^3)$ gates and $O(n^2)$ ancillas, all
+cleared after the bit is copied.  Then XOR $F(u)$ into the $u$-field of
+$c'$, with $O(s)$ gates and $s$ ancillas, and XOR the $O(n)$-gate updates
+of $\phi$, $d$ and $c$ into $c'$.  Finally clear the membership bit.  A
+move therefore costs $O(A)$ gates with $O(s+n^2)$ reusable ancillas.
+Moves of the other walks cost $O(s+n)$ gates and $O(s+n)$ ancillas; a
+conditional application of $F$ is computed into a temporary register,
+selected bitwise into $c'$, and then uncomputed.
+
+\emph{Walks.}  By the pebbling count, each walk uses
+$(2k-1)^m\leq k^2(16nL)^{1+\varepsilon_k}$ moves, hence
+$O(k^2(nL)^{1+\varepsilon_k}A)$ gates, and at most $(k-1)m+2$
+configuration registers.  Since $K<8nN$,
+$m=\ceil{\log_kK}=O(\ceil{n/\log k})$, so the registers use
+$O(kn\ceil{n/\log k})$ wires.  Afterwards only $c_0$ and $c_K$ are held.
+
+\emph{Assembly.}  Run the scan, keeping its final configuration.  For the
+lookup, for each key $h$ compute $[c=h]$ into one ancilla with $O(n)$
+gates and $O(n)$ ancillas, CNOT it into the positions of the one bits of
+$z_h$ in a fresh register, and clear it.  Copy the needed fields with
+CNOTs and run the correction and period walks.  Read the residue by the
+same comparison scan over the $K$ table entries, using $O(nK)$ gates, and
+run the cycle walk.  For each output bit, two Toffoli gates XOR the bit
+selected by $\phi$ into $y$.  Finally run everything except the output
+step backwards, which clears every ancilla.  If $T<K$, pebble the walk
+of $T$ applications of $F$ instead.
+
+The lookups cost $O(nN/L)$ gates.  The residue scans and copies cost
+$O(nK)=O(n^2L)$, which is absorbed by the walks because $A\geq n^3$.
+Besides the pebbling registers, $O(1)$ configurations and $O(s+n^2)$
+workspace ancillas are used.
+\end{proof}
+
+\begin{corollary}[Ancilla--gate tradeoffs]\label[corollary]{cor:reversible}
+Under the assumptions of \cref{thm:reversible}, write $\varepsilon=\varepsilon_k$
+and assume $A\leq N/(k^2n)$.  A reversible circuit computes every fixed
+power $F^T$ with
+\[
+  O\!\left(k\,n^{1+\varepsilon/2}A^{1/2}N^{(1+\varepsilon)/(2+\varepsilon)}\right)
+\]
+gates and $O(kn\ceil{n/\log k}+s)$ ancillas.  In particular:
+\begin{enumerate}
+\item for $k=2$, with $O(n^2+s)$ ancillas, the gate count is
+  $N^{\log3/(1+\log3)}\poly(n)A^{1/2}$, where
+  $\log3/(1+\log3)\approx0.6131$;
+\item for fixed $k$, the exponent of $N$ is
+  $\tfrac12+\varepsilon_k/(2(2+\varepsilon_k))<\tfrac12+1/(4\log k)$, with
+  $O_k(n^2+s)$ ancillas;
+\item for $k=n$, with $O(n^3/\log n+s)$ ancillas, the gate count is
+  $N^{1/2}\,2^{n/(4\log n)}\poly(n)A^{1/2}=N^{1/2+O(1/\log n)}A^{1/2}$.
+\end{enumerate}
+A reversible circuit with $O(nN)$ gates and $O(n)$ ancillas computes
+$F^T$ for every $F$, which covers larger $A$.
+\end{corollary}
+
+\begin{proof}
+Let $L$ be the largest power of two with
+$L\leq\Lambda:=(N/(k^2n^{\varepsilon}A))^{1/(2+\varepsilon)}$.  The
+assumption on $A$ gives $\Lambda\geq1$, and $\Lambda\leq\sqrt N\leq N/2$.
+At $L=\Lambda$ the two terms of \cref{thm:reversible} agree up to a
+constant, and halving $L$ changes them by constant factors.  So the gate
+count is
+\[
+  O\!\left(\frac{nN}{\Lambda}\right)
+  =O\!\left(nN^{(1+\varepsilon)/(2+\varepsilon)}
+     (k^2n^\varepsilon A)^{1/(2+\varepsilon)}\right),
+\]
+which is at most the displayed bound because $k^2n^{\varepsilon}A\geq1$
+and $1/(2+\varepsilon)\leq1/2$.  The exponent of $N$ equals
+$\tfrac12+\varepsilon/(2(2+\varepsilon))$, and
+$\varepsilon_k\leq1/\log k$.  For $k=2$,
+$(1+\varepsilon_2)/(2+\varepsilon_2)=\log3/(1+\log3)$.  For $k=n$,
+$N^{\varepsilon/(2(2+\varepsilon))}\leq N^{\varepsilon/4}\leq2^{n/(4\log n)}$
+and $kn\ceil{n/\log k}=O(n^3/\log n)$.  For the last claim, scan the
+truth table of $F^T$: for each state $x'$, compute $[x=x']$ into an
+ancilla with $O(n)$ gates and $O(n)$ ancillas, CNOT it into the one bits
+of $F^T(x')$ in $y$, and clear it.
+\end{proof}
+
+\begin{corollary}[In-place permutations]\label[corollary]{cor:in-place}
+Let $P$ be a permutation of $\bits^n$ with $\CC(P)\leq s$.  For each
+integer $k\geq2$ satisfying the hypothesis of \cref{cor:reversible},
+there is a reversible circuit mapping $(x,0^{n+a})$ to $(P(x),0^{n+a})$,
+after a fixed relabelling of wires, with $a=O(kn\ceil{n/\log k}+s)$ and
+the gate count of \cref{cor:reversible} plus $O(s+n)$.
+\end{corollary}
+
+\begin{proof}
+First XOR $P(x)$ into a zero register with $O(s+n)$ gates and $s$
+temporary ancillas.  Then apply the circuit of \cref{cor:reversible} for
+$P^{-1}=P^{\ord(P)-1}$ from the new register into the input register.  It
+XORs $P^{-1}(P(x))=x$ into $x$ and leaves zero there.  Relabel the two
+$n$-wire registers.
+\end{proof}
+
+\begin{remark}[Lower bounds and the pebbling overhead]\label[remark]{rem:pebbling}
+A reversible circuit with $g$ gates yields a Boolean circuit with $O(g)$
+gates, whatever the number of ancillas: each reversible gate changes one
+wire by a fan-in-at-most-three function.  So \cref{thm:lower} applies
+to reversible circuits with any number of ancillas, and the exponent
+$1/2$ cannot be lowered for them either.  Whether $N^{1/2}\poly(n,s)$
+gates are possible with $\poly(n,s)$ ancillas is open.  The overhead
+$N^{\Theta(\varepsilon_k)}$ comes only from pebbling the four walks.
+Bennett's pebble game on a path, which models any construction storing
+only whole configurations of a walk, was analyzed exactly by
+Knill~\cite{Knill95}, and Li, Tromp, and Vit\'anyi~\cite{LTV98} show that
+Bennett's strategy reaches the greatest distance for a given number of
+pebbles.  Such results limit this strategy class only.  They give no
+circuit lower bound, since a reversible circuit need not simulate a walk
+configuration by configuration.
+\end{remark}
+
+
 \section{Applications}\label{sec:applications}
 
-This section collects four consequences of the fixed-power construction:
-computations with a bounded number of nondeterministic or alternating
-choices, the running time of the preprocessing, a single explicit map that
-collects the hardness of all linear-size maps, and the structure of
-permutations whose iterator is easy but whose inverse is not.  Only the
-simulation and hardwiring arguments of \cref{sec:universal-map,sec:asymmetric}
-are mechanized in Lean, as described there; the rest of this section is
-prose.
+This section connects the circuit bounds to exact program summaries,
+bounded choices, preprocessing, universal maps, and asymmetric iterators.
+The target and navigation circuits used below are mechanized, as are the
+simulation and hardwiring arguments of \cref{sec:universal-map,sec:asymmetric}.
+The local certificate characterization, SAT-oracle analyses, SETH reduction,
+and preprocessing runtime are prose results.
+
+\subsection{Exact program summaries and local certificates}
+\label{sec:program-analysis}
+
+Let $P:\bits^n\to\bits$ be a target predicate of size $a$, put
+$N=2^n$, $A_P=s+a+n^3$, and $B_P=A_P+\sqrt{n^3NA_P}$.  Define the
+\emph{target distance}
+\[
+ \tau_P(x)=
+ \begin{cases}
+  \min\{t\geq0:P(F^t(x))=1\},&\text{if the target is reached},\\
+  N,&\text{otherwise}.
+ \end{cases}
+\]
+Every finite first-hit time is less than $N$, so the sentinel $N$ means
+\emph{never} without ambiguity; the output uses $n+1$ bits.
+
+\begin{corollary}[Exact target-distance summaries]
+\label[corollary]{cor:distance-summary}
+The function $\tau_P$ has a circuit of size $O(B_P)$.
+\end{corollary}
+\begin{proof}
+Use the existence flag and first-hit-time circuit of \cref{cor:target},
+and select $N$ on negative instances with $O(n)$ additional gates.
+The time on positive instances is the transient depth of the absorbing
+map $G(x)=x$ when $P(x)=1$ and $G(x)=F(x)$ otherwise.
+No clock is added to the dynamical state.
+\end{proof}
+
+There is also a proof using only \cref{thm:main}, at the cost of a factor
+$n$.  Compile $G^{2^i}$ for $0\leq i<n$.  For a nontarget input, start
+with $z=x$, $r=0$, and consider these powers in decreasing order.
+Accept a jump when its endpoint is still outside $P$, updating $z$ and
+adding $2^i$ to $r$.  Absorption makes target membership monotone along
+the orbit.  The accepted jumps find the largest $r<N$ still outside
+the target, so $r+1$ is the first-hit time or $N$ if no target is reached.
+Target inputs return zero.  The time accumulator belongs to the query
+circuit, and does not enlarge the state width to which powering is applied.
+
+\begin{proposition}[Local characterization]
+\label[proposition]{prop:distance-certificate}
+For a function $R:\bits^n\to\{0,\ldots,N\}$, one has $R=\tau_P$ if and
+only if, for every $x$,
+\begin{equation}\label{eq:distance-certificate}
+ R(x)=
+ \begin{cases}
+  0,&P(x)=1,\\
+  \operatorname{inc}_N(R(F(x))),&P(x)=0,
+ \end{cases}
+ \qquad \operatorname{inc}_N(u)=\min(N,u+1).
+\end{equation}
+\end{proposition}
+\begin{proof}
+The target distance satisfies the equation.  Conversely, if the first
+hit from $x$ is at time $d<N$, the equation forces zero at that target
+and then $1,\ldots,d$ backwards along the path.  If the target is never
+reached, the orbit enters a target-free cycle.  Going around a cycle of
+length $k>0$ forces $u=\min(N,u+k)$, hence $u=N$.  The same value
+propagates backwards to $x$.  These cases determine $R$ everywhere.
+\end{proof}
+
+For a proposed circuit $R$ with $q$ gates and $n+1$ output bits, a violation circuit
+checks the range $R(x)\leq N$ and \cref{eq:distance-certificate} using
+$O(q+s+a+n)$ gates.  Its unsatisfiability certifies the entire
+summary.  This verification problem is coNP-complete in the length of
+the supplied circuit descriptions: a violating state is a witness for
+failure, and with $F$ the identity and $R\equiv0$, correctness is
+equivalent to $P$ being a tautology.  Thus this is a small semantic
+certificate with a coNP correctness check.  It does not bound the length
+of a proof of the UNSAT obligation in a conventional proof system.
+Guessing a summary, checking it with a SAT oracle, and testing its value
+at the queried starting state gives certificates for either reachability
+answer, with description length
+$O(B_P\log(B_P+2))$ and a verification circuit of size $O(B_P)$.
+
+The rank is necessary for this exact characterization.  The Boolean
+equation $E(x)=P(x)\lor E(F(x))$ also admits the spurious value one on a
+target-free cycle; a finite decreasing distance cannot do so.
+In particular,
+\[
+ I_{\mathrm{safe}}(x)=[\tau_P(x)=N]
+\]
+is the largest inductive invariant avoiding $P$.  Every safe initial
+set lies inside it.  On states with $0<\tau_P(x)<N$, the equation gives
+$\tau_P(F(x))=\tau_P(x)-1$, an exact termination rank when $P$ denotes
+halting.
+
+Once $R=\tau_P$ is certified, evaluating it gives the answer and exact
+time for any single starting state.  For an initial-state predicate $A$:
+\begin{itemize}
+\item safety is the unsatisfiability of $A(x)\land[R(x)<N]$;
+\item with $P$ a halting predicate, nontermination from some allowed
+  state is the satisfiability of $A(x)\land[R(x)=N]$;
+\item if $A$ is nonempty and all its states terminate, binary search
+  with queries $\exists x:\ A(x)\land[R(x)\geq k]$ finds the exact
+  worst-case first-halting time in $O(n)$ SAT calls.
+\end{itemize}
+An empty initial set is detected by a separate satisfiability query.
+The use of compact state predicates follows symbolic model checking
+\cite{BCMDH90}; here the representation-size guarantee is for general
+Boolean circuits.  Existence, discovery, and validation remain different
+costs.  Feldman, Immerman, Sagiv, and Shoham \cite{FISS20} give exponential
+query lower bounds for invariant inference even with short invariants;
+their Hoare-query model is a specific restriction on access to the system.
+
+\paragraph{One certificate for all state pairs.}
+Let $D_F(x,y)$ be the least $t$ with $F^t(x)=y$, or $N$ if no such $t$
+exists.  By \cref{thm:reachability}, a flag-to-sentinel conversion gives
+$\CC(D_F)=O(B)$.  For each fixed $y$, apply
+\cref{prop:distance-certificate} with the target predicate $[x=y]$.
+Consequently $D_F$ is the unique function into $\{0,\ldots,N\}$ satisfying
+\begin{equation}\label{eq:pair-distance-certificate}
+ D_F(x,y)=
+ \begin{cases}
+  0,&x=y,\\
+  \operatorname{inc}_N(D_F(F(x),y)),&x\ne y.
+ \end{cases}
+\end{equation}
+For a candidate of $q$ gates, one UNSAT check over $x,y$ certifies all
+pairwise first-hit times using $O(q+s+n)$ gates.  The circuit can then be reused with arbitrary
+initial and target predicates through
+$\exists x,y:\ A(x)\land[D_F(x,y)<N]\land P(y)$.
+The two query inputs do not double the dynamical state width.
+The existing lower bounds for arbitrary fixed powers do not establish
+matching lower bounds for these distance or invariant circuits.
 
 \subsection{A bounded number of choices}\label{sec:bounded-choice}
 
@@ -4761,10 +5206,10 @@ dictionaries of different words $y$ cannot be shared, because their
 invariant sets are disjoint.  For a binary alphabet the bound
 $2^{n/2+g}\poly(n)$ is below the truth-table bound whenever
 $g\leq(1/2-\varepsilon)n$ for a fixed $\varepsilon>0$ and $n$ is large.  Unbounded nondeterminism lies outside the method.
-When $g$ is not bounded, the configuration graph has out-degree two, a
-computation is a tree rather than a trajectory, and neither
-\cref{lem:checkpoints} nor the correction identity \cref{eq:identity} has
-an analogue.  Whether nondeterministic in-place machines admit circuits of
+When $g$ is not bounded, the configuration graph has out-degree two and a
+computation is a tree rather than a trajectory.  The single-trajectory
+arguments in \cref{lem:checkpoints} and the correction identity
+\cref{eq:identity} do not directly apply.  Whether nondeterministic in-place machines admit circuits of
 size $|\Gamma|^{n/2}\poly(n)$ is open.
 
 \subsection{The cost of writing down the circuit}\label{sec:preprocessing}
@@ -4851,6 +5296,53 @@ circuits of \cref{cor:halting}, where $T=2^b$.  Only the circuit for the
 first halting time, which uses \cref{thm:depth}, has not been analysed
 here.
 
+\begin{proposition}[A SETH obstruction to uniform analysis]
+\label[proposition]{prop:seth-analysis}
+Fix $0<\varepsilon<1$.  Unless the Strong Exponential Time Hypothesis
+(SETH) fails, no deterministic uniform algorithm solves general
+$n$-bit iteration in time
+\[
+  2^{(1-\varepsilon)n}\poly(s,n,\log(T+2)),
+\]
+or general target reachability in time
+$2^{(1-\varepsilon)n}\poly(s,n,a)$.
+The same obstruction applies to an algorithm that constructs an exact
+Boolean circuit for the requested power, reachability summary, or exact
+target-distance summary within those respective time bounds.
+\end{proposition}
+\begin{proof}
+Given an $m$-variable CNF formula $\varphi$, form the $(m+1)$-bit map
+\[
+ F_\varphi(u,b)=
+ \bigl(u+1\bmod2^m,\ b\lor\varphi(u)\bigr).
+\]
+Its circuit has size $O(|\varphi|+m)$.  Starting at $(0^m,0)$, the
+assignment register visits every assignment during the next $2^m$ steps,
+and the last bit is then $\operatorname{SAT}(\varphi)$.
+Equivalently, the target $b=1$ is reachable exactly when $\varphi$ is
+satisfiable.  The hypothesized algorithm, with $n=m+1$ and
+$T=2^m$, therefore decides CNF-SAT in
+$2^{(1-\varepsilon)m}\poly(|\varphi|,m)$ time, contrary to SETH
+\cite{CDLMPSSW16}.  A compiler has the same consequence: its explicit
+circuit output can be evaluated with only polynomial overhead in $n$
+per gate, which preserves the stated exponent on these instances.
+For a target-distance summary, compare its value with the never sentinel.
+\end{proof}
+
+For this example the entire powered map is already tiny:
+\[
+ F_\varphi^{2^m}(u,b)=
+ \bigl(u,\ b\lor\operatorname{SAT}(\varphi)\bigr).
+\]
+It is either the identity or the map that sets the last bit to one.
+Determining which summary is correct decides SAT.  In particular, a
+general $2^{n/2}\poly(s,n)$-time compiler would give a
+$2^{m/2}\poly(|\varphi|,m)$-time SAT algorithm.  This is an obstruction
+for algorithms inspecting the transition circuit, distinct from the
+oracle-model restrictions in \cref{sec:blackbox}.  It already uses an
+exponent with $O(n)$ bits and is compatible with the near-full-state-space
+preprocessing bound of \cref{prop:preprocessing}.
+
 \subsection{A universal linear-size map}\label{sec:universal-map}
 
 Hardness of a fixed power of some linear-size map transfers to a single
@@ -4903,9 +5395,11 @@ $n=\Omega(m/\log m)$.
 \end{proof}
 
 Lean checks the simulation and hardwiring steps of this proof in
-\texttt{UniversalMap.lean}.  \texttt{iterate\_simulation} derives
-$U^{\tau T}\circ\mathrm{enc}=\mathrm{enc}\circ F^T$ from the one-step
-identity, and \texttt{simulation\_circuit} turns a circuit for $U^{\tau T}$,
+\texttt{UniversalMap.lean}.  The theorem \texttt{iterate\_simulation} derives
+\[
+ U^{\tau T}\circ\mathrm{enc}=\mathrm{enc}\circ F^T
+\]
+from the one-step identity.  The theorem \texttt{simulation\_circuit} turns a circuit for $U^{\tau T}$,
 correct on encoded states, into one for $F^T$ when the encoding places the
 input bits among constant bits; in the native basis this costs two gates
 for the constants.  \texttt{Universal.step\_round} defines the step map on
@@ -5696,370 +6190,16 @@ The bounds above leave four questions.
 \end{enumerate}
 
 
-\section{Distinguished points: small width and reversible circuits}
-\label{sec:distinguished}
-
-The batched lookup of \cref{lem:lookup} is needed because membership in the
-packed checkpoint set of \cref{lem:checkpoints} has no cheap test: every
-state of the initial trajectory must be looked up.  If membership in $H$
-can be decided by a small circuit, only the \emph{first} checkpoint on the
-trajectory needs a payload, and one linear scan over the dictionary
-suffices.  Distinguished points, an idea attributed to Rivest in the
-time--memory tradeoff literature~\cite{vOW99}, give such a set when they
-are selected by a hash function of limited independence.  This section derives three
-consequences: a polynomial-factor improvement of \cref{eq:optimized},
-circuits of width $O(n+s)$, and reversible circuits with few ancillas.
-The Lean development checks only the semantic correctness of the six-step
-procedure in the proof of \cref{thm:distinguished}, for an arbitrary set
-$H$ with the hitting property of \cref{lem:distinguished}
-(\texttt{distinguishedPower\_correct}; see \cref{sec:lean}).  The hash
-lemma, the gate counts and widths, and the reversible and pebbling results
-of this section are not mechanized.
-
-\subsection{Hashed checkpoints}
-
-Identify $\bits^n$ with the field $\mathbb F_{2^n}$ through a fixed
-irreducible polynomial of degree $n$ over $\mathbb F_2$.  Put $t=2n$.  For
-coefficients $a=(a_0,\ldots,a_{t-1})\in\mathbb F_{2^n}^t$ and
-$0\leq l\leq n$, let
-\[
-  g_a(x)=\sum_{j<t}a_jx^j,\qquad
-  H_{a,l}=\{x:\text{the first $l$ coordinates of $g_a(x)$ vanish}\}.
-\]
-
-\begin{lemma}[Hashed checkpoint or repetition]\label[lemma]{lem:distinguished}
-Let $n\geq3$, let $F$ be any function on $\bits^n$, and let $L=2^l$ with
-$0\leq l\leq n-1$.  Put $K=16nL-1$.  There are coefficients $a$ such that
-$H=H_{a,l}$ satisfies $|H|\leq 2N/L$ and, for every $x$, either two of
-$x,F(x),\ldots,F^K(x)$ are equal or $F^i(x)\in H$ for some $i\leq K$.
-Membership in $H_{a,l}$ has a circuit with $O(n^3)$ gates and width $O(n)$.
-\end{lemma}
-
-\begin{proof}
-Choose $a$ uniformly.  For distinct $x_1,\ldots,x_t$ the vector
-$(g_a(x_1),\ldots,g_a(x_t))$ is uniform on $\mathbb F_{2^n}^t$, since the
-Vandermonde matrix of distinct points is invertible; here $t\leq N$.
-Hence the indicators $Y_x=[x\in H_{a,l}]$ are $t$-wise independent
-Bernoulli variables with mean $1/L$.
-
-\emph{Size.}  The indicators are in particular pairwise independent, so
-$|H|=\sum_xY_x$ has mean $N/L$ and variance at most $N/L$.  By Chebyshev's
-inequality, $\Pr[|H|>2N/L]\leq L/N\leq1/2$.
-
-\emph{Hitting.}  Fix $x$ and suppose that $x_i=F^i(x)$, $0\leq i\leq K$,
-are distinct.  The trajectory is determined by $F$ alone, before $a$ is
-drawn.  Then $X=\sum_{i\leq K}Y_{x_i}$ is a sum of $K+1=16nL$
-$t$-wise independent indicators with mean $\mu=16n$.  Bellare and Rompel's
-tail bound for even $t\geq4$~\cite{BR94},
-\[
-  \Pr[|X-\mu|\geq\Delta]\leq
-  8\left(\frac{t\mu+t^2}{\Delta^2}\right)^{t/2},
-\]
-applies with $\Delta=15n$, because $X=0$ forces $|X-\mu|=16n\geq\Delta$.
-Here $(t\mu+t^2)/\Delta^2=(32n^2+4n^2)/(225n^2)=0.16$, so
-$\Pr[X=0]\leq8\cdot0.16^{\,n}$.  If the first $K+1$ states are not
-distinct there is nothing to prove.  A union bound over the $N$ starting
-states therefore bounds the failure probability of the hitting condition
-by $8\cdot0.32^{\,n}\leq0.27$ for $n\geq3$.  Since $0.27+1/2<1$, some
-$a$ satisfies both conditions.
-
-\emph{Membership.}  Evaluate $g_a(x)$ by Horner's rule: $t-1$ products of
-two variable field elements and $t$ additions of hardwired constants.  A
-product is a schoolbook polynomial product followed by reduction modulo the
-fixed irreducible polynomial.  Both are $\mathbb F_2$-bilinear or linear
-maps with $O(n^2)$ gates.  Producing one product coefficient at a time and
-adding its fixed reduction vector into an $n$-bit accumulator keeps only
-$O(n)$ wires live.  Finally test $l$ bits for zero.  The total is
-$O(tn^2)=O(n^3)$ gates and width $O(n)$.
-\end{proof}
-
-The coefficients are found nonuniformly, as are all tables in this paper.
-No attempt is made to reduce the $O(n^3)$ membership cost, for instance by
-fast field multiplication.
-
-\subsection{One lookup per input}
-
-The \emph{width} of a circuit is the minimum, over topological orders of
-its gates, of the largest number of inputs and gate values that have
-already been produced and are still needed by a later gate or as an
-output.  It is the number of registers of a straight-line program
-evaluating the circuit.  Every circuit of size $s$ for $F$ has width at
-most $s+n$.
-
-\begin{theorem}[Distinguished-point fixed powers]\label{thm:distinguished}
-Let $n\geq3$, let $F$ have a circuit with $s$ gates and width $w$, and put
-$A=s+n^3$.  For every $T\geq0$ and every power of two $1\leq L\leq N/2$,
-\begin{equation}\label{eq:dp-tradeoff}
-  \CC(F^T)=O\!\left(nLA+\frac{nN}{L}\right),
-\end{equation}
-by a circuit of width $O(n+w)$.  Consequently, every fixed power satisfies
-\begin{equation}\label{eq:dp-optimized}
-  \CC(F^T)=O\!\left(n\sqrt{NA}\right),
-\end{equation}
-again by circuits of width $O(n+w)\leq O(n+s)$.
-\end{theorem}
-
-\begin{proof}
-Take $H$, $K=16nL-1$, and $x_i=F^i(x)$ as in \cref{lem:distinguished}.  If
-$T<K$, unroll $T$ copies of $F$, using $Ts\leq16nLs$ gates and width
-$O(n+w)$.  Assume $T\geq K$ and hardwire the payloads $z_h=F^{T-K}(h)$ for
-$h\in H$ and the residues $R(\lambda)=(T-K)\bmod\lambda$ for
-$1\leq\lambda\leq K$.  Each phase below is a straight-line program on an
-$O(n)$-bit configuration; stage indices are hardwired, so no counter is
-needed.  All index fields have $O(n)$ bits, since $K<8nN$.
-\begin{enumerate}
-\item \emph{Scan.}  The configuration is $(u,\phi,d,c)$, initially
-  $(x,0,0,0)$.  At stage $i=0,1,\ldots,K$: if $\phi=0$ and $u\in H$, set
-  $\phi=1$, $d=i$ and $c=u$; then, if $i<K$, replace $u$ by $F(u)$.
-  Finally $u=x_K$, and if $\phi=1$, then $d$ is the first index with
-  $x_d\in H$ and $c=x_d$.  Each stage costs $s+O(n^3)=O(A)$ gates.
-\item \emph{Lookup.}  Put $z=\bigvee_{h\in H}[c=h]\cdot z_h$, bitwise.
-  For each key this is an $n$-bit equality test and $O(n)$ further
-  gates, $O(n|H|)=O(nN/L)$ in total, in one pass over the keys.
-\item \emph{Correction.}  Starting from $v=z$, at stage $i=0,\ldots,K-1$
-  replace $v$ by $F(v)$ exactly when $i\geq d$.  This applies $F$ exactly
-  $K-d$ times, so if $\phi=1$, then as in \cref{eq:identity},
-  $v=F^{K-d}(F^{T-K}(x_d))=F^T(x)$.
-\item \emph{Period.}  In a separate register, starting from $w=x_K$, at
-  stage $j=1,\ldots,K$ replace $w$ by $F(w)$, and record $\lambda=j$ the
-  first time $w=x_K$; use the dummy value $\lambda=1$ if this never
-  happens.  The register $v$ from the correction step is left unchanged.
-\item \emph{Residue and cycle walk.}  Read $r=R(\lambda)$ by a linear scan
-  of the $K$ table entries, $O(nK)$ gates.  Starting from $v'=x_K$, at
-  stage $i=0,\ldots,K-1$ replace $v'$ by $F(v')$ exactly when $i<r$.
-\item \emph{Output.}  Return $v$ if $\phi=1$ and $v'$ otherwise.
-\end{enumerate}
-If $\phi=1$ the output is correct by step~3.  If $\phi=0$, then by
-\cref{lem:distinguished} two of $x_0,\ldots,x_K$ coincide.  The orbit of
-$x$ then has tail length $\mu$ and cycle length $\lambda^*$ with
-$\mu+\lambda^*\leq K$.  Hence $x_K$ lies on the cycle, step~4 returns
-$\lambda=\lambda^*$, and step~5 gives $v'=F^{K+r}(x)$ with
-$K+r\equiv T\pmod{\lambda^*}$ and $K+r,T\geq\mu$, so $v'=F^T(x)$.  As in
-\cref{sec:fixed}, both branches are evaluated on every input, with dummy
-values where needed.  No division is performed.
-
-The four walks cost $O(KA)=O(nLA)$ gates, the lookup $O(nN/L)$, and the
-residue scan and selections $O(nK)=O(n^2L)$, which is absorbed.  This
-proves \cref{eq:dp-tradeoff}.  Only $O(1)$ configurations, the
-$O(n)$-bit Horner state of \cref{lem:distinguished}, and one evaluation of
-$F$ are live at any time, which gives width $O(n+w)$.
-
-For \cref{eq:dp-optimized}, if $A\leq N$ let $L$ be the largest power of
-two with $L\leq\sqrt{N/A}$.  Then $L\leq\sqrt{N/n^3}\leq N/2$, so
-$nLA\leq n\sqrt{NA}$ and $nN/L<2n\sqrt{NA}$.  If $A>N$, scan a complete
-truth table of $F^T$: for each state $x'$ an $n$-bit equality test with
-the input and $O(n)$ gates to OR in the stored value.  This uses
-$O(nN)\leq O(n\sqrt{NA})$ gates and width $O(n)$.
-\end{proof}
-
-\begin{remark}[Comparison with sorting-based lookup]\label[remark]{rem:dp-compare}
-For $A\leq N$, \cref{eq:dp-optimized} improves \cref{eq:optimized} by a
-factor of order $\sqrt n$, with the same $A=s+n^3$.  The saving comes from
-replacing a sort of $\Theta(N/L+L)$ records, at $O(n^3)$ gates per record,
-by one comparison per key at $O(n)$ gates; the price is a walk of length
-$16nL$ in place of $2L$.  This is not the best known gate count.  An
-$O(R\log R)$-comparator network~\cite{AKS83} in \cref{lem:lookup,lem:repeat}
-reduces the sorting cost to $O(n^2R)$ and gives
-$O(A_2+n\sqrt{NA_2})$ with $A_2=s+n^2$ (\cref{thm:aks}), which is smaller than
-\cref{eq:dp-optimized} by up to a factor $\sqrt n$ when $s<n^3$.  The
-$n^3$ term here is the cost of the hash, not of lookup.  The advantage of
-distinguished points is structural: no sorting network is used, and the
-width is $O(n+s)$.  The sorting network on $\Theta(N/L+L)$ records used
-in \cref{sec:fixed} manipulates that many records together; we do not know how
-to evaluate it in width much below $\sqrt N$ at the balanced choice of $L$.
-Equivalently, \cref{thm:distinguished} describes a machine with $O(n+s)$
-bits of read/write memory and a read-only data stream that it reads in one
-left-to-right pass, performing $O(n\sqrt{NA})$ bit operations.  The
-stream must repeat the data that the machine cannot retain: each of the
-$O(K)$ membership tests needs the $2n$ hash coefficients, which occupy
-$\Theta(n^2)$ bits, and each of the $O(K)$ evaluations of $F$ needs a gate
-list of $O(s\log s)$ bits.  The stream therefore consists of one block of
-coefficients and one copy of the gate list of $F$ in front of every stage
-of the walks, followed at the appropriate point by the key--payload pairs
-and the residue table.  Its length is
-$O(nN/L+nL(n^2+s\log s))$, which is $O(n\sqrt{NA}\log s)$ at the balanced
-choice of $L$.  If the machine may instead reread a fixed region of its
-input, one copy of the coefficients and of the gate list suffices, and the
-stream has length $O(nN/L+n^2+s\log s)$.  The circuit-width statement
-needs neither variant, since its constants are hardwired.
-\end{remark}
-
-\subsection{Reversible circuits with few ancillas}
-
-A reversible circuit uses NOT, CNOT and Toffoli gates on a fixed set of
-wires.  A circuit \emph{computes} $G:\bits^n\to\bits^q$ with $a$ ancillas
-if it maps $(x,y,0^a)$ to $(x,y\oplus G(x),0^a)$ for all $x$ and $y$.
-Any Boolean circuit with $g$ gates gives such a circuit with $O(g+q)$
-gates and $g$ ancillas: compute every gate into a fresh zero wire, copy
-the outputs with CNOTs, and run the first part backwards.
-A fan-in-two gate into a fresh wire needs $O(1)$ reversible gates, since
-every Boolean function of two bits is a polynomial of degree at most two
-over $\mathbb F_2$.  Applied to \cref{thm:distinguished} directly, this
-gives as many ancillas as gates.  Bennett's pebbling of the four walks
-removes almost all of them.
-
-A walk with $K$ stages is a sequence of configurations $c_0,\ldots,c_K$
-with $c_{i+1}=\mathrm{step}_i(c_i)$.  A \emph{move} XORs
-$\mathrm{step}_i(c_i)$ into a register, which either creates $c_{i+1}$
-from zeros or clears it.  Let $k\geq2$ and $m=\ceil{\log_kK}$, and pad the
-walk to $k^m$ stages with identity steps.  To advance $k^j$ stages from a
-held configuration, advance $k$ times by $k^{j-1}$ stages, and then undo
-the first $k-1$ of these advances in reverse order.  If $M(j)$ moves
-suffice for level $j$, then $M(j)=(2k-1)M(j-1)$ and $M(0)=1$, so
-$M(m)=(2k-1)^m$.  At most $(k-1)m+1$ configurations besides $c_0$ are
-held at once~\cite{Bennett89,LS90}.  Put
-\[
-  \varepsilon_k=\log_k(2k-1)-1=\log_k\!\left(2-\tfrac1k\right)
-  \in\left(0,\tfrac1{\log k}\right].
-\]
-Since $k^{m-1}<K$,
-\[
-  (2k-1)^m=(k^m)^{1+\varepsilon_k}<(kK)^{1+\varepsilon_k}\leq k^2K^{1+\varepsilon_k}.
-\]
-For example, $\varepsilon_2=\log3-1\approx0.585$, $\varepsilon_4\approx0.404$
-and $\varepsilon_{16}\approx0.238$.
-
-\begin{theorem}[Reversible fixed powers]\label{thm:reversible}
-Let $n\geq3$, $\CC(F)\leq s$, $A=s+n^3$, and let $k\geq2$ be an integer.
-For every $T\geq0$ and every power of two $1\leq L\leq N/2$, a reversible
-circuit computes $F^T$ with
-\[
-  O\!\left(\frac{nN}{L}+k^2(nL)^{1+\varepsilon_k}A\right)
-  \text{ gates and }
-  O\!\left(kn\ceil{\frac{n}{\log k}}+s\right)\text{ ancillas.}
-\]
-\end{theorem}
-
-\begin{proof}
-Use the phases of \cref{thm:distinguished}.  Each of the four walks has
-at most $K+1=16nL$ stages on configurations of $b=O(n)$ bits.
-
-\emph{One move.}  For the scan, a move XORs $\mathrm{step}_i(c)$ into a
-register $c'$.  Compute the membership bit of $u$ by Horner's rule,
-keeping all $t=2n$ intermediate field elements; each product is formed
-by $n^2$ Toffoli gates into a $(2n-1)$-bit coefficient register, reduced
-by $O(n^2)$ CNOTs, after which the coefficient register is cleared by the
-same Toffoli gates.  This costs $O(n^3)$ gates and $O(n^2)$ ancillas, all
-cleared after the bit is copied.  Then XOR $F(u)$ into the $u$-field of
-$c'$, with $O(s)$ gates and $s$ ancillas, and XOR the $O(n)$-gate updates
-of $\phi$, $d$ and $c$ into $c'$.  Finally clear the membership bit.  A
-move therefore costs $O(A)$ gates with $O(s+n^2)$ reusable ancillas.
-Moves of the other walks cost $O(s+n)$ gates and $O(s+n)$ ancillas; a
-conditional application of $F$ is computed into a temporary register,
-selected bitwise into $c'$, and then uncomputed.
-
-\emph{Walks.}  By the pebbling count, each walk uses
-$(2k-1)^m\leq k^2(16nL)^{1+\varepsilon_k}$ moves, hence
-$O(k^2(nL)^{1+\varepsilon_k}A)$ gates, and at most $(k-1)m+2$
-configuration registers.  Since $K<8nN$,
-$m=\ceil{\log_kK}=O(\ceil{n/\log k})$, so the registers use
-$O(kn\ceil{n/\log k})$ wires.  Afterwards only $c_0$ and $c_K$ are held.
-
-\emph{Assembly.}  Run the scan, keeping its final configuration.  For the
-lookup, for each key $h$ compute $[c=h]$ into one ancilla with $O(n)$
-gates and $O(n)$ ancillas, CNOT it into the positions of the one bits of
-$z_h$ in a fresh register, and clear it.  Copy the needed fields with
-CNOTs and run the correction and period walks.  Read the residue by the
-same comparison scan over the $K$ table entries, using $O(nK)$ gates, and
-run the cycle walk.  For each output bit, two Toffoli gates XOR the bit
-selected by $\phi$ into $y$.  Finally run everything except the output
-step backwards, which clears every ancilla.  If $T<K$, pebble the walk
-of $T$ applications of $F$ instead.
-
-The lookups cost $O(nN/L)$ gates.  The residue scans and copies cost
-$O(nK)=O(n^2L)$, which is absorbed by the walks because $A\geq n^3$.
-Besides the pebbling registers, $O(1)$ configurations and $O(s+n^2)$
-workspace ancillas are used.
-\end{proof}
-
-\begin{corollary}[Ancilla--gate tradeoffs]\label[corollary]{cor:reversible}
-Under the assumptions of \cref{thm:reversible}, write $\varepsilon=\varepsilon_k$
-and assume $A\leq N/(k^2n)$.  A reversible circuit computes every fixed
-power $F^T$ with
-\[
-  O\!\left(k\,n^{1+\varepsilon/2}A^{1/2}N^{(1+\varepsilon)/(2+\varepsilon)}\right)
-\]
-gates and $O(kn\ceil{n/\log k}+s)$ ancillas.  In particular:
-\begin{enumerate}
-\item for $k=2$, with $O(n^2+s)$ ancillas, the gate count is
-  $N^{\log3/(1+\log3)}\poly(n)A^{1/2}$, where
-  $\log3/(1+\log3)\approx0.6131$;
-\item for fixed $k$, the exponent of $N$ is
-  $\tfrac12+\varepsilon_k/(2(2+\varepsilon_k))<\tfrac12+1/(4\log k)$, with
-  $O_k(n^2+s)$ ancillas;
-\item for $k=n$, with $O(n^3/\log n+s)$ ancillas, the gate count is
-  $N^{1/2}\,2^{n/(4\log n)}\poly(n)A^{1/2}=N^{1/2+O(1/\log n)}A^{1/2}$.
-\end{enumerate}
-A reversible circuit with $O(nN)$ gates and $O(n)$ ancillas computes
-$F^T$ for every $F$, which covers larger $A$.
-\end{corollary}
-
-\begin{proof}
-Let $L$ be the largest power of two with
-$L\leq\Lambda:=(N/(k^2n^{\varepsilon}A))^{1/(2+\varepsilon)}$.  The
-assumption on $A$ gives $\Lambda\geq1$, and $\Lambda\leq\sqrt N\leq N/2$.
-At $L=\Lambda$ the two terms of \cref{thm:reversible} agree up to a
-constant, and halving $L$ changes them by constant factors.  So the gate
-count is
-\[
-  O\!\left(\frac{nN}{\Lambda}\right)
-  =O\!\left(nN^{(1+\varepsilon)/(2+\varepsilon)}
-     (k^2n^\varepsilon A)^{1/(2+\varepsilon)}\right),
-\]
-which is at most the displayed bound because $k^2n^{\varepsilon}A\geq1$
-and $1/(2+\varepsilon)\leq1/2$.  The exponent of $N$ equals
-$\tfrac12+\varepsilon/(2(2+\varepsilon))$, and
-$\varepsilon_k\leq1/\log k$.  For $k=2$,
-$(1+\varepsilon_2)/(2+\varepsilon_2)=\log3/(1+\log3)$.  For $k=n$,
-$N^{\varepsilon/(2(2+\varepsilon))}\leq N^{\varepsilon/4}\leq2^{n/(4\log n)}$
-and $kn\ceil{n/\log k}=O(n^3/\log n)$.  For the last claim, scan the
-truth table of $F^T$: for each state $x'$, compute $[x=x']$ into an
-ancilla with $O(n)$ gates and $O(n)$ ancillas, CNOT it into the one bits
-of $F^T(x')$ in $y$, and clear it.
-\end{proof}
-
-\begin{corollary}[In-place permutations]\label[corollary]{cor:in-place}
-Let $P$ be a permutation of $\bits^n$ with $\CC(P)\leq s$.  For each
-integer $k\geq2$ satisfying the hypothesis of \cref{cor:reversible},
-there is a reversible circuit mapping $(x,0^{n+a})$ to $(P(x),0^{n+a})$,
-after a fixed relabelling of wires, with $a=O(kn\ceil{n/\log k}+s)$ and
-the gate count of \cref{cor:reversible} plus $O(s+n)$.
-\end{corollary}
-
-\begin{proof}
-First XOR $P(x)$ into a zero register with $O(s+n)$ gates and $s$
-temporary ancillas.  Then apply the circuit of \cref{cor:reversible} for
-$P^{-1}=P^{\ord(P)-1}$ from the new register into the input register.  It
-XORs $P^{-1}(P(x))=x$ into $x$ and leaves zero there.  Relabel the two
-$n$-wire registers.
-\end{proof}
-
-\begin{remark}[Lower bounds and the pebbling overhead]\label[remark]{rem:pebbling}
-A reversible circuit with $g$ gates yields a Boolean circuit with $O(g)$
-gates, whatever the number of ancillas: each reversible gate changes one
-wire by a fan-in-at-most-three function.  So \cref{thm:lower} applies
-to reversible circuits with any number of ancillas, and the exponent
-$1/2$ cannot be lowered for them either.  Whether $N^{1/2}\poly(n,s)$
-gates are possible with $\poly(n,s)$ ancillas is open.  The overhead
-$N^{\Theta(\varepsilon_k)}$ comes only from pebbling the four walks.
-Bennett's pebble game on a path, which models any construction storing
-only whole configurations of a walk, was analyzed exactly by
-Knill~\cite{Knill95}, and Li, Tromp, and Vit\'anyi~\cite{LTV98} show that
-Bennett's strategy reaches the greatest distance for a given number of
-pebbles.  Such results limit this strategy class only.  They give no
-circuit lower bound, since a reversible circuit need not simulate a walk
-configuration by configuration.
-\end{remark}
-
 \section{Lean formalization}\label{sec:lean}
 
 The accompanying \texttt{lean/} project proves existence of actual Boolean
 circuits with evaluation semantics and gate bounds.  It covers
 \cref{tab:results}, the invariant-set, image-sensitive and active-mass
 refinements, permutation inversion, complete-configuration simulation,
-and the lower-bound results, including the exact number of distinct powers
-of a finite map (\cref{lem:num-powers}) and the counting step of
-\cref{prop:count-general}, as well as the semantic identities of
+and the core matching-exponent lower bound.  Further checked components
+include the exact number of distinct powers of a finite map
+(\cref{lem:num-powers}), the counting step of \cref{prop:count-general},
+and the semantic identities of
 \cref{sec:spectrum} (but not their gate counts).  It also covers the reachable-set bounds for in-place machines given a step
 circuit (\cref{sec:inplace}).  It also checks the in-forest duality
 \cref{lem:forest-duality}, a combinatorial statement without circuits.
@@ -6108,7 +6248,10 @@ independent fidelity to every intended model convention.
 Sparse checkpoints and charged lookup give square-root state-space bounds
 for arbitrary fixed iterates and functional-graph navigation.  The counting
 example makes the exponent sharp for unrestricted fixed powers; it does not
-establish sharpness for polynomial-width input times.
+establish sharpness for polynomial-width input times or exact program summaries.
+The distance circuits have local coNP correctness checks, while
+\cref{prop:seth-analysis} obstructs a general compiler with a fixed saving
+in the state-width exponent under SETH.
 
 In the black-box model, \cref{sec:blackbox} gives partial lower bounds
 for a fixed exponent: matching ones for permutations within restricted
@@ -6117,9 +6260,9 @@ ones for random maps.
 
 Two directions remain: the additive bound
 $s+\widetilde O(2^{n/2})$, and broader classes of transitions with cheaply
-constructible orbit coordinates.  The sparse-counter compiler shows how
-an explicit structural description can supply such coordinates; finding them
-from a succinct transition circuit is a separate problem.
+constructible orbit coordinates.  The sparse-counter compiler obtains these
+from an explicit edit list; extracting that list from a transition circuit
+is a separate task.
 
 \section*{Provenance and draft status}
 
@@ -6128,7 +6271,12 @@ from ChatGPT (GPT-6 Astra Pro), including assistance with theorem
 formulation, proof development, exposition, and literature searches.
 The Lean development and the current revision also received assistance
 from Codex, including circuit synthesis proofs, axiom auditing, and review.
-The author field is provisional.  Historical priority and final
+Christian Reitwiessner contributed the manuscript extensions, Lean
+formalizations, and validation programs integrated from repository pull
+requests on October 17, 2026; those contributions disclose assistance
+from Claude Code.  Codex assisted with their integration, the program-summary
+and certificate discussion, bibliography reconciliation, and combined
+validation.  The author field is provisional.  Historical priority and final
 attribution require author review; the draft does not represent
 independent peer verification.
 
@@ -6486,13 +6634,6 @@ circuits: derandomizing the {XOR} lemma.
 Computing (STOC)}, pages 220--229, 1997.
 \newblock \href{https://doi.org/10.1145/258533.258590}{doi:10.1145/258533.258590}.
 
-\bibitem{BR94}
-Mihir Bellare and John Rompel.
-\newblock Randomness-efficient oblivious sampling.
-\newblock In \emph{Proceedings of the 35th Annual Symposium on Foundations of
-Computer Science (FOCS)}, pages 276--287, 1994.
-\newblock \href{https://doi.org/10.1109/SFCS.1994.365687}{doi:10.1109/SFCS.1994.365687}.
-
 \bibitem{AKS04}
 Manindra Agrawal, Neeraj Kayal, and Nitin Saxena.
 \newblock {PRIMES} is in {P}.
@@ -6615,17 +6756,6 @@ Gabriel Semani\v{s}in.
 \newblock \emph{Discrete Applied Mathematics}, 159(12):1189--1195, 2011.
 \newblock \href{https://doi.org/10.1016/j.dam.2011.04.008}{doi:10.1016/\allowbreak j.dam.2011.04.008}.
 
-\bibitem{Lupanov58}
-Oleg B. Lupanov.
-\newblock A method of circuit synthesis.
-\newblock \emph{Izvestiya VUZ, Radiofizika}, 1:120--140, 1958.
-\newblock In Russian.
-
-\bibitem{Landau03}
-Edmund Landau.
-\newblock \"Uber die Maximalordnung der Permutationen gegebenen Grades.
-\newblock \emph{Archiv der Mathematik und Physik}, 3. Reihe, 5:92--103, 1903.
-
 \bibitem{CLORS23}
 Lijie Chen, Zhenjian Lu, Igor C. Oliveira, Hanlin Ren, and Rahul Santhanam.
 \newblock Polynomial-time pseudodeterministic construction of primes.
@@ -6638,13 +6768,6 @@ Patrick X. Gallagher.
 \newblock On the distribution of primes in short intervals.
 \newblock \emph{Mathematika}, 23(1):4--9, 1976.
 \newblock \href{https://doi.org/10.1112/S0025579300016442}{doi:10.1112/S0025579300016442}.
-
-\bibitem{Sho97}
-Peter W. Shor.
-\newblock Polynomial-time algorithms for prime factorization and discrete
-logarithms on a quantum computer.
-\newblock \emph{SIAM Journal on Computing}, 26(5):1484--1509, 1997.
-\newblock \href{https://doi.org/10.1137/S0097539795293172}{doi:10.1137/S0097539795293172}.
 
 \bibitem{Kit95}
 A. Yu. Kitaev.
@@ -6713,13 +6836,6 @@ generic-group models.
 pages 693--721. Springer, 2018.
 \newblock \href{https://doi.org/10.1007/978-3-319-96884-1_23}{doi:10.1007/978-3-319-96884-1\_23}.
 
-\bibitem{CGK19}
-Henry Corrigan-Gibbs and Dmitry Kogan.
-\newblock The function-inversion problem: barriers and opportunities.
-\newblock In \emph{Theory of Cryptography -- TCC 2019}, LNCS 11891,
-pages 393--421. Springer, 2019.
-\newblock \href{https://doi.org/10.1007/978-3-030-36030-6_16}{doi:10.1007/978-3-030-36030-6\_16}.
-
 \bibitem{AGL22}
 Akshima, Siyao Guo, and Qipeng Liu.
 \newblock Time-space lower bounds for finding collisions in
@@ -6727,6 +6843,28 @@ Akshima, Siyao Guo, and Qipeng Liu.
 \newblock In \emph{Advances in Cryptology -- CRYPTO 2022}, pages 192--221.
 Springer, 2022.
 \newblock \href{https://doi.org/10.1007/978-3-031-15982-4_7}{doi:10.1007/978-3-031-15982-4\_7}.
+
+\bibitem{BCMDH90}
+Jerry R. Burch, Edmund M. Clarke, Kenneth L. McMillan, David L. Dill, and
+L. James Hwang.
+\newblock Symbolic model checking: $10^{20}$ states and beyond.
+\newblock In \emph{Proceedings of the Fifth Annual IEEE Symposium on
+Logic in Computer Science}, pages 428--439, 1990.
+\newblock \href{https://lics.siglog.org/1990/BurchClarkeMcMillan-Symbolicmodelchecki.html}{LICS archive}.
+
+\bibitem{FISS20}
+Yotam M. Y. Feldman, Neil Immerman, Mooly Sagiv, and Sharon Shoham.
+\newblock Complexity and information in invariant inference.
+\newblock Preprint, revised 2020.
+\newblock \href{https://arxiv.org/abs/1910.12256v3}{arXiv:1910.12256v3}.
+
+\bibitem{CDLMPSSW16}
+Marek Cygan, Holger Dell, Daniel Lokshtanov, D\'aniel Marx, Jesper Nederlof,
+Yoshio Okamoto, Ramamohan Paturi, Saket Saurabh, and Magnus Wahlstr\"om.
+\newblock On problems as hard as CNF-SAT.
+\newblock \emph{ACM Transactions on Algorithms}, 12(3), Article 41,
+1--24, 2016.
+\newblock \href{https://doi.org/10.1145/2925416}{doi:10.1145/2925416}.
 
 \end{thebibliography}
 

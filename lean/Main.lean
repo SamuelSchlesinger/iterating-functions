@@ -29,19 +29,12 @@ public import Proofs.AffineController
 public import Proofs.SparseCounterTime
 public import Proofs.SparseNavigation
 public import Proofs.Spectrum
-
 public import Proofs.NumberOfPowers
-
 public import Proofs.InPlace
-
 public import Proofs.ForestDuality
-
 public import Proofs.CounterBatch
-
 public import Proofs.SequentialSquaring
-
 public import Proofs.PhaseIdentities
-
 public import Proofs.DistinguishedPoints
 
 /-!

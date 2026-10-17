@@ -1,3 +1,58 @@
+Combined integration validation, October 17, 2026
+
+Integration baseline: f802f0e649affc059453e5b158751f465146a770.
+All fourteen open PR heads (#1, #4, #6--#17) are retained as ancestors.
+REVIEW.md lists their exact reviewed revisions and contribution scopes.
+Every contributed proof module and check script matches its PR head.
+
+make lean-check
+  cd lean && lake build --wfail
+  Build completed successfully (3789 jobs).
+  94 Proofs modules; 103 guarded axiom checks in Main.lean.
+  Audited axiom lists contain propext, Classical.choice, and Quot.sound only.
+
+make check
+  All seven finite semantic check programs passed.
+  Core checks: 448 maps, 17476 checkpoint cases, 2000 batched lookups.
+  Extension checks: 3446 maps, 399199 first-target times,
+    97265 hitting-time pairs, 1832344 visit-schedule/count cases.
+  Sparse counter: 46233 permutations, 334382 powers, 700 field examples,
+    1000 random edit lists, 100 large-universe metamorphic cases.
+  Minimum checkpoints: 400 forest-duality and 1900 functional-map cases.
+  Random maps: six seeded samples of sizes 2^12, 2^14, and 2^16;
+    phase identities passed, and observed L1/L2 ratios were at most one.
+    These finite observations do not prove hypotheses L1 or L2.
+  Distinguished points: 168 fixed-power checks passed.
+  New program-summary checks:
+    distance systems: 4114
+    candidate certificates checked: 2560148
+    binary-lifting and invalid-range checks: 16418 each
+    assignment-enumerator queries: 4240
+
+The new checker compares the local distance equation with direct simulation
+for every map and target set on 1, 2, and 4 states, including every candidate
+distance function with values in 0,...,N. It also checks pairwise recurrences
+and all assignment truth tables on 1, 2, and 3 variables. These are semantic
+checks, not proofs of gate bounds, coNP completeness, or SETH.
+
+make
+  Three pdflatex passes; 88 pages.
+  No unresolved references, duplicate labels, or box warnings.
+  All 88 pages inspected as rendered contact sheets; the abstract, new
+  applications, revised formalization account, and provenance inspected
+  at readable resolution. No clipping or overlapping text found.
+
+Bibliography: 69 unique keys in each bibliography, with matching key sets.
+All citations and cross-references resolve; submission abstract matches.
+git diff --check: passed.
+
+The local certificate characterization and SETH reduction remain prose.
+Each contributed extension's precise Lean boundary is in lean/README.md.
+Builds and finite checks do not establish all prose proofs or novelty.
+
+Historical validation records follow. Their counts and scope describe
+earlier revisions and are superseded by the combined record above.
+
 Validation, October 16, 2026
 
 Finite semantic checks: make check

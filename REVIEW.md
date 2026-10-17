@@ -1,5 +1,73 @@
 # Detailed review and formalization record
 
+## Integrated revision, October 17, 2026
+
+This revision incorporates all fourteen PRs open at the start of integration,
+on top of main at `f802f0e` (which already included #2, #3, and #5). Each PR
+head is retained as an ancestor through a separate merge commit. The table
+records the reviewed snapshot; later remote updates require a separate check.
+
+| PR | Contribution | Integrated head |
+|---|---|---|
+| [#1](https://github.com/SamuelSchlesinger/iterating-functions/pull/1) | Hard short-exponent powers are equivalent to PSPACE ⊄ P/poly | `f60aa21d0d7f` |
+| [#4](https://github.com/SamuelSchlesinger/iterating-functions/pull/4) | Distinguished-point checkpoints: small-width and low-ancilla reversible circuits for fixed powers | `51df2a9c1740` |
+| [#6](https://github.com/SamuelSchlesinger/iterating-functions/pull/6) | Exact constant and average-case behaviour for powers of P_n | `af61378d52ba` |
+| [#7](https://github.com/SamuelSchlesinger/iterating-functions/pull/7) | Explicit hard powers of P_n are equivalent to exponential lower bounds for E | `e4682e68e34f` |
+| [#8](https://github.com/SamuelSchlesinger/iterating-functions/pull/8) | Depth–size tradeoff for fixed powers, with a cellular-automaton corollary | `970eb7f56e11` |
+| [#9](https://github.com/SamuelSchlesinger/iterating-functions/pull/9) | Cycle-spectrum decomposition and cycle-length transfer | `eefcb9395be0` |
+| [#10](https://github.com/SamuelSchlesinger/iterating-functions/pull/10) | Counting barrier, Landau ceiling and black-box tightness | `32e505dee28f` |
+| [#11](https://github.com/SamuelSchlesinger/iterating-functions/pull/11) | In-place Turing machines: reachable-configuration bounds and a sharp two-head example | `4b2e296a4f87` |
+| [#12](https://github.com/SamuelSchlesinger/iterating-functions/pull/12) | Minimum checkpoint sets: in-forest duality, coNP-completeness, exact table algorithm | `57d3490c878e` |
+| [#13](https://github.com/SamuelSchlesinger/iterating-functions/pull/13) | A polynomial-size permutation with hard powers near the counting ceiling | `f7b8bdfd62be` |
+| [#14](https://github.com/SamuelSchlesinger/iterating-functions/pull/14) | Applications: bounded alternation, preprocessing time, a universal map, asymmetric iterators | `8b3f0b5b0e22` |
+| [#15](https://github.com/SamuelSchlesinger/iterating-functions/pull/15) | Space-bounded machines and batched powers | `eb825c51ba0d` |
+| [#16](https://github.com/SamuelSchlesinger/iterating-functions/pull/16) | Cryptographic consequences and related work on preprocessing | `54dbda208e87` |
+| [#17](https://github.com/SamuelSchlesinger/iterating-functions/pull/17) | Black-box lower bounds for fast-forwarding fixed powers | `eb953bb32421` |
+
+The requested changes on #1, #4, and #6 were already addressed at these heads:
+qualified hardness implications; a separate period-walk register and repeated
+stream data; and corrected statements about independent residue information
+and average-case hardness. Their historical GitHub review states were still
+CHANGES_REQUESTED; this integration does not represent a new review approval.
+
+Integration reconciles the bibliography, imports, theorem audits, validation
+scripts, and coverage descriptions. It shares #6's sharp circuit-count lemma
+with #13, cites the proved approximation result where #13 previously described
+an expectation, and replaces #16's depth sketch with the theorem from #8.
+Every contributed proof module and check script is byte-identical to its PR
+head. All PR-added theorem labels remain except `lem:relabel-count`, whose
+references now use the equivalent, more general `lem:sharp-count`.
+
+The new program-analysis subsection adds the exact target distance with a
+never sentinel, its unique saturated successor equation, the coNP-complete
+validation interface, largest safe invariants, exact termination ranks, and
+SAT queries for allowed initial sets. The same recurrence certifies all
+pairwise first-hit times. These use the existing O(B_P) target circuits and
+O(B) pairwise circuits, without adding a clock to the state. The assignment
+enumerator proves that any general deterministic uniform analyzer or exact
+summary compiler with time 2^((1-epsilon)n) poly would refute SETH, even for
+a requested power that is one of two trivial maps. This is separate from
+both the unrestricted-exponent counting lower bounds and the black-box models.
+
+Combined validation passes `make lean-check` (3,789 jobs, 94 proof modules,
+103 axiom guards) and `make check`. The new exhaustive checker covers 4,114
+finite transition/target systems, 2,560,148 candidate certificates, 16,418
+binary-lifting and range-rejection cases each, and 4,240 assignment-enumerator
+queries. Bibliographies have 69 matching unique keys, and all cross-references
+resolve. PDF rendering and final build results are recorded in `validation.txt`.
+
+The new certificate and SETH proofs are prose. The Lean guide specifies which
+parts of each contributed extension are checked. In particular, simulations
+of random maps do not prove hypotheses L1 or L2, and the corresponding
+black-box bounds remain conditional. Successful builds and finite checks do
+not independently verify every new prose proof or establish historical priority.
+Christian Reitwiessner's contributions and the disclosed AI assistance are
+credited in the manuscript's provenance note.
+
+## Historical review and milestones
+
+The entries below record the earlier revisions and their then-current scope.
+
 Reviewed against local baseline `2a0bb654c27fc7650c901b946c7a2bba36212536` and
 the ten proposed additions. Revision date: October 16, 2026.
 

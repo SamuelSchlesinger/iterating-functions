@@ -1,5 +1,24 @@
 # Detailed review and formalization record
 
+## Queried iterates, October 30, 2026
+
+The input-time bound improves from `O(min(mB, nB+mn))` to `O(B+mn)`, so a time
+of at most `n^2` bits costs one fixed power up to a constant factor. Binary
+powering is replaced by one scan of the compressed checkpoint forest for
+transient targets and one scan of cyclic checkpoints by phase for cyclic
+targets. Any mark passing the distance filter works, so no minimum is taken.
+
+`Proofs/TimeNavigation.lean` checks the selection rules and
+`Proofs/TimeNavigationCircuits.lean` checks the circuits, giving
+`variable_time_navigated_optimized` with bound `96000000*B + 200*m*(n+1)`.
+Lean does not check the remark that reachability follows from this theorem, or
+the bound on the spectrum decomposition. `verify_time_navigation.py` exercises
+every eligible mark on small maps.
+
+The spectrum decomposition now totals `O(B)`, because there are at most
+`sqrt(2N)` distinct cycle lengths. It still gives no bound beyond the main
+theorem. The previous bound remains checked, as `variable_time_additive_optimized`.
+
 ## Integrated revision, October 17, 2026
 
 This revision incorporates all fourteen PRs open at the start of integration,

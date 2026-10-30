@@ -63,7 +63,9 @@ natural-number division in integer budgets means floor division.
 | `fixed_power_polynomial` | If `s ≤ K*(n+1)^d`, the circuit size is at most `120000*(K+1)*(n+1)^(max d 3)*2^((n+1)/2)`. |
 | `permutation_inverse`, `permutation_inverse_encoded` | Exact inverse circuits with the fixed-power tradeoff, also for injectively encoded finite permutation domains in arbitrary universes. |
 | `variable_time`, `variable_time_optimized` | An `m`-bit input exponent, with optimized bound `m*(120000*B + 4*n)`. |
-| `variable_time_additive_optimized` | Arbitrarily wide input exponents with bound `33000000*(n+1)*B + 200*m*(n+1)`. Together with the preceding result, this gives the minimum of the two asymptotic bounds. |
+| `variable_time_additive_optimized` | Arbitrarily wide input exponents with bound `33000000*(n+1)*B + 200*m*(n+1)`, by binary powering on a compressed time. Superseded by the next row. |
+| `variable_time_navigated`, `variable_time_navigated_optimized` | An `m`-bit input exponent for every `m`, with tradeoff `32000000*powerBudget n s N L + 200*m*(n+1)` and optimized bound `96000000*B + 200*m*(n+1)`. No state-width factor multiplies `B`. |
+| `forest_ancestor_walk`, `exists_forest_ancestor_mark`, `cycle_mark_walk`, `exists_cycle_checkpoint` | Soundness and existence of the marks selected by the transient and cyclic filters, on arbitrary finite types. |
 | `first_target_state`, `target_reachability` | Eventual recognition of a target predicate and the first visited target state; the absorbing transition costs at most `s + predicate.size + 4*n`. |
 | `halting_computation` | Final configurations on valid initial states, under semantic absorption and termination hypotheses, with the original tradeoff and a first halt before `N` steps. |
 | `batched_fixed_power_optimized` | For `1 ≤ r ≤ N`, size at most `3000000*(r*A + sqrt((n+1)^3*N*r*A))`. The checkpoint dictionary is shared across the batch. |
@@ -310,6 +312,15 @@ the Boolean ring, keeping payload vectors and Boolean wires in the same type.
     visit times, allowing coordinate transport with two forward encodings and
     no inverse circuit. The native synthesis theorem can be reused with any
     supplied cycle-label circuit of the specified format.
+
+18. **Replace binary powering by one scan.** `TimeNavigation.lean` proves that
+    any mark passing an ancestry, depth, and distance filter walks to the
+    requested transient iterate, and that any cyclic checkpoint passing a
+    representative and phase filter walks to the requested cyclic iterate.
+    Each filter is nonempty whenever the short prefix does not already contain
+    the answer. No minimum over marks is taken. `TimeNavigationCircuits.lean`
+    charges the prefix, dictionary, record rows, final walk, and both labels,
+    then reuses the time compression of `LongTime.lean`.
 
 The construction uses classical choices of checkpoints, finite enumerations,
 and circuit witnesses. It establishes nonuniform existence, not an extracted

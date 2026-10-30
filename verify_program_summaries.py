@@ -2,7 +2,7 @@
 """Exhaustive finite checks for distance certificates and the SAT enumerator.
 
 These checks validate semantic identities, not circuit-size bounds, coNP
-completeness, or SETH. The distance oracle simulates until a target or repetition;
+completeness, or the Circuit-SAT consequences. The distance oracle simulates until a target or repetition;
 the certificate check only inspects a state and its successor.
 """
 

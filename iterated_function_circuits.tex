@@ -74,8 +74,10 @@ depth, pair-input reachability, exact first hitting times, and complete visit
 descriptors, together with input-time and shared batched versions.  Exact
 target-distance summaries have a local correctness equation, yielding
 compact safety invariants and termination ranks with coNP verification.
-Under SETH, general deterministic uniform analysis cannot save a fixed fraction of the
-state-width exponent, even when the requested powered map has a tiny circuit.
+General deterministic uniform analysis saving a fixed fraction of the
+state-width exponent, even when the requested powered map has a tiny circuit,
+would give the same saving for Circuit-SAT and hence imply
+$\mathsf{NEXP}\not\subseteq\mathsf{P}/\mathrm{poly}$.
 
 Structured transitions admit stronger bounds.  A permutation differing from
 a counter at $r$ states has $O(n(r+1))$-gate signed fixed powers and navigation,
@@ -721,6 +723,15 @@ is compatible with that requirement.  It does rule out security against
 all circuits of size $2^{(1/2+\varepsilon)n}$, for any fixed
 $\varepsilon>0$ and sufficiently large $n$; it establishes no security
 at smaller sizes.
+
+For small $s$, exact inversion can instead use satisfiability search.
+Encoding $P(x)=y$ with a prefix of $x$ fixed gives a 3-CNF with
+$O(s)$ variables and clauses, and $n$ such queries recover $x$.  If the
+counting theorem of~\cite{Claude26}, discussed after
+\cref{prop:circuit-sat-analysis}, holds, then for $s\geq n$ this gives
+deterministic time and circuit size $2^{O(s/\sqrt{\log s})}$.
+That improves on \cref{cor:inverse} for $s\leq cn\sqrt{\log n}$ with a
+sufficiently small constant $c>0$, and gives nothing for larger $s$.
 
 For noninjective maps, a forward power need not find a preimage.  For
 example, the map with values $(0,0,1,0)$ on $\{0,1,2,3\}$ has unique
@@ -4986,7 +4997,7 @@ This section connects the circuit bounds to exact program summaries,
 bounded choices, preprocessing, universal maps, and asymmetric iterators.
 The target and navigation circuits used below are mechanized, as are the
 simulation and hardwiring arguments of \cref{sec:universal-map,sec:asymmetric}.
-The local certificate characterization, SAT-oracle analyses, SETH reduction,
+The local certificate characterization, SAT-oracle analyses, Circuit-SAT reduction,
 and preprocessing runtime are prose results.
 
 \subsection{Exact program summaries and local certificates}
@@ -5296,52 +5307,78 @@ circuits of \cref{cor:halting}, where $T=2^b$.  Only the circuit for the
 first halting time, which uses \cref{thm:depth}, has not been analysed
 here.
 
-\begin{proposition}[A SETH obstruction to uniform analysis]
-\label[proposition]{prop:seth-analysis}
-Fix $0<\varepsilon<1$.  Unless the Strong Exponential Time Hypothesis
-(SETH) fails, no deterministic uniform algorithm solves general
-$n$-bit iteration in time
+\begin{proposition}[A Circuit-SAT barrier to uniform analysis]
+\label[proposition]{prop:circuit-sat-analysis}
+Fix $0<\varepsilon<1$.  Suppose a deterministic uniform algorithm solves
+general $n$-bit iteration in time
 \[
   2^{(1-\varepsilon)n}\poly(s,n,\log(T+2)),
 \]
 or general target reachability in time
-$2^{(1-\varepsilon)n}\poly(s,n,a)$.
-The same obstruction applies to an algorithm that constructs an exact
-Boolean circuit for the requested power, reachability summary, or exact
-target-distance summary within those respective time bounds.
+$2^{(1-\varepsilon)n}\poly(s,n,a)$, or constructs an exact Boolean circuit
+for the requested power, reachability summary, or exact target-distance
+summary within those respective time bounds.  Then satisfiability of
+Boolean circuits with $m$ inputs and $g$ gates is decidable
+deterministically in time $2^{(1-\varepsilon)m}\poly(g,m)$.  Consequently,
+$\mathsf{NEXP}\not\subseteq\mathsf{P}/\poly$, and for some $\delta>0$ a
+language in $\mathsf{E}^{\mathsf{NP}}$ has no circuits of size $2^{\delta m}$.
 \end{proposition}
 \begin{proof}
-Given an $m$-variable CNF formula $\varphi$, form the $(m+1)$-bit map
+Let $C$ be a Boolean circuit over AND, OR, and NOT with $m$ inputs and
+$g$ gates.  Rewriting it with bounded fan-in changes its size only
+polynomially.  Form the $(m+1)$-bit map
 \[
- F_\varphi(u,b)=
- \bigl(u+1\bmod2^m,\ b\lor\varphi(u)\bigr).
+ F_C(u,b)=
+ \bigl(u+1\bmod2^m,\ b\lor C(u)\bigr).
 \]
-Its circuit has size $O(|\varphi|+m)$.  Starting at $(0^m,0)$, the
+Its circuit has size $\poly(g,m)$.  Starting at $(0^m,0)$, the
 assignment register visits every assignment during the next $2^m$ steps,
-and the last bit is then $\operatorname{SAT}(\varphi)$.
-Equivalently, the target $b=1$ is reachable exactly when $\varphi$ is
-satisfiable.  The hypothesized algorithm, with $n=m+1$ and
-$T=2^m$, therefore decides CNF-SAT in
-$2^{(1-\varepsilon)m}\poly(|\varphi|,m)$ time, contrary to SETH
-\cite{CDLMPSSW16}.  A compiler has the same consequence: its explicit
+and the last bit is then $\operatorname{SAT}(C)$.
+Equivalently, the target $b=1$ is reachable exactly when $C$ is
+satisfiable.  The hypothesized algorithm, with $n=m+1$,
+$T=2^m$, and a constant-size target predicate, therefore decides
+satisfiability of $C$ in $2^{(1-\varepsilon)m}\poly(g,m)$ time.  A
+compiler has the same consequence: its explicit
 circuit output can be evaluated with only polynomial overhead in $n$
 per gate, which preserves the stated exponent on these instances.
 For a target-distance summary, compare its value with the never sentinel.
+
+This running time saves the superpolynomial factor $2^{\varepsilon m}$
+over exhaustive search on circuits with $m^k$ gates for every $k$, so
+Williams's theorems~\cite[Theorems~1.1 and~1.2]{Williams10} give both
+lower bounds.
 \end{proof}
 
 For this example the entire powered map is already tiny:
 \[
- F_\varphi^{2^m}(u,b)=
- \bigl(u,\ b\lor\operatorname{SAT}(\varphi)\bigr).
+ F_C^{2^m}(u,b)=
+ \bigl(u,\ b\lor\operatorname{SAT}(C)\bigr).
 \]
 It is either the identity or the map that sets the last bit to one.
-Determining which summary is correct decides SAT.  In particular, a
+Determining which summary is correct decides Circuit-SAT.  In particular, a
 general $2^{n/2}\poly(s,n)$-time compiler would give a
-$2^{m/2}\poly(|\varphi|,m)$-time SAT algorithm.  This is an obstruction
+$2^{m/2}\poly(g,m)$-time Circuit-SAT algorithm.  This is a barrier
 for algorithms inspecting the transition circuit, distinct from the
 oracle-model restrictions in \cref{sec:blackbox}.  It already uses an
 exponent with $O(n)$ bits and is compatible with the near-full-state-space
 preprocessing bound of \cref{prop:preprocessing}.
+
+\Cref{prop:circuit-sat-analysis} is unconditional.  It does not use the
+Exponential Time Hypothesis (ETH) or the Strong Exponential Time Hypothesis
+(SETH)~\cite{CDLMPSSW16}, which implies ETH~\cite{IPZ01}.  Preprints by
+OpenAI~\cite{OpenAI26} and Anthropic~\cite{Claude26} announce deterministic
+algorithms counting the satisfying assignments of $k$-CNF formulas in time
+$2^{o(n)}$ for each fixed $k$, with Lean formalizations, and so refute both
+hypotheses; these claims are under community examination at the time of
+writing.  They do not provide the saving in the proposition.
+Anthropic's bound for a $k$-CNF with $n$ variables and $M$ clauses is
+$2^{O(\min\{k^2n\log\log n/\sqrt{\log n},\;kM/\sqrt{\log M}\})}$.  A circuit
+with $g$ gates has a 3-CNF encoding with $O(g)$ variables and clauses, so
+this bound decides its satisfiability in time $2^{O(g/\sqrt{\log g})}$, which
+is below $2^m$ only for $g=O(m\sqrt{\log m})$.  The hard instances for the
+proposition are thus the transitions of larger polynomial size.  Unrolling
+$T$ steps of the transition has the same limitation, with $Ts$ in place
+of $g$.
 
 \subsection{A universal linear-size map}\label{sec:universal-map}
 
@@ -6250,8 +6287,8 @@ for arbitrary fixed iterates and functional-graph navigation.  The counting
 example makes the exponent sharp for unrestricted fixed powers; it does not
 establish sharpness for polynomial-width input times or exact program summaries.
 The distance circuits have local coNP correctness checks, while
-\cref{prop:seth-analysis} obstructs a general compiler with a fixed saving
-in the state-width exponent under SETH.
+\cref{prop:circuit-sat-analysis} shows that a general compiler with a fixed
+saving in the state-width exponent would give the same saving for Circuit-SAT.
 
 In the black-box model, \cref{sec:blackbox} gives partial lower bounds
 for a fixed exponent: matching ones for permutations within restricted
@@ -6276,7 +6313,8 @@ formalizations, and validation programs integrated from repository pull
 requests on October 17, 2026; those contributions disclose assistance
 from Claude Code.  Codex assisted with their integration, the program-summary
 and certificate discussion, bibliography reconciliation, and combined
-validation.  The author field is provisional.  Historical priority and final
+validation.  Claude Code assisted with the Circuit-SAT barrier and its
+literature check.  The author field is provisional.  Historical priority and final
 attribution require author review; the draft does not represent
 independent peer verification.
 
@@ -6865,6 +6903,35 @@ Yoshio Okamoto, Ramamohan Paturi, Saket Saurabh, and Magnus Wahlstr\"om.
 \newblock \emph{ACM Transactions on Algorithms}, 12(3), Article 41,
 1--24, 2016.
 \newblock \href{https://doi.org/10.1145/2925416}{doi:10.1145/2925416}.
+
+\bibitem{Williams10}
+R. Ryan Williams.
+\newblock Improving exhaustive search implies superpolynomial lower bounds.
+\newblock In \emph{Proceedings of the 42nd ACM Symposium on Theory of
+Computing}, pages 231--240, 2010.
+\newblock Journal version: \emph{SIAM Journal on Computing}, 42(3):1218--1244,
+2013.  Theorem numbers follow the
+\href{https://people.csail.mit.edu/rrw/improved-algs-lbs2.pdf}{author's
+version of May 4, 2010}.
+\newblock \href{https://doi.org/10.1145/1806689.1806723}{doi:10.1145/1806689.1806723}.
+
+\bibitem{IPZ01}
+Russell Impagliazzo, Ramamohan Paturi, and Francis Zane.
+\newblock Which problems have strongly exponential complexity?
+\newblock \emph{Journal of Computer and System Sciences}, 63(4):512--530, 2001.
+\newblock \href{https://doi.org/10.1006/jcss.2001.1774}{doi:10.1006/jcss.2001.1774}.
+
+\bibitem{OpenAI26}
+OpenAI.
+\newblock The Exponential Time Hypothesis is false.
+\newblock Preprint, revised October 25, 2026.
+\newblock \href{https://github.com/openai/math/blob/main/preprints/The-Exponential-Time-Hypothesis-is-False-October-25-2026/paper.pdf}{github.com/openai/math}.
+
+\bibitem{Claude26}
+Claude (Anthropic).
+\newblock A $2^{o(n)}$ time algorithm for 3-SAT.
+\newblock Preprint, October 26, 2026.
+\newblock \href{https://hexagonmath.org/2610.00577v1}{hexagon:2610.00577v1}.
 
 \end{thebibliography}
 

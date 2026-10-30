@@ -38,13 +38,14 @@ the random-map results retain two unproved probabilistic hypotheses.
 These are nonuniform bounded-fan-in Boolean circuits, with every lookup,
 selection, and arithmetic gate charged. The general theorem bounds circuit
 size. A separate construction analyzes preprocessing near the full state-space
-scale. Under SETH, no general deterministic uniform analyzer or exact summary
-compiler runs in 2^((1-epsilon)n) poly time for a fixed epsilon > 0, even on
-instances whose requested power has a tiny circuit. The sparse
+scale. A general deterministic uniform analyzer or exact summary compiler
+running in 2^((1-epsilon)n) poly time for a fixed epsilon > 0, even on instances
+whose requested power has a tiny circuit, would give the same saving for
+Circuit-SAT and hence NEXP not in P/poly. The sparse
 case additionally has a polynomial-time chart compiler from an explicit edit
 list. Lean checks the core circuit bounds and selected extensions or semantic
 components; the [Lean guide](lean/README.md) states each boundary. The new
-certificate characterization and SETH reduction are prose proofs.
+certificate characterization and Circuit-SAT reduction are prose proofs.
 
 ## Read and use
 

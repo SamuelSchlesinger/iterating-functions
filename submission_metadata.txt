@@ -25,8 +25,10 @@ depth, pair-input reachability, exact first hitting times, and complete visit
 descriptors, together with input-time and shared batched versions.  Exact
 target-distance summaries have a local correctness equation, yielding
 compact safety invariants and termination ranks with coNP verification.
-Under SETH, general deterministic uniform analysis cannot save a fixed fraction of the
-state-width exponent, even when the requested powered map has a tiny circuit.
+General deterministic uniform analysis saving a fixed fraction of the
+state-width exponent, even when the requested powered map has a tiny circuit,
+would give the same saving for Circuit-SAT and hence imply
+$\mathsf{NEXP}\not\subseteq\mathsf{P}/\mathrm{poly}$.
 
 Structured transitions admit stronger bounds.  A permutation differing from
 a counter at $r$ states has $O(n(r+1))$-gate signed fixed powers and navigation,

@@ -1,3 +1,14 @@
+Source revision validation, October 30, 2026
+
+python3 verify_program_summaries.py: passed. Its assignment enumerator covers
+every truth table on 1, 2, and 3 variables, so it applies to Circuit-SAT inputs.
+Bibliography: 73 unique keys in each bibliography, with matching key sets.
+A static source scan found all citations and cross-references resolved, and
+the submission abstract matches.
+git diff --check: passed.
+No Lean source changed. pdflatex was unavailable, so the manuscript was not
+compiled and iterated_function_circuits.pdf must be rebuilt with make.
+
 Combined integration validation, October 17, 2026
 
 Integration baseline: f802f0e649affc059453e5b158751f465146a770.
@@ -33,7 +44,8 @@ The new checker compares the local distance equation with direct simulation
 for every map and target set on 1, 2, and 4 states, including every candidate
 distance function with values in 0,...,N. It also checks pairwise recurrences
 and all assignment truth tables on 1, 2, and 3 variables. These are semantic
-checks, not proofs of gate bounds, coNP completeness, or SETH.
+checks, not proofs of gate bounds, coNP completeness, or the Circuit-SAT
+consequences.
 
 make
   Three pdflatex passes; 88 pages.
@@ -46,7 +58,7 @@ Bibliography: 69 unique keys in each bibliography, with matching key sets.
 All citations and cross-references resolve; submission abstract matches.
 git diff --check: passed.
 
-The local certificate characterization and SETH reduction remain prose.
+The local certificate characterization and Circuit-SAT reduction remain prose.
 Each contributed extension's precise Lean boundary is in lean/README.md.
 Builds and finite checks do not establish all prose proofs or novelty.
 

@@ -27,7 +27,7 @@ simulation, batched counter powers, sequential-squaring arithmetic, and the
 deterministic phase identities used in the black-box section. The table below
 distinguishes circuit constructions from semantic results and hypotheses.
 The manuscript's local distance-certificate characterization, SAT-based
-analyses, and SETH compiler obstruction are not formalized. Their underlying
+analyses, and Circuit-SAT compiler barrier are not formalized. Their underlying
 target and pairwise first-hit circuits are already checked.
 
 ```sh

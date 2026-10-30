@@ -45,18 +45,32 @@ SAT queries for allowed initial sets. The same recurrence certifies all
 pairwise first-hit times. These use the existing O(B_P) target circuits and
 O(B) pairwise circuits, without adding a clock to the state. The assignment
 enumerator proves that any general deterministic uniform analyzer or exact
-summary compiler with time 2^((1-epsilon)n) poly would refute SETH, even for
-a requested power that is one of two trivial maps. This is separate from
+summary compiler with time 2^((1-epsilon)n) poly would decide Circuit-SAT in
+time 2^((1-epsilon)m) poly(g,m), even for a requested power that is one of two
+trivial maps. By Theorems 1.1 and 1.2 of Williams (STOC 2010, author's version)
+this implies NEXP not in P/poly and an E^NP language without 2^(delta m)-size
+circuits. Both Williams statements were checked against the author's text; his
+Circuit-SAT is over AND, OR, and NOT, and E^NP is not known to lie in NEXP, so
+the two consequences are stated separately. The barrier is unconditional and
+uses neither ETH nor SETH. This is separate from
 both the unrestricted-exponent counting lower bounds and the black-box models.
+
+The manuscript's remarks on the OpenAI and Anthropic preprints were checked
+against their text: OpenAI Theorem 1.1, and Anthropic's main theorem and
+Corollary 5. The organizers of the open community examination state that their
+involvement is not certification of the claim, so the manuscript reports those
+refutations as announced. No theorem in the
+manuscript depends on them; the small-size inversion remark is explicitly
+conditional on the counting theorem.
 
 Combined validation passes `make lean-check` (3,789 jobs, 94 proof modules,
 103 axiom guards) and `make check`. The new exhaustive checker covers 4,114
 finite transition/target systems, 2,560,148 candidate certificates, 16,418
 binary-lifting and range-rejection cases each, and 4,240 assignment-enumerator
-queries. Bibliographies have 69 matching unique keys, and all cross-references
+queries. Bibliographies have 73 matching unique keys, and all cross-references
 resolve. PDF rendering and final build results are recorded in `validation.txt`.
 
-The new certificate and SETH proofs are prose. The Lean guide specifies which
+The new certificate and Circuit-SAT proofs are prose. The Lean guide specifies which
 parts of each contributed extension are checked. In particular, simulations
 of random maps do not prove hypotheses L1 or L2, and the corresponding
 black-box bounds remain conditional. Successful builds and finite checks do

@@ -127,10 +127,12 @@ def check(graph, ranks, length, counts):
                 rows = [a for a in marks
                         if graph.pre[a] <= graph.pre[h] <= graph.high[a]
                         and target <= graph.depth[a] <= target + k]
+                assert rows
+                if u <= k:
+                    assert h in rows
                 if u >= k:
-                    assert rows
                     counts["long transient"] += 1
-                for a in rows or [h]:
+                for a in rows:
                     steps = graph.depth[a] - target
                     assert 0 <= steps <= k
                     assert graph.walk(a, steps) == expected

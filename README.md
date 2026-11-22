@@ -90,6 +90,11 @@ ranks with ties. Its density proof adapts the five-wise continuous-rank
 argument presented by Knudsen and Stöckel.
 [Edgar, Fig. 1](https://doi.org/10.7717/peerj.10805), [Knudsen and Stöckel, §5.1, Theorem 2](https://arxiv.org/abs/1502.05729).
 
+The input-exponent construction uses Christian Reitwiessner's ancestry and
+depth test for a transient target. Shared half-word tables and blocks of
+cycle phases give the sharper fixed-power term in the resulting bound.
+[Reitwiessner's input-time construction](https://github.com/SamuelSchlesinger/iterating-functions/pull/19).
+
 The paper's related-work sections credit the underlying constructions, and its
 provenance note credits Christian Reitwiessner's contributed extensions and
 formalizations and describes AI assistance. Authorship and final attribution

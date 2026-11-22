@@ -10,8 +10,8 @@ and exponents on both sides of every local cutoff, including a 66-bit
 exponent. An eight-state chain and cycle exercise longer branches.
 Run it with `python3 verify_endpoint_powers.py`. The finite check
 covers semantic recovery. The circuit size proofs are in cslib-frontier.
-[Fixed power](https://github.com/cslib-community/complexitylib/pull/7522),
-[input exponent](https://github.com/cslib-community/complexitylib/pull/LIVE-FRONTIER-PR).
+[Fixed power](https://github.com/cslib-community/cslib-frontier/pull/7522),
+[input exponent](https://github.com/cslib-community/cslib-frontier/pull/7527).
 
 ## Russian literature on powering, November 22, 2026
 

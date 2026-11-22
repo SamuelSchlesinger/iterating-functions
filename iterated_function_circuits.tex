@@ -982,7 +982,11 @@ $2^{n/2}\poly(n)$ nonuniform gates, however many steps are taken.
 The fixed-power construction in \cref{sec:fixed} looks up an entire
 trajectory. Here the circuit first finds one checkpoint by evaluating a
 small rank circuit on the trajectory. The same checkpoint set supplies
-the data for an exponent presented in binary.
+the data for an exponent presented in binary. Reitwiessner obtained
+an additive $O(nm)$ exponent cost for the sorting-based bound by
+separating transient and cyclic targets \cite{Reitwiessner26}. We use his
+ancestry and depth test with shared half-word tables, and group cycle
+phases into blocks indexed by their origin.
 
 \subsection{Selecting a sparse set by a local minimum}
 
@@ -1119,11 +1123,11 @@ states, select any row $a$ satisfying
  v(a)\le v(h)\le e(a),\qquad \mu(a)-K\le D\le\mu(a).
 \]
 The lower threshold can be truncated at zero. Such a row reaches the
-target after exactly $\mu(a)-D\le K$ steps. If $u\ge K$, apply
+target after exactly $\mu(a)-D\le K$ steps. If $u\le K$, the starting
+checkpoint $h$ itself is an eligible row. If $u>K$, apply
 \cref{lem:endpoint-rank} to the $K$ states starting at $F^{u-K}(h)$.
 Their strictly decreasing transient depths ensure they are distinct,
-and the selected state is an eligible row. If no row is eligible then
-$u<K$, and the default $(h,\mu(h))$ reaches the target in $u$ steps.
+and the selected state is an eligible row.
 \Cref{lem:endpoint-table} returns the selected state and its depth
 together. A subtraction and one bounded walk finish this branch.
 
@@ -6473,8 +6477,8 @@ The bounds above leave four questions.
 The accompanying \texttt{lean/} project proves existence of actual Boolean
 circuits with evaluation semantics and gate bounds. The endpoint bounds
 in \cref{thm:endpoint} are formalized separately in cslib-frontier
-(\href{https://github.com/cslib-community/complexitylib/pull/7522}{fixed power},
-\href{https://github.com/cslib-community/complexitylib/pull/LIVE-FRONTIER-PR}{input exponent}).
+(\href{https://github.com/cslib-community/cslib-frontier/pull/7522}{fixed power},
+\href{https://github.com/cslib-community/cslib-frontier/pull/7527}{input exponent}).
 The local project covers the sorting-based fixed and input-time bounds,
 the other rows of \cref{tab:results}, the invariant-set, image-sensitive and active-mass
 refinements, permutation inversion, complete-configuration simulation,
@@ -7166,6 +7170,12 @@ Quicksort, largest bucket, and min-wise hashing with limited independence.
 In \emph{Algorithms -- ESA 2015}, LNCS \textbf{9294} (2015), 828--839.
 \href{https://doi.org/10.1007/978-3-662-48350-3_69}{doi:10.1007/978-3-662-48350-3\_69}.
 Full version, \href{https://arxiv.org/abs/1502.05729}{arXiv:1502.05729}.
+
+\bibitem{Reitwiessner26}
+Christian Reitwiessner.
+\newblock Input-time iteration in $O(B+nm)$ gates.
+\newblock Contribution to \emph{Square-root circuit bounds for iterated
+functions}, 2026. \href{https://github.com/SamuelSchlesinger/iterating-functions/pull/19}{Pull request 19}.
 
 \bibitem{Lupanov92D}
 Oleg B. Lupanov (printed as Lupanow).

@@ -1,5 +1,47 @@
 # Detailed review and formalization record
 
+## Russian literature on powering, November 22, 2026
+
+Lupanov's 2003 theorem on p. 180 gives the sharp Shannon bound for an
+exponent supplied as input. The maximum runs over the domain and its
+self-map. In the full-cube, unit-cost binary case it is asymptotic to
+2^n, the worst-case cost of evaluating the transition once. His upper
+bound encodes trees and cycles, and his lower bound on p. 208 counts
+single cycles. The square-root theorem here exploits the circuit size of
+the given transition. Sergeev supplied the full paper. An English account
+of the asymptotic is available in [Korshunov, Theorem 2.3](https://doi.org/10.1070/RM2012v067n01ABEH004777).
+
+The 1992 Dagstuhl and Oberwolfach abstracts treat bijections. The 1993
+journal paper proves the size and depth bounds for bijections and on p. 66
+states extensions to noninjective maps and simultaneous evaluations.
+On p. 67 Lupanov also describes deciding whether one state reaches another
+and finding a witnessing exponent with the same estimates. The present
+reachability theorem returns the least such exponent with a gate bound
+that depends on the size of the transition circuit. The Keldysh bibliography identifies the
+1994 Moscow note at pp. 331–333. Only its bibliographic record was available.
+[Dagstuhl, p. 13](https://doi.org/10.4230/DagSemRep.45), [Oberwolfach, p. 8](https://www.wisdom.weizmann.ac.il/~/oded/PS/owr-cc92.pdf#page=8), [1993 journal article](https://www.mathnet.ru/rus/vmumm2330), [Keldysh bibliography, entry 48](https://keldysh.ru/memory/lupanov/3.pdf).
+
+Lupanov credits Redkin's linear bound for a Boolean function specified on
+$M$ inputs (p. 187), and the results of Nechiporuk, Sholomov, and Andreev
+for the sharper lookup bound on larger domains (p. 202). He also credits
+a simpler graph partition in F. Müller's “On the realization of one class
+of automaton mappings,” *Problemy Kibernetiki* 34 (1978), 95–108 (p. 190,
+footnote). [Redkin (1969)](https://www.mathnet.ru/rus/at10369),
+[Nechiporuk (1965)](https://www.mathnet.ru/rus/dan31288), [Andreev (1989)](https://www.mathnet.ru/rus/dm939).
+
+Two later papers concern the random-map parameters used here. Zubkov and
+Mironkin give the first-repeat distribution from one specified state of
+an iterated random map. Mironkin and Mikhailov compute the probability
+that a specified state belongs to its image, and hence the expected image
+size in the image-sensitive circuit bound. The black-box hypotheses in
+the manuscript ask for simultaneous bounds over all states.
+[Zubkov and Mironkin (2017)](https://doi.org/10.4213/mvk239), [Mironkin and Mikhailov (2018)](https://doi.org/10.4213/mvk264).
+
+D. Yu. Cherukhin's similarly titled 2001 paper defines a power by
+composing a scalar Boolean function on disjoint blocks of fresh inputs.
+After $k$ levels an $n$-ary function has $n^k$ inputs. The powers in
+this manuscript keep the state width fixed. [Cherukhin's definition, p. 104](https://www.mathnet.ru/eng/da234).
+
 ## Integrated revision, October 17, 2026
 
 This revision incorporates all fourteen PRs open at the start of integration,

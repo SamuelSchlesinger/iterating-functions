@@ -51,7 +51,7 @@
 \title{Square-Root Circuit Bounds\\for Iterated Functions}
 % Author field is provisional and editable; no affiliation is assumed.
 \author{Samuel Schlesinger}
-\date{October 17, 2026\\[3pt]\small Preliminary draft}
+\date{November 22, 2026\\[3pt]\small Preliminary draft}
 
 \begin{document}
 \maketitle
@@ -60,10 +60,13 @@
 Let $F:\bits^n\to\bits^n$ have a Boolean circuit of size $s$, and put
 $A=s+n^3$ and $B=A+\sqrt{n^3 2^nA}$.  Every fixed iterate $F^T$ has a
 bounded-fan-in circuit of size $O(B)$, independently of the magnitude of
-$T\geq0$, without assuming injectivity.  The construction uses sparse
-checkpoints and sorting-based lookup, with every access and arithmetic gate
-charged.  The circuit-size bound is nonuniform; constructing its hardwired
-data can require work exponential in the state width.
+$T\geq0$, without assuming injectivity.  For polynomial $s$ this is
+$2^{n/2+O(\log n)}$.  Over all $n$-bit maps, Lupanov (2003) proved the
+sharp worst-case bound $(1+o(1))2^n$ even for an $n$-bit input exponent.
+We adapt the sparse checkpoints and sorting-based lookup of Hirahara,
+Ilango, and Williams for permutation inversion.  The size bound charges
+every access and arithmetic gate.  Constructing the hardwired data for
+this nonuniform circuit can require work exponential in the state width.
 
 For even $n$, an explicit linear-size permutation has almost all powers of
 complexity $\Omega(2^{n/2}/n)$ under a uniform exponent modulo its order.
@@ -84,9 +87,6 @@ can be constructed in polynomial time from an explicit edit list.  An
 autonomous $q$-bit controller with a $p$-bit affine payload gives
 $O(2^q(q+p^2))$-gate fixed powers.  Lean checks these core circuit bounds;
 further extensions state their individual formalization boundaries.
-The checkpoint and block
-methods have established antecedents, and historical priority of these
-circuit formulations remains unresolved.
 \end{abstract}
 
 \noindent\textbf{Keywords.} Boolean circuit complexity; function iteration;
@@ -104,11 +104,13 @@ memory probes, or the time of a random-access algorithm.
 
 Let $N=2^n$ and suppose that $F$ has a circuit of size $s$.  Directly
 unrolling $T$ applications gives a circuit of size at most $Ts$ for $F^T$.
-Alternatively, hardwiring a complete truth table and testing the input
-against all $N$ states gives an $O(nN)$-gate circuit, independently of $T$.
-The latter bound ignores the possibility that $F$ itself is much simpler
-than an arbitrary map on its state space.  Our main result exploits that
-possibility.
+Synthesizing the $n$ output bits of $F^T$ separately by Lupanov's
+single-output construction~\cite{Lupanov58} gives at most $(1+o(1))N$
+gates for any fixed $T$.  Lupanov's later powering theorem attains this
+same leading term with a single circuit that takes both $x$ and an $n$-bit
+exponent as inputs~\cite[p.~180]{Lupanov03}.  This is sharp over all $F$,
+already at exponent one.  Our question is how much smaller the circuit
+can be when the transition itself has small size $s$.
 
 \begin{theorem}[Fixed-power tradeoff]\label{thm:main}
 Let $n\geq 1$, let $F:\bits^n\to\bits^n$ satisfy $\CC(F)\leq s$, and put
@@ -210,25 +212,6 @@ Recognizable targets include eventual membership and recurring or permanent
 acceptance.  For a predicate of size $a$, put $A_P=s+a+n^3$ and
 $B_P=A_P+\sqrt{n^3NA_P}$.
 
-\Cref{sec:structured} gives stronger bounds for autonomous controllers and
-sparse counter edits.  For the latter, an explicit edit list permits
-polynomial-time chart construction; transport to other coordinates charges
-their encoding and decoding circuits.  Choosing $T=\ord(P)-1$ also recovers
-the earlier square-root permutation-inversion bound, compatible with
-polynomial-size one-wayness; see \cref{sec:one-way}.
-
-The further extensions separate several questions that the size bound
-does not settle.  \Cref{sec:exact-constant,sec:explicit-exponents,sec:near-landau}
-refine counting, approximation, and the complexity of specifying hard
-exponents.  \Cref{sec:aks,sec:depth-size,sec:distinguished} study smaller
-polynomial factors, depth, width, and reversible implementations;
-the distinguished-point procedure has checked semantics, while its
-resource bounds remain prose.  \Cref{sec:min-checkpoints} studies optimal
-checkpoint sets.  \Cref{sec:program-analysis,sec:preprocessing} connect
-compact summaries to certification and the cost of construction, and
-\cref{sec:blackbox} states its oracle-model restrictions and probabilistic
-hypotheses explicitly.
-
 \begin{table}[htbp]
 \centering
 \small
@@ -263,7 +246,61 @@ All listed bounds are formalized; \cref{sec:lean} records the checked boundary.}
 \label{tab:results}
 \end{table}
 
+\Cref{sec:structured} gives stronger bounds for autonomous controllers and
+sparse counter edits.  For the latter, an explicit edit list permits
+polynomial-time chart construction; transport to other coordinates charges
+their encoding and decoding circuits.  Choosing $T=\ord(P)-1$ also recovers
+the earlier square-root permutation-inversion bound, compatible with
+polynomial-size one-wayness; see \cref{sec:one-way}.
+
+The further extensions separate several questions that the size bound
+does not settle.  \Cref{sec:exact-constant,sec:explicit-exponents,sec:near-landau}
+refine counting, approximation, and the complexity of specifying hard
+exponents.  \Cref{sec:aks,sec:depth-size,sec:distinguished} study smaller
+polynomial factors, depth, width, and reversible implementations;
+the distinguished-point procedure has checked semantics, while its
+resource bounds remain prose.  \Cref{sec:min-checkpoints} studies optimal
+checkpoint sets.  \Cref{sec:program-analysis,sec:preprocessing} connect
+compact summaries to certification and the cost of construction, and
+\cref{sec:blackbox} states its oracle-model restrictions and probabilistic
+hypotheses explicitly.
+
 \subsection{Related work and status of the formulation}\label{sec:related}
+
+Lupanov announced the permutation case at Dagstuhl and Oberwolfach in
+1992~\cite{Lupanov92D,Lupanov92O}.  His 1993 journal article gives circuits
+of depth $O(\log M)$ for permutations of $M$ states and records the
+extension to arbitrary self-maps~\cite[pp.~60, 66]{Lupanov93}.  A further short account
+appeared in 1994~\cite{Lupanov94}.
+
+The 2003 paper gives the full construction for arbitrary
+self-maps~\cite[p.~180, eq.~(1)]{Lupanov03}.
+Let $S\subseteq\bits^n$ have size $M$.  For each $F:S\to S$, one circuit
+computes $F^t(x)$ on $S$ with $t$ supplied in $\ceil{\log_2 M}$ bits.
+Let $L^*_{\mathcal B}(n,M)$ be the maximum, over $S$ and $F$, of the
+minimum cost of such a circuit, with arbitrary outputs for $x\notin S$.
+For every fixed finite complete Boolean basis $\mathcal B$, as
+$n\to\infty$ with $M/\log_2 n\to\infty$, Lupanov proves
+\[
+  L^*_{\mathcal B}(n,M)\sim \rho_{\mathcal B}\frac{Mn}{\log_2(Mn)},
+\]
+where $\rho_{\mathcal B}$ is the minimum reduced gate weight of the
+basis.  On the full cube $M=2^n$, and $\rho_{\mathcal B}=1$ for our
+unit-cost binary gates.  Since setting $t=1$ recovers $F$, a map with
+$\CC(F)\sim 2^n$ has an input-time circuit of size $(1+o(1))\CC(F)$.
+Korshunov gives an English account~\cite[Theorem~2.3]{Korshunov12}.
+
+Lupanov's upper bound encodes the trees and cycles of the functional
+graph.  For large $M$, he uses a variant of Uhlig's simultaneous
+evaluation theorem to retrieve several pieces of this encoding at the
+leading cost of one retrieval.  To compute a bit specified on $M$ states,
+he uses Redkin's $O(M)$ bound~\cite{Redkin69}.  For larger domains,
+Sholomov~\cite{Sholomov69} obtained the sharp bound of $(1+o(1))M/\log_2 M$
+gates in our basis using a completion result of Nechiporuk~\cite{Nechiporuk65}.
+Andreev subsequently weakened the domain-size hypothesis~\cite[p.~44,
+Theorem~1]{Andreev89}.  Lupanov applies these results on pp.~187 and~202.
+For the matching lower bound, it suffices to count maps consisting of
+a single $M$-cycle~\cite[p.~208]{Lupanov03}.
 
 Preprocessing trajectories to exchange storage for later computation is
 classical.  Hellman's cryptanalytic time--memory tradeoff is an early
@@ -277,8 +314,8 @@ word-size exponent~\cite[Section~5]{MRRR12}.  Those results concern
 representation space, RAM time, and black-box access, rather than total
 Boolean gate count.
 
-A closer circuit antecedent is Hirahara, Ilango, and
-Williams~\cite[Section~3.2]{HIW24}: they obtain square-root-size
+The checkpoint construction in this paper builds on Hirahara, Ilango, and
+Williams~\cite[Section~3.2]{HIW24}, who obtain square-root-size
 permutation-inversion circuits using checkpoints and batched lookup.
 Their Section~3.2 treats a single-cycle permutation explicitly and notes
 in one sentence that the construction extends to all permutations through
@@ -326,9 +363,8 @@ Szemer\'edi~\cite{AKS83} save a factor of $n$ (\cref{sec:aks}), while
 the shifted payload in \cref{eq:overview-identity} and the
 checkpoint-or-repetition lemma handle general powers and functional graphs.
 No RAM memory probe is treated as a unit-cost circuit operation.
-Checkpointing, sorting-based lookup, and square-root-size permutation
-inversion are not claimed as new.  Historical priority for the full
-fixed-power theorem and the shared bounds in this draft remains unresolved.
+The historical priority question that remains concerns the dependence on
+the transition size $s$ in the fixed-power and shared bounds.
 
 \section{Model and circuit primitives}\label{sec:model}
 
@@ -670,6 +706,13 @@ apply the fixed-power construction unchanged.  A state still occupies
 $n$ bits, but the dictionary contains only $O(M/L)$ records.
 \end{proof}
 
+There is also a bound independent of $s$ when $M/\log_2 n\to\infty$.
+For any fixed $T$, apply Lupanov's theorem~\cite[p.~180]{Lupanov03} to
+the self-map $G=F^T|_S$ and set its exponent input to one.  The resulting
+circuit agrees with $F^T$ on $S$ and uses at most $(1+o(1))Mn/\log_2(Mn)$
+gates in our basis.  This argument covers arbitrarily large $T$, since
+the map synthesized is $G$ itself.
+
 \begin{corollary}[Image sensitivity]\label[corollary]{cor:image}
 Put $M_d=|\operatorname{im}(F^d)|$.  For $T\geq d$ and $1\leq L\leq M_d$,
 \[
@@ -685,6 +728,11 @@ $F(F^d(x))=F^d(F(x))$.  Compute $F^d(x)$ and apply
 \cref{thm:invariant} on its image for $T-d$ more steps.
 Optimize $L$ as in \cref{eq:L-choice}, replacing $N$ by $M_d$.
 \end{proof}
+
+For a uniformly random map $F$, Mironkin and Mikhailov~\cite{MM18}
+give a recurrence for the probability that a fixed state $w$ belongs
+to $\operatorname{im}(F^d)$.  By symmetry, $N$ times this probability
+is exactly the expected image size $\mathbb E[M_d]$ in \cref{cor:image}.
 
 \subsection{Permutation inversion and one-way functions}\label{sec:one-way}
 
@@ -2744,6 +2792,11 @@ For $m\geq 1$, define
 where $\operatorname{val}(t)$ is the nonnegative integer encoded by $t$.
 \end{definition}
 
+\noindent For $1\leq m\leq n$, padding $t$ with leading zeros in Lupanov's
+full-cube circuit~\cite[p.~180]{Lupanov03} gives
+$\CC(\Iter_{F,m})\leq(1+o(1))2^n$ for every $F$.  When $F$ has a small
+circuit, the following bound can be exponentially smaller.
+
 \begin{theorem}[Variable-time iteration]\label{thm:variable}
 Under the assumptions of \cref{thm:main}, for every $m\geq 1$,
 \begin{equation}\label{eq:variable}
@@ -2974,6 +3027,11 @@ no counting argument over powers of polynomial-size maps reaches the
 upper bound of \cref{thm:batch}.
 
 \paragraph{Mass production.}
+Lupanov already observed that the Shannon asymptotic for powering
+persists for a fixed number of inputs with possibly different
+exponents~\cite[p.~66]{Lupanov93}.  His 2003 construction uses a
+multi-output extension of Uhlig's simultaneous synthesis
+theorem~\cite[Addendum~1, Theorem~D1]{Lupanov03}.
 Uhlig showed that for every $f:\bits^n\to\bits$ and every
 $r=2^{o(n/\log n)}$, evaluating $f$ on $r$ independent inputs has
 circuits of size $(1+o(1))2^n/n$~\cite{Uhlig74,Uhlig92}.  Applied to each
@@ -3309,6 +3367,12 @@ $p,q$.  Only the labels of $J$ need to be stored.  The Lean proof obtains
 the same interval property by lexicographically ordering root-to-vertex
 paths, without formalizing a traversal algorithm.
 \end{proof}
+
+Lupanov observed that the same size and depth estimates as for powering
+permutations suffice to decide whether $y$ lies on the orbit of $x$ and
+return an exponent taking $x$ to $y$~\cite[p.~67]{Lupanov93}.  The
+following theorem returns the least such exponent for an arbitrary
+self-map and bounds the size in terms of $\CC(F)$.
 
 \begin{theorem}[Reachability and first hitting times]\label{thm:reachability}
 A circuit of size $O(B)$, on input $(x,y)$, decides whether
@@ -5663,7 +5727,10 @@ By (P1), $\kappa$ strictly decreases along every path to a cycle.
 
 Now let $f$ be a uniformly random map on $V$.  Write
 $\rho(x)=\mu(x)+\ell(x)$ for the number of distinct states on the
-trajectory of $x$, and put $D_0=2\sqrt{N\ln N}$.
+trajectory of $x$, and put $D_0=2\sqrt{N\ln N}$.  Zubkov and
+Mironkin~\cite{ZM17} give exact distribution formulas for the time to
+the first repeat from a fixed state under $f^k$.  The case $k=1$
+is the variable $\rho(x)$ used here.
 
 \begin{lemma}[Rho lengths]\label[lemma]{lem:bb-L0}
 $\Pr[\max_x\rho(x)>D_0]\leq 1/N$.
@@ -6266,6 +6333,9 @@ is a separate task.
 
 \section*{Provenance and draft status}
 
+The author thanks Igor Sergeev for drawing attention to Lupanov's work
+on powers of Boolean maps and providing the 2003 paper.
+
 This draft and the underlying argument were developed with assistance
 from ChatGPT (GPT-6 Astra Pro), including assistance with theorem
 formulation, proof development, exposition, and literature searches.
@@ -6865,6 +6935,91 @@ Yoshio Okamoto, Ramamohan Paturi, Saket Saurabh, and Magnus Wahlstr\"om.
 \newblock \emph{ACM Transactions on Algorithms}, 12(3), Article 41,
 1--24, 2016.
 \newblock \href{https://doi.org/10.1145/2925416}{doi:10.1145/2925416}.
+
+\bibitem{Lupanov92D}
+Oleg B. Lupanov (printed as Lupanow).
+\newblock On the realization complexity of Boolean operators degree.
+\newblock In \emph{Complexity and Realization of Boolean Functions},
+Dagstuhl Seminar Report 45, page 13, 1992.
+\newblock \href{https://doi.org/10.4230/DagSemRep.45}{Seminar report}.
+
+\bibitem{Lupanov92O}
+Oleg B. Lupanov.
+\newblock On the realization complexity of iterations of Boolean maps.
+\newblock In \emph{Komplexit\"atstheorie}, Tagungsbericht 50/1992,
+Mathematisches Forschungsinstitut Oberwolfach, page 8, 1992.
+\newblock \href{https://www.wisdom.weizmann.ac.il/~/oded/PS/owr-cc92.pdf}{Workshop report}.
+
+\bibitem{Lupanov93}
+Oleg B. Lupanov.
+\newblock On the complexity of the realization of powers of a Boolean
+$(n,n)$-function.
+\newblock \emph{Vestnik Moskovskogo Universiteta, Seriya~1,
+Matematika, Mekhanika}, (1):59--67, 1993. In Russian.
+\newblock \href{https://www.mathnet.ru/rus/vmumm2330}{Math-Net.Ru}.
+
+\bibitem{Lupanov94}
+Oleg B. Lupanov.
+\newblock On the complexity of implementing powers of a Boolean
+$(N,N)$-function.
+\newblock In \emph{Fundamental Problems of Mathematics and Mechanics},
+pages 331--333. Moscow University Press, Moscow, 1994. In Russian.
+
+\bibitem{Lupanov03}
+Oleg B. Lupanov.
+\newblock On the complexity of implementation of powers of Boolean
+$(n,n)$-functions.
+\newblock In \emph{Mathematical Problems of Cybernetics}
+(\emph{Matematicheskie Voprosy Kibernetiki}), volume~12,
+pages 179--216. Fizmatlit, Moscow, 2003. In Russian.
+
+\bibitem{Korshunov12}
+A. D. Korshunov.
+\newblock Computational complexity of Boolean functions.
+\newblock \emph{Russian Mathematical Surveys}, 67(1):93--165, 2012.
+English translation of \emph{Uspekhi Matematicheskikh Nauk},
+67(1):97--168.
+\newblock \href{https://doi.org/10.1070/RM2012v067n01ABEH004777}{doi:10.1070/RM2012v067n01ABEH004777}.
+
+\bibitem{Sholomov69}
+L. A. Sholomov.
+\newblock On the realization of partially defined Boolean functions by
+circuits of functional elements.
+\newblock In \emph{Problemy Kibernetiki}, volume~21, pages 215--226.
+Nauka, Moscow, 1969. In Russian.
+
+\bibitem{Redkin69}
+N. P. Redkin.
+\newblock Concerning complexity of realization of underdetermined Boolean functions.
+\newblock \emph{Avtomatika i Telemekhanika}, (9):118--122, 1969. In Russian.
+\newblock \href{https://www.mathnet.ru/rus/at10369}{Math-Net.Ru}.
+
+\bibitem{Nechiporuk65}
+E. I. Nechiporuk.
+\newblock Complexity of gating circuits realized by Boolean matrices
+with undetermined elements.
+\newblock \emph{Doklady Akademii Nauk SSSR}, 163(1):40--42, 1965. In Russian.
+\newblock \href{https://www.mathnet.ru/rus/dan31288}{Math-Net.Ru}.
+
+\bibitem{Andreev89}
+A. E. Andreev.
+\newblock On the complexity of realization of partial Boolean functions
+by circuits of functional elements.
+\newblock \emph{Diskretnaya Matematika}, 1(4):36--45, 1989. In Russian.
+\newblock \href{https://www.mathnet.ru/rus/dm939}{Math-Net.Ru}.
+
+\bibitem{ZM17}
+A. M. Zubkov and V. O. Mironkin.
+\newblock Distribution of the length of aperiodicity segment in the graph
+of $k$-fold iteration of uniform random mapping.
+\newblock \emph{Mathematical Aspects of Cryptography}, 8(4):63--74, 2017.
+In Russian. \href{https://doi.org/10.4213/mvk239}{doi:10.4213/mvk239}.
+
+\bibitem{MM18}
+V. O. Mironkin and V. G. Mikhailov.
+\newblock On the sets of images of $k$-fold iteration of uniform random mapping.
+\newblock \emph{Mathematical Aspects of Cryptography}, 9(3):99--108, 2018.
+In Russian. \href{https://doi.org/10.4213/mvk264}{doi:10.4213/mvk264}.
 
 \end{thebibliography}
 

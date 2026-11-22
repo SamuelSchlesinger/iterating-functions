@@ -7,6 +7,9 @@
 *.fdb_latexmk
 *.synctex.gz
 
+# Local reference scan.
+/Lupanov - boolean powers 2003.pdf
+
 # Python and macOS local files.
 __pycache__/
 *.py[cod]

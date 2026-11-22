@@ -57,24 +57,25 @@
 \maketitle
 
 \begin{abstract}
-Let $F:\bits^n\to\bits^n$ have a Boolean circuit of size $s$, and put
-$A=s+n^3$ and $B=A+\sqrt{n^3 2^nA}$.  Every fixed iterate $F^T$ has a
-bounded-fan-in circuit of size $O(B)$, independently of the magnitude of
-$T\geq0$, without assuming injectivity.  For polynomial $s$ this is
-$2^{n/2+O(\log n)}$.  Over all $n$-bit maps, Lupanov (2003) proved the
-sharp worst-case bound $(1+o(1))2^n$ even for an $n$-bit input exponent.
-We adapt the sparse checkpoints and sorting-based lookup of Hirahara,
-Ilango, and Williams for permutation inversion.  The size bound charges
-every access and arithmetic gate.  Constructing the hardwired data for
-this nonuniform circuit can require work exponential in the state width.
+Let $F:\bits^n\to\bits^n$ have a Boolean circuit of size $s$, put
+$N=2^n$, and write $E=\min\{N,\sqrt{N(s+n^2)}\}$. Every fixed iterate
+$F^T$, for arbitrary $T\ge0$, has a bounded-fan-in circuit of size
+$O(E)$. A single circuit computing $F^t(x)$ from $x$ and an $m$-bit
+exponent $t$ has size $O(E+nm)$. A quadratic-size rank circuit locates
+a checkpoint on an orbit, and shared Boolean decoders implement the
+sparse tables for the fixed or input exponent. Over all $n$-bit maps,
+Lupanov (2003) proved the sharp worst-case bound $(1+o(1))N$ for an
+$n$-bit input exponent. The size-dependent bounds are nonuniform;
+constructing the tables can take time exponential in $n$.
 
 For even $n$, an explicit linear-size permutation has almost all powers of
 complexity $\Omega(2^{n/2}/n)$ under a uniform exponent modulo its order.
 This matches the upper bound's exponential scale, but identifies no explicit
 hard power; hard exponents necessarily have exponentially many binary digits.
-The upper-bound construction also gives $O(B)$-gate cycle labels, transient
+Sorting-based checkpoint circuits also give cycle labels, transient
 depth, pair-input reachability, exact first hitting times, and complete visit
-descriptors, together with input-time and shared batched versions.  Exact
+descriptors in $O(A+\sqrt{n^3NA})$ gates for $A=s+n^3$, and share one
+dictionary across a batch of independent trajectories.  Exact
 target-distance summaries have a local correctness equation, yielding
 compact safety invariants and termination ranks with coNP verification.
 Under SETH, general deterministic uniform analysis cannot save a fixed fraction of the
@@ -112,7 +113,25 @@ exponent as inputs~\cite[p.~180]{Lupanov03}.  This is sharp over all $F$,
 already at exponent one.  Our question is how much smaller the circuit
 can be when the transition itself has small size $s$.
 
-\begin{theorem}[Fixed-power tradeoff]\label{thm:main}
+\begin{theorem}[Powers from endpoint checkpoints]\label{thm:endpoint}
+Let $n\ge1$, $N=2^n$, $\CC(F)\le s$, and $1\le L\le N$. For every
+fixed $T\ge0$ and every input exponent of width $m\ge1$,
+\begin{align}
+ \CC(F^T)&=O\bigl(L(s+n^2)+N/L\bigr),\label{eq:endpoint-fixed}\\
+ \CC(\Iter_{F,m})&=O\bigl(L(s+n^2)+N/L+nm\bigr),\label{eq:endpoint-live}
+\end{align}
+where $\Iter_{F,m}(x,t)=F^{\operatorname{val}(t)}(x)$.
+In particular, with $E=\min\{N,\sqrt{N(s+n^2)}\}$, the bounds are
+$O(E)$ and $O(E+nm)$ respectively. The constants are absolute.
+\end{theorem}
+
+For a linear-size transition, the fixed-power bound is $O(n\,2^{n/2})$,
+and the same bound holds with an $n$-bit exponent. \Cref{sec:endpoint}
+proves the theorem using a local minimum, one selected checkpoint, and
+shared decoders. The following sorting construction also supports
+invariant sets, batches and queries with two starting states.
+
+\begin{theorem}[Sorting-based fixed-power tradeoff]\label{thm:main}
 Let $n\geq 1$, let $F:\bits^n\to\bits^n$ satisfy $\CC(F)\leq s$, and put
 $N=2^n$ and $A=s+n^3$.  For every integer $T\geq 0$ and every integer
 $1\leq L\leq N$,
@@ -202,8 +221,9 @@ order.  The hard powers are selected by counting, require exponentially
 long binary exponents, and are not explicitly identified.  The same
 permutation has a polynomial-size iterator for polynomial-width input times.
 
-Write $B=A+\sqrt{n^3NA}$.  The extensions in \cref{sec:variable,sec:batch}
-handle input exponents and shared evaluation.  The graph-query circuits
+Write $B=A+\sqrt{n^3NA}$.  \Cref{sec:endpoint} proves the
+$O(E+nm)$ input-time bound. \Cref{sec:variable,sec:batch} give the
+binary-powering and shared-batch constructions.  The graph-query circuits
 in \cref{sec:structure} compute cycle labels, transient depth, reachability,
 first hitting times, visit descriptors, and synchronous coalescence in
 $O(B)$ gates.  Pair queries take two $n$-bit states; their exponential
@@ -224,8 +244,8 @@ $B_P=A_P+\sqrt{n^3NA_P}$.
 Query & Input parameters & Circuit size \\
 \midrule
 \multicolumn{3}{@{}l}{\emph{General transitions on $n$-bit states}}\\
-Fixed iterate & $x$; fixed $T\geq0$ & $O(B)$ \\
-Input-time iterate & $x,t$; $t\in\bits^m$ & $O(\min\{mB,nB+nm\})$ \\
+Fixed iterate & $x$; fixed $T\geq0$ & $O(E)$ \\
+Input-time iterate & $x,t$; $t\in\bits^m$ & $O(E+nm)$ \\
 Graph navigation & $x$ or $x,y$ & $O(B)$ \\
 Recognizable targets & $x$; fixed $P$ of size $a$ & $O(B_P)$ \\
 Shared fixed powers & $k$ states; common fixed $T$ & $O(kA+\sqrt{kn^3NA})$ \\
@@ -956,6 +976,193 @@ run directly, and these sizes are at least $2^k$ for the $80$-bit keys,
 in accordance with the state-size rule above.  The theorem does show that
 a generator on $n$ bits hides no forward sequentiality beyond
 $2^{n/2}\poly(n)$ nonuniform gates, however many steps are taken.
+
+\section{Endpoint checkpoints for fixed and input exponents}\label{sec:endpoint}
+
+The fixed-power construction in \cref{sec:fixed} looks up an entire
+trajectory. Here the circuit first finds one checkpoint by evaluating a
+small rank circuit on the trajectory. The same checkpoint set supplies
+the data for an exponent presented in binary.
+
+\subsection{Selecting a sparse set by a local minimum}
+
+Fix $1\le L\le N$. For a rank function $\rho:\bits^n\to\{0,\ldots,N-1\}$,
+put $z\in H_\rho$ if the $L+1$ states $z,F(z),\ldots,F^L(z)$ are distinct
+and the least of their ranks occurs at either endpoint. Edgar's
+closed-syncmer rule for strings chooses the leftmost minimum, and its
+window argument locates an endpoint from a minimum in a longer window
+\cite[Fig.~1]{Edgar21}. Our orbit rule admits every tied minimum. For
+example, a distinct window with ranks $(2,1,1)$ qualifies at the right
+endpoint.
+
+\begin{lemma}[An evaluable sparse checkpoint set]\label[lemma]{lem:endpoint-rank}
+There is an $O(n^2)$-gate rank circuit with $|H_\rho|L\le512N$.
+For every choice of ranks, if $x_j=F^j(x)$, $0\le j<2L$, are
+distinct and $i$ is any position of minimum rank among them, then
+\[
+ d=\begin{cases}i,&i<L,\\ i-L,&i\ge L\end{cases}
+ \qquad\text{satisfies}\qquad 0\le d<L,\quad x_d\in H_\rho.
+\]
+\end{lemma}
+
+\begin{proof}
+In the first case $x_i$ begins the window $x_i,\ldots,x_{i+L}$.
+In the second it ends the window $x_{i-L},\ldots,x_i$. Both windows lie
+in the distinct prefix, including when the minimum occurs more than once.
+
+For sparsity, identify the states with $\mathbb F_{2^n}$ and choose a
+polynomial of degree at most four with five independent uniform
+coefficients. Its values on up to five distinct states are independent
+and uniform by interpolation. Order the field outputs by their $n$-bit
+encodings. Horner evaluation needs a constant number of field operations.
+Schoolbook polynomial multiplication and the fixed linear reduction
+modulo an irreducible polynomial each take $O(n^2)$ Boolean gates.
+
+For a window of $L+1$ distinct states, fix one endpoint and condition
+on its rank $a$. The number $Y$ of competitors with strictly smaller
+ranks is a sum of four-wise independent indicators with mean
+$\mu=La/N$. Expansion of the centered fourth moment gives
+$\mathbb E[(Y-\mu)^4]\le\mu+3\mu^2$: only terms in which each index
+appears at least twice contribute. Thus for $\mu\ge1$ the conditional
+probability of a weak minimum is at most $4/\mu^2$. With
+$r=\ceil{N/L}$, averaging over $a$ gives
+\[
+ \Pr[Y=0]\le \frac rN+\frac{4N}{L^2}
+                   \sum_{a=r}^{N-1}\frac1{a^2}
+ \le \frac rN+\frac{8N}{L^2r}=O(1/L).
+\]
+Here $\sum_{a=r}^\infty a^{-2}\le 2/r$ for $r\ge1$. This estimate also
+implies the stated constant after summing over both endpoints and all
+$N$ windows and averaging over the coefficients. Windows with repeated
+states contribute zero. The finite-alphabet argument includes ties;
+Knudsen and St\"ockel give the conditioning and fourth-moment proof of
+the known five-wise upper bound for strict minima of continuous ranks
+\cite[\S5.1, Theorem~2]{KnudsenStockel15}.
+\end{proof}
+
+\subsection{A single sparse lookup with shared gates}
+
+\begin{lemma}[Sparse word tables]\label[lemma]{lem:endpoint-table}
+For $M$ hardwired rows, a query matching a constant number of $n$-bit
+fields against stored equalities or inclusive intervals, and returning
+a constant number of $n$-bit fields of one matching row, has size
+$O(M+2^{\ceil{n/2}})$. The circuit can also report whether it found a
+row and select a supplied default when none matches.
+\end{lemma}
+
+\begin{proof}
+Split each input word into high and low halves. For a half of $b$ bits
+generate the equality indicators for all $2^b$ patterns with a binary
+tree of prefixes. A prefix or suffix OR of the indicators in numerical
+order supplies all comparisons against half-word thresholds at the same
+$O(2^b)$ cost. A full-word comparison against a fixed constant tests
+the high half first and uses the low half when the high halves agree.
+Each row combines a constant number of these wires. A prefix OR of the
+row flags followed by one test per row retains the first match and
+supplies the success bit.
+
+For each output half-word, group the retained flags by the value stored
+in that field. The ORs for the groups cost $O(M+2^b)$ together. Given
+one flag for each $b$-bit pattern, emit the coordinatewise OR of the
+flagged patterns in $O(2^b)$ gates. The first bit ORs the flags whose
+patterns start with one. For the remaining bits, pair the flags for
+$0v$ and $1v$, OR each pair, and recurse on $v$. The costs
+$O(2^b)+O(2^{b-1})+\cdots$ sum to $O(2^b)$. A final word selection
+handles the default. All rows and output coordinates share the
+half-word decoders. Fields of width $n+O(1)$ are handled by a
+constant number of additional bits with the same asymptotic cost.
+\end{proof}
+
+\subsection{Recovering the state}
+
+\begin{proof}[Proof of \cref{thm:endpoint}]
+Set $K=2L$. Compute the states $x_0,\ldots,x_{2K}$ by unrolling $F$.
+Scan the ranks of $x_0,\ldots,x_{K-1}$ for their minimum. Compare
+each rank to that minimum and use one priority order for all ties.
+At a winning position $i$ select the state $h=x_d$ prescribed in
+\cref{lem:endpoint-rank}. The rank evaluations cost $O(Ln^2)$ and the
+comparisons and selections cost $O(Ln)$. If two of the first $K$ states
+coincide at $i<j$, applying $F^{K-i}$ to $x_i=x_j$ shows that
+$x_{K+j-i}=x_K$. Thus the circuit can detect the exceptional case by
+testing the $K$ equalities $x_{K+p}=x_K$, $1\le p\le K$. Whenever no
+test succeeds, the selected $h$ belongs to $H_\rho$.
+
+\emph{Fixed exponent.} For $T<K$ directly unroll $T$ steps. Otherwise
+each successful return test supplies the correct wire bundle
+$x_{K+((T-K)\bmod p)}$. Its index is fixed when constructing the
+circuit. If there is no return, one sparse lookup on $h$ supplies
+$F^{T-K}(h)$. Unroll another $K$ steps from this payload. Reusing
+the winning-position flags to select its $(K-d)$th state gives
+$F^{K-d}(F^{T-K}(F^d(x)))=F^T(x)$. Thus input-dependent lookup and
+correction are charged even when ranks tie.
+
+\emph{Input exponent.} Let $t$ denote the integer on the $m$ time
+wires. For $t<K$ return the prefix state $x_t$. For $t\ge K$ with a
+successful return test, select a positive return $p$, compute
+$(t-K)\bmod p$ once, and select the corresponding state after $x_K$.
+Streaming one time bit doubles the current remainder, adds the bit and
+conditionally subtracts $p$. This takes $O(n)$ gates per bit since
+$p\le K\le2N$. The modulus on an inactive branch may be set to one.
+In the remaining case $h=x_d$ is a checkpoint, and the required
+answer is $F^u(h)$ for the nonnegative input value $u=t-d$.
+
+Write $\mu(h)$ for the number of steps to first reach a cycle. Cut each
+edge out of a periodic state to obtain a forest rooted at the individual
+periodic states. Give its vertices a depth-first preorder $v$ and let
+$e(a)$ be the last preorder rank in the subtree of $a$. An ancestor $a$
+of $h$ is recognized by $v(a)\le v(h)\le e(a)$. A lookup on $h$
+provides $v(h)$ and $\mu(h)$, so the circuit can test $u<\mu(h)$.
+
+For a transient target put $D=\mu(h)-u$. In the table of marked
+states, select any row $a$ satisfying
+\[
+ v(a)\le v(h)\le e(a),\qquad \mu(a)-K\le D\le\mu(a).
+\]
+The lower threshold can be truncated at zero. Such a row reaches the
+target after exactly $\mu(a)-D\le K$ steps. If $u\ge K$, apply
+\cref{lem:endpoint-rank} to the $K$ states starting at $F^{u-K}(h)$.
+Their strictly decreasing transient depths ensure they are distinct,
+and the selected state is an eligible row. If no row is eligible then
+$u<K$, and the default $(h,\mu(h))$ reaches the target in $u$ steps.
+\Cref{lem:endpoint-table} returns the selected state and its depth
+together. A subtraction and one bounded walk finish this branch.
+
+For a cyclic target, choose an origin $c$ on each cycle reached from
+$H_\rho$ and number its phases in successor order. Store at $h$ the
+origin, the cycle length $\ell$, and the phase of the cycle entry minus
+$\mu(h)$, reduced modulo $\ell$. If this last field is $\phi$, the
+target phase is $P=(\phi+u)\bmod\ell$. One streaming remainder computes
+it. Let $B_0=2^{\floor{\log_2 L}}$, so $L/2<B_0\le L$. For each
+reached cycle store its state at phases $jB_0<\ell$ under the two-word
+key $(c,j)$. Distinct cycles are disjoint, so their lengths sum to at
+most $N$. Their number is at most $|H_\rho|$. The number of rows is
+therefore
+\[
+ \sum_c\ceil{\ell_c/B_0}\le |H_\rho|+N/B_0=O(N/L).
+\]
+High and low phase bits give $\floor{P/B_0}$ and $P\bmod B_0$.
+One lookup selects the block's first state, followed by fewer than $L$
+applications of $F$. Short cycles reached from different checkpoints
+share the row for their origin.
+
+A walk with an input length bounded by $K$ may unroll $K$ copies of
+$F$ and select a prefix state. Even separate equality tests per output
+bit cost $O(Kn^2)$ gates. Each branch uses a constant number of walks,
+sparse tables and word subtractions. Time arithmetic uses words of
+width $m+O(n)$ where necessary, so streaming costs $O(nm+n^2)$.
+By \cref{lem:endpoint-rank,lem:endpoint-table}, the totals are
+$O(L(s+n^2)+N/L+2^{\ceil{n/2}})$ for fixed time and this quantity
+plus $O(nm)$ for input time. The half-word term is absorbed since
+$2^{\ceil{n/2}}\le2\sqrt N$ and $L+N/L\ge2\sqrt N$.
+
+Put $a=s+n^2$. For $a\le N$ take $L=\floor{\sqrt{N/a}}\ge1$.
+Rounding changes the bound by at most a constant factor. For $a>N$
+a single full table for $F^T$ costs $O(N)$ by
+\cref{lem:endpoint-table}. For input time first implement $F$ itself
+by a full table of size $O(N)$ and apply the construction with $L=1$.
+Since $n^2=O(2^n)$, this gives $O(N+nm)$, including when the
+original transition circuit has $s\ge N$.
+\end{proof}
 
 \section{Minimum checkpoint sets}\label{sec:min-checkpoints}
 
@@ -2795,7 +3002,9 @@ where $\operatorname{val}(t)$ is the nonnegative integer encoded by $t$.
 \noindent For $1\leq m\leq n$, padding $t$ with leading zeros in Lupanov's
 full-cube circuit~\cite[p.~180]{Lupanov03} gives
 $\CC(\Iter_{F,m})\leq(1+o(1))2^n$ for every $F$.  When $F$ has a small
-circuit, the following bound can be exponentially smaller.
+circuit, \cref{thm:endpoint} gives the size-dependent bound $O(E+nm)$
+at every time width. Direct binary powering gives the following
+alternative construction.
 
 \begin{theorem}[Variable-time iteration]\label{thm:variable}
 Under the assumptions of \cref{thm:main}, for every $m\geq 1$,
@@ -4849,7 +5058,9 @@ For $A\leq N$, \cref{eq:dp-optimized} improves \cref{eq:optimized} by a
 factor of order $\sqrt n$, with the same $A=s+n^3$.  The saving comes from
 replacing a sort of $\Theta(N/L+L)$ records, at $O(n^3)$ gates per record,
 by one comparison per key at $O(n)$ gates; the price is a walk of length
-$16nL$ in place of $2L$.  This is not the best known gate count.  An
+$16nL$ in place of $2L$. \Cref{thm:endpoint} further lowers the gate count to
+$O(\min\{N,\sqrt{N(s+n^2)}\})$ using shared half-word decoders.
+An
 $O(R\log R)$-comparator network~\cite{AKS83} in \cref{lem:lookup,lem:repeat}
 reduces the sorting cost to $O(n^2R)$ and gives
 $O(A_2+n\sqrt{NA_2})$ with $A_2=s+n^2$ (\cref{thm:aks}), which is smaller than
@@ -6260,8 +6471,12 @@ The bounds above leave four questions.
 \section{Lean formalization}\label{sec:lean}
 
 The accompanying \texttt{lean/} project proves existence of actual Boolean
-circuits with evaluation semantics and gate bounds.  It covers
-\cref{tab:results}, the invariant-set, image-sensitive and active-mass
+circuits with evaluation semantics and gate bounds. The endpoint bounds
+in \cref{thm:endpoint} are formalized separately in cslib-frontier
+(\href{https://github.com/cslib-community/complexitylib/pull/7522}{fixed power},
+\href{https://github.com/cslib-community/complexitylib/pull/LIVE-FRONTIER-PR}{input exponent}).
+The local project covers the sorting-based fixed and input-time bounds,
+the other rows of \cref{tab:results}, the invariant-set, image-sensitive and active-mass
 refinements, permutation inversion, complete-configuration simulation,
 and the core matching-exponent lower bound.  Further checked components
 include the exact number of distinct powers of a finite map
@@ -6312,8 +6527,10 @@ independent fidelity to every intended model convention.
 
 \section{Conclusion and open questions}\label{sec:scope}
 
-Sparse checkpoints and charged lookup give square-root state-space bounds
-for arbitrary fixed iterates and functional-graph navigation.  The counting
+Endpoint checkpoints and shared sparse lookup give fixed iterates in
+$O(\min\{N,\sqrt{N(s+n^2)}\})$ gates, with additive $O(nm)$ for an
+$m$-bit input exponent. The sorting-based method gives square-root
+state-space bounds for functional-graph navigation.  The counting
 example makes the exponent sharp for unrestricted fixed powers; it does not
 establish sharpness for polynomial-width input times or exact program summaries.
 The distance circuits have local coNP correctness checks, while
@@ -6935,6 +7152,20 @@ Yoshio Okamoto, Ramamohan Paturi, Saket Saurabh, and Magnus Wahlstr\"om.
 \newblock \emph{ACM Transactions on Algorithms}, 12(3), Article 41,
 1--24, 2016.
 \newblock \href{https://doi.org/10.1145/2925416}{doi:10.1145/2925416}.
+
+\bibitem{Edgar21}
+Robert Edgar.
+Syncmers are more sensitive than minimizers for selecting conserved
+$k$-mers in biological sequences.
+\emph{PeerJ} \textbf{9} (2021), e10805.
+\href{https://doi.org/10.7717/peerj.10805}{doi:10.7717/peerj.10805}.
+
+\bibitem{KnudsenStockel15}
+Mathias B{\ae}k Tejs Knudsen and Morten St\"ockel.
+Quicksort, largest bucket, and min-wise hashing with limited independence.
+In \emph{Algorithms -- ESA 2015}, LNCS \textbf{9294} (2015), 828--839.
+\href{https://doi.org/10.1007/978-3-662-48350-3_69}{doi:10.1007/978-3-662-48350-3\_69}.
+Full version, \href{https://arxiv.org/abs/1502.05729}{arXiv:1502.05729}.
 
 \bibitem{Lupanov92D}
 Oleg B. Lupanov (printed as Lupanow).

@@ -3,23 +3,25 @@
 Preliminary research draft, November 22, 2026.
 
 How large a Boolean circuit is needed to evaluate an arbitrarily distant
-iterate of a simple transition? For an n-bit map F with circuit size s, put
-N = 2^n, A = s + n^3, and B = A + sqrt(n^3 N A). The paper proves that every
-fixed power F^T has a circuit of size O(B), independently of T, using sparse
-checkpoints and sorting-based lookup. For polynomial-size transitions this is
-2^(n/2) poly(n). Lupanov proved in 2003 that computing F^t(x) with an
-n-bit input exponent has worst-case size (1+o(1)) 2^n over all F, the same
-leading term as computing F(x) once.
+iterate of a simple transition? For an n-bit map F of circuit size s, put
+N = 2^n and E = min(N, sqrt(N(s+n²))). Every fixed power F^T has a circuit
+of size O(E), independently of T. One circuit taking the starting state
+and an m-bit exponent has size O(E + nm). A quadratic-size rank circuit
+finds a checkpoint on an orbit. Shared half-word decoders charge each
+row of its sparse lookup table only a constant number of gates.
+For a linear-size transition and an n-bit exponent this gives O(n 2^(n/2)).
+Lupanov's 2003 worst-case result over all maps has the sharp leading
+term (1+o(1)) 2^n for an n-bit exponent.
 
-The paper also gives:
+The sorting construction gives additional bounds with A = s + n³ and
+B = A + sqrt(n³ N A).
 
 - **Graph navigation:** cycle labels, transient depth, pair-input reachability,
   exact first hitting times, and complete visit descriptors in O(B) gates.
 - **Program analysis:** exact target-distance summaries, largest safe invariants,
   and termination ranks at the same square-root scale. A successor equation
   characterizes each summary, with a coNP-complete correctness check.
-- **Input times and batches:** an m-bit exponent costs O(min(m B, n B + n m));
-  r independent starting states with a common fixed exponent cost
+- **Batches:** r independent starting states with a common fixed exponent cost
   O(r A + sqrt(r n^3 N A)), for 1 <= r <= N.
 - **Structured transitions:** r edits to a counter permutation give
   O(n(r+1)) gates for signed fixed powers and navigation, and O(n(r+m+1))
@@ -77,12 +79,16 @@ It applies to every fixed finite complete Boolean basis. Igor Sergeev drew
 our attention to the full proof. The earlier permutation result and an English
 account of the general theorem are available online. [Lupanov (1993)](https://www.mathnet.ru/rus/vmumm2330), [Korshunov (2012), Theorem 2.3](https://doi.org/10.1070/RM2012v067n01ABEH004777).
 
-The dependence on the size of the given transition comes from extending
-the permutation-inversion construction of Hirahara, Ilango, and Williams
-to arbitrary fixed forward powers using sparse checkpoints. Priority for
-that size-dependent tradeoff remains open. The recovered exponential-size
-permutation inverter is compatible with polynomial-size one-wayness.
+The sorting construction extends Hirahara, Ilango, and Williams's
+permutation-inversion argument to arbitrary fixed forward powers. The
+resulting exponential-size inverter is compatible with polynomial-size
+one-wayness. Priority for the size-dependent tradeoff remains open.
 [Hirahara, Ilango, and Williams, §3.2](https://eccc.weizmann.ac.il/report/2023/171/).
+
+Endpoint selection adapts Edgar’s closed-syncmer window rule to discrete
+ranks with ties. Its density proof adapts the five-wise continuous-rank
+argument presented by Knudsen and Stöckel.
+[Edgar, Fig. 1](https://doi.org/10.7717/peerj.10805), [Knudsen and Stöckel, §5.1, Theorem 2](https://arxiv.org/abs/1502.05729).
 
 The paper's related-work sections credit the underlying constructions, and its
 provenance note credits Christian Reitwiessner's contributed extensions and

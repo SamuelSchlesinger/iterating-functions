@@ -1,5 +1,13 @@
 # Iterated-function circuits in Lean
 
+The sharper endpoint-checkpoint results are checked in cslib-frontier.
+The fixed-power proof gives size O(min(2ⁿ, √(2ⁿ(s + n²)))) and the
+live-input proof adds O(nm) for an m-bit exponent. The local Lean
+project below contains the earlier sorting-based bounds and their
+extensions to invariant sets, navigation and batches.
+[Fixed-power formalization](https://github.com/cslib-community/complexitylib/pull/7522),
+[input-exponent formalization](https://github.com/cslib-community/complexitylib/pull/LIVE-FRONTIER-PR).
+
 This project checks the fixed-power Boolean circuit theorem and its extensions
 end to end: square-root optimization, permutation inversion,
 variable-time iteration, recognizable targets and halting computations, cycle

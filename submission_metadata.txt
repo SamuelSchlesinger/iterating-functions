@@ -8,24 +8,25 @@ KEYWORDS
 Boolean circuit complexity; function iteration; functional graphs; nonuniform computation; sorting networks; permutation inversion; one-way functions
 
 ABSTRACT (LATEX)
-Let $F:\{0,1\}^n\to\{0,1\}^n$ have a Boolean circuit of size $s$, and put
-$A=s+n^3$ and $B=A+\sqrt{n^3 2^nA}$.  Every fixed iterate $F^T$ has a
-bounded-fan-in circuit of size $O(B)$, independently of the magnitude of
-$T\geq0$, without assuming injectivity.  For polynomial $s$ this is
-$2^{n/2+O(\log n)}$.  Over all $n$-bit maps, Lupanov (2003) proved the
-sharp worst-case bound $(1+o(1))2^n$ even for an $n$-bit input exponent.
-We adapt the sparse checkpoints and sorting-based lookup of Hirahara,
-Ilango, and Williams for permutation inversion.  The size bound charges
-every access and arithmetic gate.  Constructing the hardwired data for
-this nonuniform circuit can require work exponential in the state width.
+Let $F:\{0,1\}^n\to\{0,1\}^n$ have a Boolean circuit of size $s$, put
+$N=2^n$, and write $E=\min\{N,\sqrt{N(s+n^2)}\}$. Every fixed iterate
+$F^T$, for arbitrary $T\ge0$, has a bounded-fan-in circuit of size
+$O(E)$. A single circuit computing $F^t(x)$ from $x$ and an $m$-bit
+exponent $t$ has size $O(E+nm)$. A quadratic-size rank circuit locates
+a checkpoint on an orbit, and shared Boolean decoders implement the
+sparse tables for the fixed or input exponent. Over all $n$-bit maps,
+Lupanov (2003) proved the sharp worst-case bound $(1+o(1))N$ for an
+$n$-bit input exponent. The size-dependent bounds are nonuniform;
+constructing the tables can take time exponential in $n$.
 
 For even $n$, an explicit linear-size permutation has almost all powers of
 complexity $\Omega(2^{n/2}/n)$ under a uniform exponent modulo its order.
 This matches the upper bound's exponential scale, but identifies no explicit
 hard power; hard exponents necessarily have exponentially many binary digits.
-The upper-bound construction also gives $O(B)$-gate cycle labels, transient
+Sorting-based checkpoint circuits also give cycle labels, transient
 depth, pair-input reachability, exact first hitting times, and complete visit
-descriptors, together with input-time and shared batched versions.  Exact
+descriptors in $O(A+\sqrt{n^3NA})$ gates for $A=s+n^3$, and share one
+dictionary across a batch of independent trajectories.  Exact
 target-distance summaries have a local correctness equation, yielding
 compact safety invariants and termination ranks with coNP verification.
 Under SETH, general deterministic uniform analysis cannot save a fixed fraction of the

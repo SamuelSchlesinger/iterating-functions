@@ -12,6 +12,7 @@ check:
 	python3 verify_extensions.py
 	python3 verify_sparse_counter.py
 	python3 verify_checkpoint_sets.py
+	python3 verify_endpoint_powers.py
 	python3 verify_random_mapping_lemmas.py
 	python3 verify_distinguished_points.py
 	python3 verify_program_summaries.py

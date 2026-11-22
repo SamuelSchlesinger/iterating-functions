@@ -1,5 +1,18 @@
 # Detailed review and formalization record
 
+## Endpoint checkpoints for arbitrary powers, November 22, 2026
+
+The new theorem charges the rank circuit, shared sparse dictionaries,
+short-return detection, forest queries and cycle-phase tables. The
+finite check enumerates all 256 two-bit maps and all 75 relative rank
+orders with ties. It checks all window lengths, all starting states
+and exponents on both sides of every local cutoff, including a 66-bit
+exponent. An eight-state chain and cycle exercise longer branches.
+Run it with `python3 verify_endpoint_powers.py`. The finite check
+covers semantic recovery. The circuit size proofs are in cslib-frontier.
+[Fixed power](https://github.com/cslib-community/cslib-frontier/pull/7522),
+[input exponent](https://github.com/cslib-community/cslib-frontier/pull/7527).
+
 ## Russian literature on powering, November 22, 2026
 
 Lupanov's 2003 theorem on p. 180 gives the sharp Shannon bound for an

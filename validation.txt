@@ -1,3 +1,23 @@
+Endpoint checkpoint revision, November 22, 2026
+
+The two circuit bounds and their Lean test clients built in cslib-frontier
+with --wfail --iofail. Both headline theorems depend only on propext,
+Classical.choice, and Quot.sound. The fixed proof is in PR 7522 and the
+input-exponent extension is in PR 7527.
+
+make check passed all eight finite-check programs. The endpoint checker
+covers all 256 two-bit maps, all 75 weak rank orders, all four window
+lengths and every start, plus eight-state transient and cycle examples.
+It compares the selected states with direct iteration, including a
+66-bit exponent.
+
+make rebuilt the 93-page manuscript in three pdflatex passes. The final
+log has no unresolved references or box warnings. All 84 bibliography
+keys match the embedded references and are cited. The submission abstract
+matches the manuscript. Both Lean PR links are present in the PDF.
+All pages were rendered and the new theorem, proof and references were
+inspected at reading size.
+
 Literature revision, November 22, 2026
 
 make rebuilt the 90-page manuscript in three pdflatex passes. All labels

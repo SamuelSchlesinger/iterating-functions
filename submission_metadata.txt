@@ -11,10 +11,13 @@ ABSTRACT (LATEX)
 Let $F:\{0,1\}^n\to\{0,1\}^n$ have a Boolean circuit of size $s$, and put
 $A=s+n^3$ and $B=A+\sqrt{n^3 2^nA}$.  Every fixed iterate $F^T$ has a
 bounded-fan-in circuit of size $O(B)$, independently of the magnitude of
-$T\geq0$, without assuming injectivity.  The construction uses sparse
-checkpoints and sorting-based lookup, with every access and arithmetic gate
-charged.  The circuit-size bound is nonuniform; constructing its hardwired
-data can require work exponential in the state width.
+$T\geq0$, without assuming injectivity.  For polynomial $s$ this is
+$2^{n/2+O(\log n)}$.  Over all $n$-bit maps, Lupanov (2003) proved the
+sharp worst-case bound $(1+o(1))2^n$ even for an $n$-bit input exponent.
+We adapt the sparse checkpoints and sorting-based lookup of Hirahara,
+Ilango, and Williams for permutation inversion.  The size bound charges
+every access and arithmetic gate.  Constructing the hardwired data for
+this nonuniform circuit can require work exponential in the state width.
 
 For even $n$, an explicit linear-size permutation has almost all powers of
 complexity $\Omega(2^{n/2}/n)$ under a uniform exponent modulo its order.
@@ -35,9 +38,6 @@ can be constructed in polynomial time from an explicit edit list.  An
 autonomous $q$-bit controller with a $p$-bit affine payload gives
 $O(2^q(q+p^2))$-gate fixed powers.  Lean checks these core circuit bounds;
 further extensions state their individual formalization boundaries.
-The checkpoint and block
-methods have established antecedents, and historical priority of these
-circuit formulations remains unresolved.
 
 STATUS
-Preliminary draft, October 17, 2026. Historical priority and final attribution require author review. See the provenance note and README.
+Preliminary draft, November 22, 2026. Priority of the size-dependent tradeoff and final attribution require author review. See the provenance note and README.

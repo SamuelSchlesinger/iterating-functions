@@ -1,13 +1,15 @@
 # Square-Root Circuit Bounds for Iterated Functions
 
-Preliminary research draft, October 17, 2026.
+Preliminary research draft, November 22, 2026.
 
 How large a Boolean circuit is needed to evaluate an arbitrarily distant
 iterate of a simple transition? For an n-bit map F with circuit size s, put
 N = 2^n, A = s + n^3, and B = A + sqrt(n^3 N A). The paper proves that every
 fixed power F^T has a circuit of size O(B), independently of T, using sparse
 checkpoints and sorting-based lookup. For polynomial-size transitions this is
-2^(n/2) poly(n).
+2^(n/2) poly(n). Lupanov proved in 2003 that computing F^t(x) with an
+n-bit input exponent has worst-case size (1+o(1)) 2^n over all F, the same
+leading term as computing F(x) once.
 
 The paper also gives:
 
@@ -69,11 +71,18 @@ Finite checks exercise semantic identities; they do not prove gate bounds.
 
 ## Status and attribution
 
-The closest circuit antecedent is Hirahara, Ilango, and Williams, Section 3.2:
-the paper extends their permutation-inversion construction to arbitrary fixed
-forward powers of possibly noninjective maps. Historical priority for the full
-formulation remains unresolved. The recovered exponential-size permutation
-inverter is compatible with polynomial-size one-wayness.
+Lupanov's powering theorem also gives a sharp bound for self-maps of an
+arbitrary M-point subset of the n-bit cube when M / log n tends to infinity.
+It applies to every fixed finite complete Boolean basis. Igor Sergeev drew
+our attention to the full proof. The earlier permutation result and an English
+account of the general theorem are available online. [Lupanov (1993)](https://www.mathnet.ru/rus/vmumm2330), [Korshunov (2012), Theorem 2.3](https://doi.org/10.1070/RM2012v067n01ABEH004777).
+
+The dependence on the size of the given transition comes from extending
+the permutation-inversion construction of Hirahara, Ilango, and Williams
+to arbitrary fixed forward powers using sparse checkpoints. Priority for
+that size-dependent tradeoff remains open. The recovered exponential-size
+permutation inverter is compatible with polynomial-size one-wayness.
+[Hirahara, Ilango, and Williams, §3.2](https://eccc.weizmann.ac.il/report/2023/171/).
 
 The paper's related-work sections credit the underlying constructions, and its
 provenance note credits Christian Reitwiessner's contributed extensions and

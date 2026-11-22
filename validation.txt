@@ -1,3 +1,15 @@
+Literature revision, November 22, 2026
+
+make rebuilt the 90-page manuscript in three pdflatex passes. All labels
+and citations resolve. The final LaTeX log has no box warnings. Rendered
+contact sheets cover all 90 pages. The revised passages and bibliography
+were also inspected at reading size.
+
+The embedded bibliography and references.bib contain the same 81 unique
+keys, all cited. The submission abstract matches the manuscript.
+make check passed all seven finite semantic checks. The Lean source and
+its build configuration have no changes in this revision.
+
 Combined integration validation, October 17, 2026
 
 Integration baseline: f802f0e649affc059453e5b158751f465146a770.

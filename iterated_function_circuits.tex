@@ -51,7 +51,7 @@
 \title{Square-Root Circuit Bounds\\for Iterated Functions}
 % Author field is provisional and editable; no affiliation is assumed.
 \author{Samuel Schlesinger}
-\date{November 22, 2026\\[3pt]\small Preliminary draft}
+\date{November 25, 2026\\[3pt]\small Preliminary draft}
 
 \begin{document}
 \maketitle
@@ -70,8 +70,11 @@ constructing the tables can take time exponential in $n$.
 
 For even $n$, an explicit linear-size permutation has almost all powers of
 complexity $\Omega(2^{n/2}/n)$ under a uniform exponent modulo its order.
-This matches the upper bound's exponential scale, but identifies no explicit
-hard power; hard exponents necessarily have exponentially many binary digits.
+Counting gives the matching exponential scale. Every exponent attaining
+this bound has exponentially many bits. For a different linear-size
+permutation, element distinctness gives an explicit power of two
+$T=\Theta(n/\log n)$ for which even one output bit requires
+$\Omega(n(\log n)^\varepsilon)$ gates for some $\varepsilon>0$.
 Sorting-based checkpoint circuits also give cycle labels, transient
 depth, pair-input reachability, exact first hitting times, and complete visit
 descriptors in $O(A+\sqrt{n^3NA})$ gates for $A=s+n^3$, and share one
@@ -220,6 +223,9 @@ of complexity $\Omega(2^{n/2}/n)$, when the exponent is uniform modulo its
 order.  The hard powers are selected by counting, require exponentially
 long binary exponents, and are not explicitly identified.  The same
 permutation has a polynomial-size iterator for polynomial-width input times.
+At a smaller hardness scale, \cref{thm:distinctness-power} gives a
+linear-size permutation and a specified short exponent. Both reading one
+bit of that power and testing one specified cycle length are superlinear.
 
 Write $B=A+\sqrt{n^3NA}$.  \Cref{sec:endpoint} proves the
 $O(E+nm)$ input-time bound. \Cref{sec:variable,sec:batch} give the
@@ -371,9 +377,9 @@ the resulting class of functional problems as
 $\mathsf{FP}^{\mathsf{PSPACE}}$.  Our resource question differs: the map
 is fixed, the circuits are nonuniform, and the size bound remains
 exponential in the state length.  Our result supplies no polynomial-time
-algorithm for that iteration problem.  \Cref{sec:short-exponents} gives a nonuniform
-counterpart for short exponents: hard powers at exponents with
-polynomially many bits exist exactly when
+algorithm for that iteration problem.  \Cref{sec:short-exponents} shows
+that superpolynomially hard powers at exponents with polynomially many
+bits exist for polynomial-size transitions exactly when
 $\mathsf{PSPACE}\not\subseteq\mathsf{P}/\mathrm{poly}$.
 
 The present construction uses the same checkpoint and batched-lookup
@@ -4284,15 +4290,94 @@ the complement of recurrence of the predicate $1-P$, which changes the
 bound only by a constant number of gates.
 \end{proof}
 
+\subsection{A superlinear lower bound at a specified short exponent}
+\label{sec:distinctness-power}
+
+A counter attached to a rotating list can record a global property of
+the input. After one lap, one bit tells whether all records were distinct.
+
+We use the following consequence of OpenAI's list-distinctness
+theorem~\cite[Theorem~2.2]{OpenAI26List}. For $m=2^h$ records of $2h$ bits
+each, let $b=2hm$ be the input length. Deciding whether the records are
+pairwise distinct requires $\Omega(b(\log b)^\varepsilon)$ gates over the
+full binary Boolean basis, for some fixed $\varepsilon>0$ and all
+sufficiently large $h$. To see the implication, represent a gate
+$z=g(x,y)$ by the zero-one table of its equation over $\mathbb F_2$.
+Copy shared wires with trees of ternary equality tables and pin the output
+to one. Summing over the internal bits gives the distinctness indicator,
+since each input has a unique consistent gate assignment. A circuit of size
+$s$ gives a trivalent tensor network of volume $O(b+s)$, including copies,
+since the gates have at most $2s$ input slots in total. The one-list case
+of Theorem~2.2 gives volume $>b h^\varepsilon$, and $h=\Theta(\log b)$.
+Schlesinger formalized the Boolean-circuit consequence in
+CSLib-frontier~\cite{Schlesinger26ED}.
+
+\begin{theorem}[A hard power and a hard period test]
+\label{thm:distinctness-power}
+For every sufficiently large $n$ there is a polynomial-time constructible
+permutation $F_n$ on $n$ bits with a circuit of size $O(n)$ and a specified
+power of two $T_n=\Theta(n/\log n)$. One designated output bit of
+$F_n^{T_n}$ requires $\Omega(n(\log n)^\varepsilon)$ gates. The predicate
+that the cycle through the input has length exactly $2T_n$ satisfies the
+same lower bound.
+\end{theorem}
+
+\begin{proof}
+First take state width $n_h=b+h+1$. A state consists of the record list
+$x=(x_0,\ldots,x_{m-1})$ and an $(h+1)$-bit counter $z$ modulo $2m$.
+Let $R$ rotate the records one position to the left and put
+$e(x)=1$ if $x_0$ occurs nowhere else in the list, and $e(x)=0$ otherwise.
+One step is
+\[
+  F(x,z)=(Rx,\ (z+e(x))\bmod 2m).
+\]
+Rotation is wiring. Comparing the first word with each of the other $m-1$
+words and combining the answers costs $O(mh)$ gates. A conditional
+increment costs $O(h)$ gates. These circuits can be printed in polynomial
+time. To invert the step, rotate right and subtract $e$ of the recovered
+list from the counter.
+
+Let $u(x)$ count the positions whose record occurs exactly once.
+Each position comes to the front once in $m$ steps, so
+\begin{equation}\label{eq:distinctness-lap}
+ F^m(x,z)=(x,\ (z+u(x))\bmod 2m).
+\end{equation}
+For example, $(a,b,b,c)$ with distinct $a,b,c$ gives successive increments
+$1,0,0,1$, while four distinct records give $1,1,1,1$. Starting at zero,
+the counter ends in the interval $[0,m]$. Its bit $h$ is one exactly when
+$u(x)=m$, precisely the distinctness condition. Hardwiring $z=0$ and
+reading that bit thus gives a distinctness circuit at no additional gate
+cost.
+
+For the period test, the state returns after $2m$ steps exactly when
+$2u(x)\equiv0\pmod{2m}$, hence when $u(x)\in\{0,m\}$. It returns after $m$
+steps exactly when $u(x)=0$. As $m$ is a power of two, every proper
+divisor of $2m$ divides $m$. Thus the least period is exactly $2m$ if
+and only if $u(x)=m$. The same restriction $z=0$ gives the second bound.
+
+For intermediate widths choose the largest $h$ with $n_h\le n$ and pass
+the unused bits through unchanged. Since $n_{h+1}\le4n_h$ for $h\ge1$,
+we have $b=\Theta(n)$ and $T_n=2^h=\Theta(n/\log n)$. Fixing the extra
+bits preserves both reductions.
+\end{proof}
+
+In this example $F^{2m^2}$ is the identity by \cref{eq:distinctness-lap}.
+There are only polynomially many powers to choose from, and unrolling
+the specified $m$ steps gives an $O(n^2/\log n)$ upper bound.
+The Lean module \texttt{Proofs.DistinctnessRotation} checks bijectivity,
+the one-lap identity, the high bit and the exact-period predicate.
+The gate bounds follow from the cited distinctness theorem and the
+circuit constructions above.
+
 \subsection{Short exponents and polynomial space}\label{sec:short-exponents}
 
 The hard powers of \cref{sec:lower} have exponentially long exponents
 (\cref{cor:exponent-length}).  For exponents with polynomially many bits,
 the question changes character: \cref{cor:halting} has a vacuous bound
 when the configuration width is polynomial rather than $n+O(\log n)$.
-This subsection shows that hardness of short powers is exactly a circuit
-lower bound for $\mathsf{PSPACE}$.  None of its results is covered by the
-Lean formalization.
+At the superpolynomial scale, hard short powers exist exactly when
+$\mathsf{PSPACE}\not\subseteq\mathsf{P}/\mathrm{poly}$. The equivalence
+below is proved in the manuscript.
 
 Families are indexed by the state width.  A family of functions $(G_n)$
 is \emph{superpolynomially hard} if for every $k$ its complexity
@@ -6567,7 +6652,9 @@ formalizations, and validation programs integrated from repository pull
 requests on October 17, 2026; those contributions disclose assistance
 from Claude Code.  Codex assisted with their integration, the program-summary
 and certificate discussion, bibliography reconciliation, and combined
-validation.  The author field is provisional.  Historical priority and final
+validation. Codex also assisted with the rotating-list reduction in
+\cref{sec:distinctness-power} and its Lean proofs.
+The author field is provisional.  Historical priority and final
 attribution require author review; the draft does not represent
 independent peer verification.
 
@@ -7261,6 +7348,18 @@ V. O. Mironkin and V. G. Mikhailov.
 \newblock On the sets of images of $k$-fold iteration of uniform random mapping.
 \newblock \emph{Mathematical Aspects of Cryptography}, 9(3):99--108, 2018.
 In Russian. \href{https://doi.org/10.4213/mvk264}{doi:10.4213/mvk264}.
+
+\bibitem{OpenAI26List}
+OpenAI.
+\newblock The matrix multiplication exponent is nine fourths.
+\newblock Preprint, November 24, 2026.
+\href{https://github.com/openai/math/blob/3344da59991ed94f9ba711217b29c1d760badfa6/preprints/The-matrix-multiplication-exponent-is-nine-fourths-November-24-2026/build/obstruction.tex\#L40-L55}{Theorem 2.2, volume of list distinctness}.
+
+\bibitem{Schlesinger26ED}
+Samuel Schlesinger.
+\newblock A superlinear Boolean circuit lower bound for element distinctness.
+\newblock CSLib-frontier, 2026.
+\href{https://github.com/cslib-community/cslib-frontier/blob/f887290e29ffd133d13bb614da7e724d4b2bb8b6/CslibFrontier/Computability/Circuit/Boolean/ElementDistinctness/CircuitLowerBound.lean\#L328-L339}{Lean statement and proof}.
 
 \end{thebibliography}
 

@@ -1,6 +1,6 @@
 # Square-Root Circuit Bounds for Iterated Functions
 
-Preliminary research draft, November 22, 2026.
+Preliminary research draft, November 25, 2026.
 
 How large a Boolean circuit is needed to evaluate an arbitrarily distant
 iterate of a simple transition? For an n-bit map F of circuit size s, put
@@ -32,6 +32,14 @@ An explicit linear-size permutation has almost every power of complexity
 Omega(2^(n/2)/n), for exponents uniform modulo its order. This matches the
 upper bound's exponential scale. The counting argument identifies no explicit
 hard exponent; hard exponents for this family have exponentially many binary digits.
+
+A different linear-size permutation has an explicit power of two
+T = Θ(n/log n) at which one output bit needs Ω(n(log n)^ε) gates for a
+fixed ε > 0. One step rotates a list and increments a counter if its first
+record occurs only once. After a full rotation, the high counter bit decides
+element distinctness when the counter starts at zero. Testing for period
+exactly 2T has the same lower bound.
+[OpenAI's list-distinctness theorem](https://github.com/openai/math/blob/3344da59991ed94f9ba711217b29c1d760badfa6/preprints/The-matrix-multiplication-exponent-is-nine-fourths-November-24-2026/build/obstruction.tex#L40-L55) · [Boolean-circuit corollary](https://github.com/cslib-community/cslib-frontier/pull/8449)
 
 Further extensions treat sharp constants and approximation, explicit exponent
 complexity, a permutation near the counting ceiling, AKS sorting, depth and

@@ -36,6 +36,7 @@ public import Proofs.CounterBatch
 public import Proofs.SequentialSquaring
 public import Proofs.PhaseIdentities
 public import Proofs.DistinguishedPoints
+public import Proofs.DistinctnessRotation
 
 /-!
 # Public results and axiom audit
@@ -562,5 +563,16 @@ namespace IteratedFunctions
 [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms distinguishedPower_correct
+
+/-- info: 'IteratedFunctions.DistinctnessRotation.highBit_iff_nodup' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms DistinctnessRotation.highBit_iff_nodup
+
+/-- info: 'IteratedFunctions.DistinctnessRotation.minimalPeriod_iff_nodup' depends on axioms: [propext,
+ Classical.choice,
+ Quot.sound] -/
+#guard_msgs in
+#print axioms DistinctnessRotation.minimalPeriod_iff_nodup
 
 end IteratedFunctions

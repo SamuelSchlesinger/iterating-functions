@@ -16,7 +16,7 @@ The paper also gives:
 - **Program analysis:** exact target-distance summaries, largest safe invariants,
   and termination ranks at the same square-root scale. A successor equation
   characterizes each summary, with a coNP-complete correctness check.
-- **Input times and batches:** an m-bit exponent costs O(min(m B, n B + n m));
+- **Input times and batches:** an m-bit exponent costs O(B + n m);
   r independent starting states with a common fixed exponent cost
   O(r A + sqrt(r n^3 N A)), for 1 <= r <= N.
 - **Structured transitions:** r edits to a counter permutation give

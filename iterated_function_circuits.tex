@@ -242,7 +242,7 @@ Query & Input parameters & Circuit size \\
 \midrule
 \multicolumn{3}{@{}l}{\emph{General transitions on $n$-bit states}}\\
 Fixed iterate & $x$; fixed $T\geq0$ & $O(B)$ \\
-Input-time iterate & $x,t$; $t\in\bits^m$ & $O(\min\{mB,nB+nm\})$ \\
+Input-time iterate & $x,t$; $t\in\bits^m$ & $O(B+nm)$ \\
 Graph navigation & $x$ or $x,y$ & $O(B)$ \\
 Recognizable targets & $x$; fixed $P$ of size $a$ & $O(B_P)$ \\
 Shared fixed powers & $k$ states; common fixed $T$ & $O(kA+\sqrt{kn^3NA})$ \\
@@ -2781,14 +2781,14 @@ obtained by duplicating the circuit for $G_{j-1}$.
 \begin{theorem}[Long input times]\label{thm:long-time}
 Write $B=A+\sqrt{n^3NA}$.  For every $m\geq1$,
 \[
- \CC(\Iter_{F,m})=O\!\left(\min\{mB,\ nB+nm\}\right).
+ \CC(\Iter_{F,m})=O(B+nm).
 \]
-Thus the cost of processing additional time bits is additive once the
-state width is fixed.
+Thus an input time of at most $n^2$ bits costs no more than one fixed
+power, up to a constant factor, and each further time bit costs $O(n)$ gates.
 \end{theorem}
 \begin{proof}
-The first bound is \cref{thm:variable}.  For the second, compute the exact
-eventual cycle length $\ell=\ell(x)$ in $O(B)$ gates using
+If $m\leq n$, the input time already satisfies $t<N$.  Otherwise compute the
+exact eventual cycle length $\ell=\ell(x)$ in $O(B)$ gates using
 \cref{thm:labels}.  Replace the input time by
 \[
  u=\begin{cases}
@@ -2806,10 +2806,13 @@ prevents overflow.  Shared-carry addition and subtraction give $O(n)$
 gates per input bit, including comparison and selection.  The bounded
 modular correction by $N$ and the final selection cost $O(n^3+m)$ with
 the arithmetic circuits already used in the proof.  Hence forming $u$
-costs $O(nm+n^3)$, and its $n+1$ bits feed \cref{thm:variable} at cost
-$O(nB)$.  Since $n^3\leq B$, the second bound follows.  If $m\leq n$,
-one may simply use the original $m$-stage construction.
+costs $O(nm+n^3)$.  Its $n+1$ bits feed the $O(B)$-gate circuit of
+\cref{thm:queried-time}, which is proved below without using this theorem.
+Since $n^3\leq B$, the claim follows.
 \end{proof}
+
+Binary powering remains the construction behind the shared batched bound
+below; the scan used by \cref{thm:queried-time} is charged per query.
 
 \subsection{Sharing a dictionary among independent trajectories}
 \label{sec:batch}
@@ -3310,6 +3313,62 @@ the same interval property by lexicographically ordering root-to-vertex
 paths, without formalizing a traversal algorithm.
 \end{proof}
 
+\begin{theorem}[Queried iterates]\label{thm:queried-time}
+A circuit of size $O(B)$, on input $x$ and an $(n+1)$-bit integer $u<2N$,
+computes $F^u(x)$.
+\end{theorem}
+\begin{proof}
+Use a common parameter $L$, put $K=2L$, and take $H$, $J$, $p$, and $q$ from
+\cref{lem:checkpoint-forest}.  Compute $\mu(x)$, $\ell(x)$, $c(x)$, and
+$\phi(x)$ with \cref{thm:depth,thm:labels}.  Each branch below selects a
+state $b$ and an integer $w\leq K$ with $F^w(b)=F^u(x)$.  Generating $K$
+states from $b$ and selecting position $w$ costs $O(Ls+n^2L)$ gates.  A final
+comparison of $u$ with $\mu(x)$ chooses the branch.
+
+\emph{Transient targets, $u<\mu(x)$.}  If $u\leq K$, take $(b,w)=(x,u)$.
+Otherwise put $D=\mu(x)-u>0$.  The prefix through time $K$ has no repetition,
+so it contains a checkpoint, and therefore a mark.  Hardwire
+$(a,\mu(a),p(a),q(a))$ for each $a\in J$, and use \cref{lem:lookup} on the
+prefix to select any mark $h=F^d(x)\in J$ with $d\leq K$, together with its
+label $p(h)$.  Scan $J$ once.  Call
+$a$ \emph{eligible} when
+\[
+ p(a)\leq p(h)\leq q(a)
+ \quad\hbox{and}\quad
+ D\leq\mu(a)\leq D+K,
+\]
+and take any eligible $a$, with $(b,w)=(a,\mu(a)-D)$.
+
+Every eligible mark is correct.  The interval test gives $F^e(h)=a$ with
+$e\leq\mu(h)$.  Depth then decreases on each of these steps, so
+$\mu(a)=\mu(x)-d-e$ and $w+e+d=u$.  Thus $F^w(a)=F^u(x)$.  An eligible
+mark exists: the transient target $y=F^u(x)$ lies on the path from $h$ to its
+root, so it lies in $S$.  Let $a$ be the last mark on that path at or before
+$y$.  If $a\neq y$, then $a$ is not a root, and its next mark has depth
+below $D$.  Hence $0\leq\mu(a)-D<2L$ by part~2 of the lemma, and part~3
+gives the interval test.
+
+\emph{Cyclic targets, $u\geq\mu(x)$.}  Put $c=c(x)$ and
+$\psi=(\phi(x)+u)\bmod\ell(x)$, so that $F^u(x)=F^\psi(c)$ by
+\cref{eq:phase}.  If $\psi\leq K$, take $(b,w)=(c,\psi)$.  Otherwise hardwire
+$(a,c(a),\phi(a))$ for each cyclic $a\in H$, and scan for any $a$ with
+$c(a)=c$ and $\phi(a)\leq\psi\leq\phi(a)+K$.  Take
+$(b,w)=(a,\psi-\phi(a))$.  This is correct because $a=F^{\phi(a)}(c)$ for a
+cyclic state.  Such an $a$ exists: since $\ell(x)>\psi>K$, the orbit of
+$z=F^{\psi-K+1}(c)$ does not repeat within $L$ steps, so
+\cref{lem:checkpoints} gives $F^d(z)\in H$ with $d<K$.  Its phase is
+$\psi-K+1+d\leq\psi$.
+
+Each scan tests $O(N/L)$ records of $O(n)$ bits and costs $O(nN/L)$ gates.
+No record needs a minimum: any eligible one suffices.  The labels, lookup,
+modular reduction, and two short walks stay within $O(Ls+n^3(L+N/L))$ gates.
+Optimizing $L$ as in \cref{eq:L-choice} proves the claim.
+\end{proof}
+
+This is a Boolean-circuit counterpart of the function-power data structures
+of \cite{MRRR12}: a single scan replaces the $n$ stages of binary powering.
+As with the other navigation bounds, we make no novelty claim for the idea.
+
 \begin{theorem}[Reachability and first hitting times]\label{thm:reachability}
 A circuit of size $O(B)$, on input $(x,y)$, decides whether
 $F^t(x)=y$ for some $t\geq0$ and returns the least such $t$ when it exists.
@@ -3370,6 +3429,12 @@ Finally $\mu(x)+\ell(x)\leq N$, so every first hitting time is at most
 $N-1$.  Arithmetic may use $n+1$ intermediate bits.  The time field is unspecified on negative instances; an additional
 $O(n)$-gate mask can set it to zero if desired.
 \end{proof}
+
+\Cref{thm:queried-time} gives a shorter route to the transient case.  The
+time of a visit to a transient $y$ is forced, so $x$ reaches $y$ exactly when
+$\mu(y)\leq\mu(x)$ and $F^{\mu(x)-\mu(y)}(x)=y$.  This avoids the second
+dictionary, the depth filter, and the third prefix.  The Lean development
+retains the proof above.
 
 \begin{corollary}[Complete visit schedules]\label[corollary]{cor:schedules}
 A circuit of size $O(B)$, on input $(x,y)$, returns a success flag and
@@ -3451,9 +3516,10 @@ least $N\geq\mu(x)$ and are congruent modulo $\ell(x)$, so
 $F^T(x)=F^u(x)=\Iter_{F,n+1}(x,u)$.
 \end{proof}
 
-Combined with \cref{thm:labels,thm:variable} the right-hand side is
-$O(nB)$, so the decomposition is not a better general bound.  Its content
-is structural: all dependence on $T$ is confined to the $c(F)$-entry table
+Distinct cycle lengths sum to at most $N$, so $c(F)\leq\sqrt{2N}$.
+Combined with \cref{thm:labels,thm:long-time}, the right-hand side is
+therefore $O(B)$, and the decomposition is not a better general bound.  Its
+content is structural: all dependence on $T$ is confined to the $c(F)$-entry table
 $\ell\mapsto T\bmod\ell$.  For $P_n$, $\ell_{P_n}(a,b)$ is $a$ on active
 states and $1$ otherwise, which costs $O(n)$ gates; \cref{eq:easy-iterator}
 gives $\CC(\Iter_{P_n,n+1})=O(n^2)$; and $c(P_n)=B$.  Hence

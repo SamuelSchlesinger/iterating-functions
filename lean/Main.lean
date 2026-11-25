@@ -20,6 +20,7 @@ public import Proofs.SparseDisplacement
 public import Proofs.StreamingRemainder
 public import Proofs.EventualQueries
 public import Proofs.LongTime
+public import Proofs.TimeNavigationCircuits
 public import Proofs.TargetTimes
 public import Proofs.VisitScheduleCircuits
 public import Proofs.TypicalPowers
@@ -322,6 +323,36 @@ namespace IteratedFunctions
 [propext, Classical.choice, Quot.sound] -/
 #guard_msgs in
 #print axioms variable_time_additive_optimized
+
+/-- info: 'IteratedFunctions.variable_time_navigated' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms variable_time_navigated
+
+/-- info: 'IteratedFunctions.variable_time_navigated_optimized' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms variable_time_navigated_optimized
+
+/-- info: 'IteratedFunctions.forest_ancestor_walk' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms forest_ancestor_walk
+
+/-- info: 'IteratedFunctions.exists_forest_ancestor_mark' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms exists_forest_ancestor_mark
+
+/-- info: 'IteratedFunctions.cycle_mark_walk' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms cycle_mark_walk
+
+/-- info: 'IteratedFunctions.exists_cycle_checkpoint' depends on axioms:
+[propext, Classical.choice, Quot.sound] -/
+#guard_msgs in
+#print axioms exists_cycle_checkpoint
 
 /-- info: 'IteratedFunctions.checkpoint_depth_optimized' depends on axioms:
 [propext, Classical.choice, Quot.sound] -/

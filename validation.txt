@@ -250,3 +250,16 @@ The public theorem map is in lean/README.md; REVIEW.md tracks the continuation.
 
 These checks do not establish historical novelty or replace independent
 publication review. No submission to a publication venue has been made.
+
+Queried iterates, October 30, 2026
+
+make lean-check
+  cd lean && lake build --wfail
+  Build completed successfully (3791 jobs).
+  96 Proofs modules; 109 guarded axiom checks in Main.lean.
+
+python3 verify_time_navigation.py
+  1800 map/spacing pairs, 4798720 queries, and 6956217 selected marks
+  agree with direct simulation.
+
+The manuscript PDF was not rebuilt for this change.
